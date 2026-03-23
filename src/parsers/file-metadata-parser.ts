@@ -336,9 +336,16 @@ export class FileMetadataTaskParser {
 		const detectedProject = this.detectProjectFromFile(filePath, frontmatter, fileCache);
 		if (detectedProject) {
 			metadata.project = detectedProject;
-		} else if (frontmatter.project) {
+		} else if (frontmatter.project === true) {
+			// Legacy boolean semantics: `project: true` means use filename
+			const fileName = filePath.split("/").pop() || filePath;
+			metadata.project = fileName.replace(/\.md$/i, "");
+		} else if (
+			typeof frontmatter.project === "string" &&
+			frontmatter.project.trim()
+		) {
 			// Fallback to legacy project field
-			metadata.project = String(frontmatter.project);
+			metadata.project = frontmatter.project.trim();
 		}
 		if (frontmatter.context) {
 			metadata.context = String(frontmatter.context);

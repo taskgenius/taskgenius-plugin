@@ -331,6 +331,21 @@ describe('FileSource', () => {
       expect(task!.metadata.project).toBe('Test Project');
     });
 
+    it('should use filename as project name when frontmatter project is true', async () => {
+      const fileCache = {
+        frontmatter: {
+          dueDate: '2024-01-01',
+          project: true
+        }
+      };
+      mockApp.metadataCache.getFileCache.mockReturnValue(fileCache);
+
+      const task = await fileSource.createFileTask('Projects/My Awesome Project.md');
+
+      expect(task).toBeTruthy();
+      expect(task!.metadata.project).toBe('My Awesome Project');
+    });
+
     it('should use default status when not specified', async () => {
       const fileCache = {
         frontmatter: {

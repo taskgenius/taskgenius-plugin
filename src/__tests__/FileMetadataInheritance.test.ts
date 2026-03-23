@@ -124,6 +124,22 @@ describe("File Metadata Inheritance", () => {
 			// tags应该被继承，但不会覆盖非继承字段
 		});
 
+		test("should use filename when inherited frontmatter project is true", () => {
+			const content = "- [ ] Task without explicit project";
+			const fileMetadata = {
+				project: true,
+			};
+
+			const tasks = parser.parseLegacy(
+				content,
+				"Projects/My Awesome Project.md",
+				fileMetadata
+			);
+
+			expect(tasks).toHaveLength(1);
+			expect(tasks[0].metadata.project).toBe("My Awesome Project");
+		});
+
 		test("should work independently of project configuration", () => {
 			// 项目配置为null，验证不会崩溃
 			mockPlugin.settings.projectConfig = null;

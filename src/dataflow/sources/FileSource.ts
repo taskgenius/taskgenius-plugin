@@ -907,10 +907,13 @@ export class FileSource {
 		// 2. Metadata mapping (e.g., custom_project mapped to project via metadataMappings)
 		// 3. Tag extraction (#project/xxx) - lowest priority, only if frontmatter has nothing
 		const projectVal = resolvedFrontmatter.project ?? projectFromTags;
-		const projectValue: string | undefined =
-			projectVal !== undefined && projectVal !== null
-				? String(projectVal)
-				: undefined;
+		let projectValue: string | undefined;
+		if (projectVal === true) {
+			const fileName = filePath.split("/").pop() || filePath;
+			projectValue = fileName.replace(/\.md$/i, "");
+		} else if (typeof projectVal === "string" && projectVal.trim()) {
+			projectValue = projectVal.trim();
+		}
 
 		const shouldStripProjectTags =
 			!resolvedFrontmatter.project &&
