@@ -143,6 +143,7 @@ export class MarkdownTaskParser {
 				const inheritedMetadata = this.inheritFileMetadata(
 					metadata,
 					isSubtask,
+					filePath,
 				);
 
 				// Extract time components from task content using enhanced time parsing
@@ -1736,6 +1737,7 @@ export class MarkdownTaskParser {
 	private inheritFileMetadata(
 		taskMetadata: Record<string, string>,
 		isSubtask: boolean = false,
+		filePath: string = "",
 	): Record<string, string> {
 		// Helper function to convert priority values to numbers
 		const convertPriorityValue = (value: any): string => {
@@ -1861,22 +1863,34 @@ export class MarkdownTaskParser {
 				try {
 					const configuredProjectKey =
 						this.config.projectConfig?.metadataConfig?.metadataKey;
+					const configuredProjectValue =
+						configuredProjectKey !== undefined
+							? this.fileMetadata[configuredProjectKey]
+							: undefined;
 					if (
 						configuredProjectKey &&
-						this.fileMetadata[configuredProjectKey] !== undefined &&
-						this.fileMetadata[configuredProjectKey] !== null &&
-						String(
-							this.fileMetadata[configuredProjectKey],
-						).trim() !== ""
+						configuredProjectValue !== undefined &&
+						configuredProjectValue !== null
 					) {
 						if (
 							inherited.project === undefined ||
 							inherited.project === null ||
 							inherited.project === ""
 						) {
-							inherited.project = String(
-								this.fileMetadata[configuredProjectKey],
-							).trim();
+							if (configuredProjectValue === true) {
+								const fileName =
+									filePath.split("/").pop() || filePath;
+								inherited.project = fileName.replace(
+									/\.md$/i,
+									"",
+								);
+							} else if (
+								typeof configuredProjectValue === "string" &&
+								configuredProjectValue.trim() !== ""
+							) {
+								inherited.project =
+									configuredProjectValue.trim();
+							}
 						}
 					}
 				} catch {}
@@ -1939,6 +1953,10 @@ export class MarkdownTaskParser {
 						// Convert priority values to numbers before inheritance
 						if (key === "priority") {
 							inherited[key] = convertPriorityValue(value);
+						} else if (key === "project" && value === true) {
+							const fileName =
+								filePath.split("/").pop() || filePath;
+							inherited[key] = fileName.replace(/\.md$/i, "");
 						} else {
 							inherited[key] = String(value);
 						}

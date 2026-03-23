@@ -199,6 +199,29 @@ describe("FileMetadataTaskParser", () => {
 			expect(dueDateTask?.status).toBe(" "); // Due dates are typically incomplete
 		});
 
+		it("should use filename as project name when frontmatter project is true", () => {
+			const filePath = "Projects/My Awesome Project.md";
+			const fileContent = "# Test File";
+			const fileCache = {
+				frontmatter: {
+					title: "Test Task",
+					todo: true,
+					project: true,
+				},
+				tags: [],
+			};
+
+			const result = parser.parseFileForTasks(
+				filePath,
+				fileContent,
+				fileCache as any
+			);
+
+			expect(result.errors).toHaveLength(0);
+			expect(result.tasks).toHaveLength(1);
+			expect(result.tasks[0].metadata.project).toBe("My Awesome Project");
+		});
+
 		it("should not create tasks when parsing is disabled", () => {
 			const disabledConfig: FileParsingConfiguration = {
 				enableFileMetadataParsing: false,
