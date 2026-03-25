@@ -196,6 +196,7 @@ export class CalendarComponent extends Component {
 		this.processTasks();
 		this.render();
 		this.registerExternalTextDropHandlers();
+		this.registerTimeSlotQuickCaptureHandler();
 
 		// Listen for calendar views configuration changes
 		this.registerEvent(
@@ -254,6 +255,10 @@ export class CalendarComponent extends Component {
 		this.tasks = newTasks;
 		this.badgeEventsCache.clear();
 		this.processTasks();
+		if (this.tgCalendar) {
+			this.tgCalendar.setEvents(this.convertTasksToTGEvents());
+			return;
+		}
 		this.renderCurrentView();
 	}
 
@@ -576,7 +581,211 @@ export class CalendarComponent extends Component {
 		return !["year", "month", "week", "day", "agenda"].includes(viewMode);
 	}
 
+	private isTimeGridView(viewMode: CalendarViewMode = this.currentViewMode): boolean {
+		if (viewMode === "week" || viewMode === "day") {
+			return true;
+		}
+		if (!this.isCustomView(viewMode)) {
+			return false;
+		}
+		const customConfig = this.getCustomViewConfig(viewMode);
+		return (
+			customConfig?.baseViewType === "week" ||
+			customConfig?.baseViewType === "day"
+		);
+	}
+
+	private captureTimeGridScroll():
+		| {
+				scrollTop: number;
+				scrollLeft: number;
+		  }
+		| null {
+		if (!this.isTimeGridView()) return null;
+		const container = this.viewContainerEl.querySelector<HTMLElement>(
+			".tg-time-grid-container",
+		);
+		if (!container) return null;
+		return {
+			scrollTop: container.scrollTop,
+			scrollLeft: container.scrollLeft,
+		};
+	}
+
+	private restoreTimeGridScroll(
+		scrollState:
+			| {
+					scrollTop: number;
+					scrollLeft: number;
+			  }
+			| null,
+	): void {
+		if (!scrollState || !this.isTimeGridView()) return;
+
+		const restore = () => {
+			const container = this.viewContainerEl.querySelector<HTMLElement>(
+				".tg-time-grid-container",
+			);
+			if (!container) return;
+			container.scrollTop = scrollState.scrollTop;
+			container.scrollLeft = scrollState.scrollLeft;
+		};
+
+		// The calendar library may adjust scroll asynchronously after mount,
+		// so retry a few times to keep the user's position stable.
+		setTimeout(restore, 0);
+		setTimeout(restore, 16);
+		setTimeout(restore, 80);
+		setTimeout(restore, 180);
+	}
+
+	private getActiveTimeRangeForCurrentView():
+		| {
+				startHour: number;
+				endHour: number;
+		  }
+		| null {
+		if (!this.isTimeGridView()) return null;
+
+		if (this.isCustomView(this.currentViewMode)) {
+			const customConfig = this.getCustomViewConfig(this.currentViewMode);
+			const timeFilter = customConfig?.calendarConfig?.timeFilter;
+			if (
+				timeFilter?.enabled &&
+				(customConfig?.baseViewType === "week" ||
+					customConfig?.baseViewType === "day")
+			) {
+				const startHour =
+					timeFilter.type === "workingHours"
+						? 9
+						: timeFilter.startHour;
+				const endHour =
+					timeFilter.type === "workingHours"
+						? 18
+						: timeFilter.endHour;
+				if (endHour > startHour) {
+					return { startHour, endHour };
+				}
+			}
+			return null;
+		}
+
+		const config = this.getEffectiveCalendarConfig();
+		if (config.showWorkingHoursOnly) {
+			const startHour = config.workingHoursStart ?? 9;
+			const endHour = config.workingHoursEnd ?? 18;
+			if (endHour > startHour) {
+				return { startHour, endHour };
+			}
+		}
+
+		return null;
+	}
+
+	private resolveDateTimeFromDayColumnPosition(
+		dayColumn: HTMLElement,
+		clientY: number,
+	): Date | null {
+		const dateIso = dayColumn.dataset.date;
+		if (!dateIso) return null;
+
+		const rect = dayColumn.getBoundingClientRect();
+		const relY = clientY - rect.top;
+
+		// Keep in sync with TGCalendar config (theme.cellHeight / draggable.snapMinutes)
+		const cellHeightPx = 60;
+		const snapMinutes = 15;
+		const timeRange = this.getActiveTimeRangeForCurrentView();
+		const startHour = timeRange?.startHour ?? 0;
+		const endHour = timeRange?.endHour ?? 24;
+		const visibleMinutes = Math.max(0, (endHour - startHour) * 60);
+		if (visibleMinutes <= 0) return null;
+
+		const rawMinutes = (relY / cellHeightPx) * 60;
+		const maxSnappedMinutes = Math.max(0, visibleMinutes - snapMinutes);
+		const snappedMinutes = Math.max(
+			0,
+			Math.min(
+				maxSnappedMinutes,
+				Math.round(rawMinutes / snapMinutes) * snapMinutes,
+			),
+		);
+		const absoluteMinutes = startHour * 60 + snappedMinutes;
+
+		const baseDate = dateFns.parseISO(dateIso);
+		return dateFns.setMinutes(
+			dateFns.setHours(baseDate, Math.floor(absoluteMinutes / 60)),
+			absoluteMinutes % 60,
+		);
+	}
+
+	private adjustTimedEventPositionForActiveTimeRange(
+		event: AdapterCalendarEvent,
+		el: HTMLElement,
+	): void {
+		const timeRange = this.getActiveTimeRangeForCurrentView();
+		if (!timeRange) return;
+		if (event.allDay) return;
+
+		const startValue = event.start as unknown;
+		const startDate =
+			startValue instanceof Date
+				? startValue
+				: new Date(startValue as string | number);
+		if (Number.isNaN(startDate.getTime())) return;
+
+		const startMinutes =
+			startDate.getHours() * 60 + startDate.getMinutes();
+		const relativeMinutes = startMinutes - timeRange.startHour * 60;
+
+		// Event starts outside visible range, let the library decide whether to show/hide.
+		if (relativeMinutes < 0) return;
+
+		const cellHeightPx = 60;
+		const expectedTop = (relativeMinutes / 60) * cellHeightPx;
+		const transform = el.style.transform || "";
+		const translateMatch = transform.match(
+			/translate\(\s*([-\d.]+)%\s*,\s*([-\d.]+)px\s*\)/,
+		);
+		const currentLeftPercent = translateMatch
+			? parseFloat(translateMatch[1] ?? "0")
+			: 0;
+		const currentTop = translateMatch
+			? parseFloat(translateMatch[2] ?? "NaN")
+			: Number.NaN;
+
+		if (
+			!Number.isFinite(currentTop) ||
+			Math.abs(currentTop - expectedTop) > 1
+		) {
+			el.style.transform = `translate(${currentLeftPercent}%, ${expectedTop}px)`;
+		}
+	}
+
+	private refreshCalendarEventsPreservingView(): void {
+		if (!this.tgCalendar) {
+			this.renderCurrentView();
+			return;
+		}
+
+		this.badgeEventsCache.clear();
+		this.processTasks();
+		this.tgCalendar.setEvents(this.convertTasksToTGEvents());
+	}
+
+	private updateLocalTaskState(
+		taskId: string,
+		updater: (task: Task) => Task,
+	): void {
+		const index = this.tasks.findIndex((t) => t.id === taskId);
+		if (index === -1) return;
+		const current = this.tasks[index];
+		if (!current) return;
+		this.tasks[index] = updater(current);
+	}
+
 	private renderCurrentView() {
+		const timeGridScrollState = this.captureTimeGridScroll();
 		this.viewContainerEl.empty();
 
 		// Clean up previous views
@@ -611,6 +820,8 @@ export class CalendarComponent extends Component {
 				}
 				break;
 		}
+
+		this.restoreTimeGridScroll(timeGridScrollState);
 	}
 
 	/**
@@ -806,8 +1017,6 @@ export class CalendarComponent extends Component {
 				this.handleDateContextMenu(date, x, y),
 			onTimeSlotClick: (dateTime: Date) =>
 				this.handleTimeSlotClick(dateTime),
-			onTimeSlotDoubleClick: (dateTime: Date) =>
-				this.handleTimeSlotDoubleClick(dateTime),
 			// Range selection (drag to select multiple cells)
 			onDateRangeSelect: (startDate: Date, endDate: Date) =>
 				this.handleDateRangeSelect(startDate, endDate),
@@ -898,8 +1107,6 @@ export class CalendarComponent extends Component {
 			// Time slot interactions (week/day views, v0.6.0+)
 			onTimeSlotClick: (dateTime: Date) =>
 				this.handleTimeSlotClick(dateTime),
-			onTimeSlotDoubleClick: (dateTime: Date) =>
-				this.handleTimeSlotDoubleClick(dateTime),
 			// Range selection (drag to select multiple cells)
 			onDateRangeSelect: (startDate: Date, endDate: Date) =>
 				this.handleDateRangeSelect(startDate, endDate),
@@ -993,6 +1200,7 @@ export class CalendarComponent extends Component {
 		ctx.defaultRender();
 
 		const { event, el } = ctx;
+		this.adjustTimedEventPositionForActiveTimeRange(event, el);
 
 		// Backup click handler to ensure selection always works
 		// This guards against cases where the library's click handler fails
@@ -1047,20 +1255,18 @@ export class CalendarComponent extends Component {
 					// Update UI immediately
 					checkbox.checked = !task.completed;
 					checkbox.dataset.task = newStatus;
-
-					// Trigger task-completed event if needed
-					if (!task.completed) {
-						this.app.workspace.trigger(
-							"task-genius:task-completed",
-							task,
-						);
-					}
-
-					// Refresh calendar
-					setTimeout(() => {
-						this.processTasks();
-						this.renderCurrentView();
-					}, 100);
+					this.updateLocalTaskState(task.id, (currentTask) => ({
+						...currentTask,
+						completed: !currentTask.completed,
+						status: newStatus,
+						metadata: {
+							...currentTask.metadata,
+							completedDate: !currentTask.completed
+								? Date.now()
+								: undefined,
+						},
+					}));
+					this.refreshCalendarEventsPreservingView();
 				}
 			}
 		});
@@ -1565,20 +1771,18 @@ export class CalendarComponent extends Component {
 							// Update UI
 							checkbox.checked = !task.completed;
 							checkbox.dataset.task = newStatus;
-
-							// Trigger task-completed event if needed
-							if (!task.completed) {
-								this.app.workspace.trigger(
-									"task-genius:task-completed",
-									task,
-								);
-							}
-
-							// Refresh calendar
-							setTimeout(() => {
-								this.processTasks();
-								this.renderCurrentView();
-							}, 100);
+							this.updateLocalTaskState(task.id, (currentTask) => ({
+								...currentTask,
+								completed: !currentTask.completed,
+								status: newStatus,
+								metadata: {
+									...currentTask.metadata,
+									completedDate: !currentTask.completed
+										? Date.now()
+										: undefined,
+								},
+							}));
+							this.refreshCalendarEventsPreservingView();
 						}
 					}
 				});
@@ -1594,6 +1798,31 @@ export class CalendarComponent extends Component {
 				dateNum.addClass("past-due");
 			}
 		}
+	}
+
+	private registerTimeSlotQuickCaptureHandler(): void {
+		this.registerDomEvent(this.viewContainerEl, "dblclick", (e: MouseEvent) => {
+			const targetEl = e.target instanceof HTMLElement ? e.target : null;
+			if (!targetEl) return;
+
+			// Ignore double-clicks on existing events
+			if (targetEl.closest(".tg-event")) return;
+
+			const dayColumn = targetEl.closest<HTMLElement>(
+				".tg-day-column[data-date]",
+			);
+			if (!dayColumn) return;
+
+			const dateTime = this.resolveDateTimeFromDayColumnPosition(
+				dayColumn,
+				e.clientY,
+			);
+			if (!dateTime) return;
+
+			e.preventDefault();
+			e.stopPropagation();
+			this.handleTimeSlotDoubleClick(dateTime);
+		});
 	}
 
 	private registerExternalTextDropHandlers(): void {
@@ -1665,27 +1894,11 @@ export class CalendarComponent extends Component {
 			".tg-day-column[data-date]",
 		);
 		if (dayColumn?.dataset.date) {
-			const rect = dayColumn.getBoundingClientRect();
-			const relY = e.clientY - rect.top;
-
-			// Keep in sync with our TGCalendar config (theme.cellHeight / draggable.snapMinutes)
-			const cellHeightPx = 60;
-			const snapMinutes = 15;
-
-			const rawMinutes = (relY / cellHeightPx) * 60;
-			const snappedMinutes = Math.max(
-				0,
-				Math.min(
-					1440,
-					Math.round(rawMinutes / snapMinutes) * snapMinutes,
-				),
+			const start = this.resolveDateTimeFromDayColumnPosition(
+				dayColumn,
+				e.clientY,
 			);
-
-			const baseDate = dateFns.parseISO(dayColumn.dataset.date);
-			const start = dateFns.setMinutes(
-				dateFns.setHours(baseDate, Math.floor(snappedMinutes / 60)),
-				snappedMinutes % 60,
-			);
+			if (!start) return null;
 			const end = dateFns.addMinutes(start, 30);
 
 			return { start, end, allDay: false };
