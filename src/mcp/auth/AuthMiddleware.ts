@@ -3,6 +3,17 @@
  */
 
 import { IncomingMessage, ServerResponse } from "http";
+import { timingSafeEqual, createHash } from "crypto";
+
+function safeEqual(a: string, b: string): boolean {
+	try {
+		const hashA = createHash("sha256").update(a).digest();
+		const hashB = createHash("sha256").update(b).digest();
+		return timingSafeEqual(hashA, hashB);
+	} catch {
+		return false;
+	}
+}
 
 export class AuthMiddleware {
 	constructor(private authToken: string) {}
@@ -19,7 +30,7 @@ export class AuthMiddleware {
 		if (!parsed) {
 			return false;
 		}
-		return parsed.token === this.authToken;
+		return safeEqual(parsed.token, this.authToken);
 	}
 
 	/**
