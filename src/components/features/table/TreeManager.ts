@@ -4,6 +4,7 @@ import { TreeNode, TableRow, TableCell, TableColumn } from "./TableTypes";
 import { SortCriterion } from "@/common/setting-definition";
 import { sortTasks } from "@/commands/sortTaskCommands";
 import { t } from "@/translations/helper";
+import { isValidTreeParent } from "@/utils/ui/tree-view-utils";
 
 /**
  * Tree manager component responsible for handling hierarchical task display
@@ -91,10 +92,14 @@ export class TreeManager extends Component {
 		tasks.forEach((task) => {
 			const node = this.treeNodes.get(task.id);
 			if (!node) return;
+			const parentTask = task.metadata.parent
+				? taskMap.get(task.metadata.parent)
+				: undefined;
 
 			if (
 				task.metadata.parent &&
-				this.treeNodes.has(task.metadata.parent)
+				this.treeNodes.has(task.metadata.parent) &&
+				isValidTreeParent(task, parentTask)
 			) {
 				// This task has a parent
 				const parentNode = this.treeNodes.get(task.metadata.parent);

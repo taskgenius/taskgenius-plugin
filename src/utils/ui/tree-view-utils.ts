@@ -1,5 +1,39 @@
 import { Task } from "../../types/task";
 
+function normalizeHeadingPath(task: Task): string[] {
+	const heading = task.metadata.heading;
+	if (Array.isArray(heading)) {
+		return heading.map((item) => String(item).trim().toLowerCase());
+	}
+	return [];
+}
+
+export function isValidTreeParent(child: Task, parent?: Task): boolean {
+	if (!parent) {
+		return false;
+	}
+
+	if (child.filePath !== parent.filePath) {
+		return false;
+	}
+
+	if ((child.line ?? 0) <= (parent.line ?? -1)) {
+		return false;
+	}
+
+	const childHeadingPath = normalizeHeadingPath(child);
+	const parentHeadingPath = normalizeHeadingPath(parent);
+	if (
+		childHeadingPath.length > 0 &&
+		parentHeadingPath.length > 0 &&
+		childHeadingPath.join("\n") !== parentHeadingPath.join("\n")
+	) {
+		return false;
+	}
+
+	return true;
+}
+
 /**
  * Convert a flat list of tasks to a hierarchical tree structure
  * @param tasks Flat list of tasks
@@ -9,7 +43,13 @@ export function tasksToTree(tasks: Task[]): Task[] {
 	// Create a map for quick task lookup
 	const taskMap = new Map<string, Task>();
 	tasks.forEach((task) => {
-		taskMap.set(task.id, { ...task });
+		taskMap.set(task.id, {
+			...task,
+			metadata: {
+				...task.metadata,
+				children: [...(task.metadata.children || [])],
+			},
+		});
 	});
 
 	// Find root tasks and build hierarchy
@@ -18,10 +58,13 @@ export function tasksToTree(tasks: Task[]): Task[] {
 	// First pass: connect children to parents
 	tasks.forEach((task) => {
 		const taskWithChildren = taskMap.get(task.id)!;
+		const parentTask = task.metadata.parent
+			? taskMap.get(task.metadata.parent)
+			: undefined;
 
-		if (task.metadata.parent && taskMap.has(task.metadata.parent)) {
+		if (task.metadata.parent && isValidTreeParent(task, parentTask)) {
 			// This task has a parent, add it to parent's children
-			const parent = taskMap.get(task.metadata.parent)!;
+			const parent = parentTask!;
 			if (!parent.metadata.children.includes(task.id)) {
 				parent.metadata.children.push(task.id);
 			}

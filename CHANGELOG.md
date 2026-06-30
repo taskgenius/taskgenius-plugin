@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Bug Fixes
+
+* **tree view:** prevent invalid task nesting across headings, bullets, and intervening text
+  - Reset parser hierarchy when non-task structural lines break a task block
+  - Ignore stale or invalid parent links in tree rendering when parent and child cross heading boundaries
+
 
 ## [9.13.1](https://github.com/Quorafind/Obsidian-Task-Genius/compare/9.13.0...9.13.1) (2025-12-11)
 

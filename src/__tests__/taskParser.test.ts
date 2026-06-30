@@ -830,6 +830,61 @@ This project involves software development tasks.
 			expect(tasks[3].content).toBe("Child task 2");
 			expect(tasks[3].metadata.parent).toBe(tasks[0].id);
 		});
+
+		test("should not treat tasks after an intermediate bullet as children", () => {
+			const content = `- [ ] Parent task
+  - Plain bullet
+    - [ ] Nested task`;
+			const tasks = parser.parseLegacy(content, "test.md");
+
+			expect(tasks).toHaveLength(2);
+			expect(tasks[0].content).toBe("Parent task");
+			expect(tasks[0].metadata.children).toHaveLength(0);
+			expect(tasks[1].content).toBe("Nested task");
+			expect(tasks[1].metadata.parent).toBeUndefined();
+		});
+
+		test("should not treat tasks after intervening text as children", () => {
+			const content = `- [ ] Parent task
+  Notes about the parent
+  - [ ] Nested task`;
+			const tasks = parser.parseLegacy(content, "test.md");
+
+			expect(tasks).toHaveLength(2);
+			expect(tasks[0].content).toBe("Parent task");
+			expect(tasks[0].metadata.children).toHaveLength(0);
+			expect(tasks[1].content).toBe("Nested task");
+			expect(tasks[1].metadata.parent).toBeUndefined();
+		});
+
+		test("should not link tasks across headings and plain bullets", () => {
+			const content = `# Tasks
+
+
+- [ ] This is a task
+- [ ] This other task
+
+- [ ] This a new task
+
+- [ ] Tirst other
+### New section
+- Bullet
+
+- [ ] This task should be not chilren of "This other task"`;
+			const tasks = parser.parseLegacy(content, "test.md");
+
+			expect(tasks).toHaveLength(5);
+			expect(tasks[0].content).toBe("This is a task");
+			expect(tasks[1].content).toBe("This other task");
+			expect(tasks[2].content).toBe("This a new task");
+			expect(tasks[3].content).toBe("Tirst other");
+			expect(tasks[4].content).toBe(
+				'This task should be not chilren of "This other task"',
+			);
+			expect(tasks[4].metadata.parent).toBeUndefined();
+			expect(tasks[1].metadata.children).toHaveLength(0);
+			expect(tasks[3].metadata.children).toHaveLength(0);
+		});
 	});
 
 	describe("Edge Cases", () => {

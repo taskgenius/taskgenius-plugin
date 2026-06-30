@@ -29,6 +29,8 @@ Task Genius plugin transforms Obsidian into a powerful task management system wi
 
 For detailed feature documentation, visit [taskgenius.md](https://taskgenius.md).
 
+Task hierarchy in tree-style views follows real markdown structure. Tasks are no longer treated as children across intervening bullets, text, or heading boundaries just because a later line is more indented.
+
 ---
 
 ## Installation

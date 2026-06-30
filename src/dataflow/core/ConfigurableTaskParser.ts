@@ -120,6 +120,7 @@ export class MarkdownTaskParser {
 					const [level, headingText] = headingResult;
 					this.currentHeading = headingText;
 					this.currentHeadingLevel = level;
+					this.clearIndentStack();
 					i++;
 					continue;
 				}
@@ -257,6 +258,8 @@ export class MarkdownTaskParser {
 
 				this.updateIndentStack(taskId, indentLevel, actualSpaces);
 				this.tasks.push(enhancedTask);
+			} else {
+				this.handleNonTaskLine(line);
 			}
 
 			i++;
@@ -1311,6 +1314,18 @@ export class MarkdownTaskParser {
 		}
 
 		this.indentStack.push({ taskId, indentLevel, actualSpaces });
+	}
+
+	private handleNonTaskLine(line: string): void {
+		if (line.trim().length === 0) {
+			return;
+		}
+
+		this.clearIndentStack();
+	}
+
+	private clearIndentStack(): void {
+		this.indentStack = [];
 	}
 
 	private getStatusFromMapping(rawStatus: string): string | undefined {

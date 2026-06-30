@@ -23,6 +23,7 @@ import { TaskSelectionManager } from "@/components/features/task/selection/TaskS
 import { showBulkOperationsMenu } from "./BulkOperationsMenu";
 import { TaskStatusIndicator } from "./TaskStatusIndicator";
 import { TaskTimerManager } from "@/managers/timer-manager";
+import { isValidTreeParent } from "@/utils/ui/tree-view-utils";
 
 export class TaskTreeItemComponent extends Component {
 	public element: HTMLElement;
@@ -1398,7 +1399,10 @@ export class TaskTreeItemComponent extends Component {
 			// Find *grandchildren* by looking up children of the current childTask in the *full* taskMap
 			const grandchildren: Task[] = [];
 			this.taskMap.forEach((potentialGrandchild) => {
-				if (potentialGrandchild.metadata.parent === childTask.id) {
+				if (
+					potentialGrandchild.metadata.parent === childTask.id &&
+					isValidTreeParent(potentialGrandchild, childTask)
+				) {
 					grandchildren.push(potentialGrandchild);
 				}
 			});

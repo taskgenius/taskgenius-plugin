@@ -9,7 +9,10 @@ import {
 import { Task } from "@/types/task";
 import { TaskListItemComponent } from "./listItem"; // Re-import needed components
 import { ViewMode, getViewSettingOrDefault } from "@/common/setting-definition"; // 导入 SortCriterion
-import { tasksToTree } from "@/utils/ui/tree-view-utils"; // Re-import needed utils
+import {
+	tasksToTree,
+	isValidTreeParent,
+} from "@/utils/ui/tree-view-utils"; // Re-import needed utils
 import { TaskTreeItemComponent } from "./treeItem"; // Re-import needed components
 import { t } from "@/translations/helper";
 import TaskProgressBarPlugin from "@/index";
@@ -1218,7 +1221,9 @@ export class ContentComponent extends Component {
 		for (let i = start; i < end; i++) {
 			const rootTask = this.rootTasks[i];
 			const childTasks = this.notFilteredTasks.filter(
-				(task) => task.metadata.parent === rootTask.id,
+				(task) =>
+					task.metadata.parent === rootTask.id &&
+					isValidTreeParent(task, rootTask),
 			);
 
 			const treeComponent = new TaskTreeItemComponent(
