@@ -160,6 +160,13 @@ function calculateTaskDateRange(task: Task): TaskDateRange {
 	// This ensures tasks with only start time (e.g., "🛫 2025-11-29 23:35") still show on calendar
 	if (enhancedDates?.startDateTime && !enhancedDates?.endDateTime) {
 		const startTime = enhancedDates.startDateTime.getTime();
+		if (
+			scheduledDate &&
+			scheduledDate > startTime &&
+			!isDateOnly(scheduledDate)
+		) {
+			return { start: startTime, end: scheduledDate };
+		}
 		// If there's a due date, use it as end; otherwise add 30 minutes
 		if (dueDate && dueDate > startTime) {
 			return { start: startTime, end: dueDate };
@@ -205,6 +212,17 @@ function calculateTaskDateRange(task: Task): TaskDateRange {
 	}
 
 	// Priority 1: startDate → dueDate (multi-day span)
+	if (
+		startDate &&
+		scheduledDate &&
+		startDate !== scheduledDate &&
+		startDate < scheduledDate &&
+		!isDateOnly(startDate) &&
+		!isDateOnly(scheduledDate)
+	) {
+		return { start: startDate, end: scheduledDate };
+	}
+
 	if (startDate && dueDate && startDate !== dueDate && startDate < dueDate) {
 		return { start: startDate, end: dueDate };
 	}

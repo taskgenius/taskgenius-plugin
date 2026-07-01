@@ -28,7 +28,7 @@ import {
 	getDateFromFile,
 	appHasDailyNotesPluginLoaded,
 	getDailyNoteSettings,
-} from "obsidian-daily-notes-interface";
+} from "@/utils/obsidian-daily-notes";
 import { Events, on, emit } from "../dataflow/events/Events";
 import { DateInheritanceService } from "../services/date-inheritance-service";
 
@@ -228,7 +228,7 @@ export class HabitManager extends Component {
 
 	private async getDailyNotes(): Promise<TFile[]> {
 		const files = getAllDailyNotes();
-		return Object.values(files);
+		return files.map((entry) => entry.file);
 	}
 
 	private isDailyNote(file: TFile): boolean {

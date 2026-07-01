@@ -73,7 +73,7 @@
 	},
 	"dependencies": {
 		"@popperjs/core": "^2.11.8",
-		"@taskgenius/calendar": "workspace:*",
+		"@taskgenius/calendar": "^0.16.2",
 		"@types/sortablejs": "^1.15.8",
 		"chrono-node": "^2.7.6",
 		"date-fns": "^4.1.0",

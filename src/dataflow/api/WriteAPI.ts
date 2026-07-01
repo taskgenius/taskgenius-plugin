@@ -15,7 +15,7 @@ import {
 	getDailyNote,
 	appHasDailyNotesPluginLoaded,
 	getDailyNoteSettings,
-} from "obsidian-daily-notes-interface";
+} from "@/utils/obsidian-daily-notes";
 import {
 	saveCapture,
 	processDateTemplates,
@@ -1907,6 +1907,12 @@ export class WriteAPI {
 
 			// Append under optional heading
 			const file = dailyNoteFile;
+			if (!file) {
+				return {
+					success: false,
+					error: "Failed to resolve daily note file",
+				};
+			}
 			const current = await this.vault.read(file);
 			let newContent = current;
 
