@@ -24,10 +24,11 @@ jobs:
               with:
                   node-version: "20"
 
+            # Version comes from "packageManager" in package.json. Newer pnpm 10.x
+            # releases reject the name-only onlyBuiltDependencies entry for the
+            # git-hosted @codemirror/language, so keep CI on the pinned version.
             - name: Setup pnpm
               uses: pnpm/action-setup@v4
-              with:
-                  version: 10
 
             - name: Get pnpm store directory
               shell: bash
