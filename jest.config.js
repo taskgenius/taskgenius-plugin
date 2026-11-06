@@ -1,3 +1,9 @@
+// Test fixtures hardcode epoch timestamps for local midnight in UTC+8
+// (e.g. 1704038400000 = 2024-01-01 00:00 +08:00). Pin the timezone so the
+// suite gives the same result on every machine and on CI (UTC).
+// Set here, before Jest spawns workers, so every worker inherits it.
+process.env.TZ = "Asia/Shanghai";
+
 const localMetadataPathIgnorePatterns = [
 	"<rootDir>/.conductor/",
 	"<rootDir>/.boncli/",

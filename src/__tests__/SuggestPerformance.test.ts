@@ -138,7 +138,8 @@ describe("Suggest Performance Tests", () => {
 		const duration = endTime - startTime;
 		
 		// Should generate suggestions efficiently
-		expect(duration).toBeLessThan(500); // 500ms for 4000 operations
+		// 500ms for 4000 operations; shared CI runners are slower and noisier
+		expect(duration).toBeLessThan(process.env.CI ? 1000 : 500);
 		
 		console.log(`Generated ${iterations * triggerChars.length} suggestions in ${duration}ms`);
 	});
