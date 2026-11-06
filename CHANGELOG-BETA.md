@@ -27,6 +27,20 @@ All notable changes to beta releases will be documented in this file.
 
 * **dataflow:** close lifecycle and worker hazards (Phase 0 W2/W2-bis/W3) 1de55f4
 
+### Refactors
+
+* **v10:** modularize entry + gantt year-view and project grouping fixes f28ea8e
+
+### Documentation
+
+* Phase 0 deferred items + Phase 1-4 worktree split plan e90fc53
+* **v10:** self-contained worktree briefs for Phase 1-4 d5d03cf
+
+### Tests
+
+* **dataflow:** add integration test fixtures for orchestrator dd3fe89
+* **dataflow:** critical-path integration tests (Phase 0 W5) d583e96
+
 ## [9.14.0-beta.4](///compare/9.14.0-beta.3...9.14.0-beta.4) (2026-01-05)
 
 ### Features
