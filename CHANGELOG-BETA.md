@@ -4,6 +4,8 @@ All notable changes to beta releases will be documented in this file.
 
 
 
+## [9.14.0-beta.6](///compare/9.14.0-beta.5...9.14.0-beta.6) (2026-11-06)
+
 ## [9.14.0-beta.5](///compare/9.14.0-beta.4...9.14.0-beta.5) (2026-06-28)
 
 ### Features
