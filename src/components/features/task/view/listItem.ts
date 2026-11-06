@@ -1251,10 +1251,6 @@ export class TaskListItemComponent extends Component {
 		const oldTask = this.task;
 		this.task = task;
 
-		// Batch DOM updates to minimize reflows
-		const needsContentUpdate = false;
-		const needsMetadataUpdate = false;
-
 		// Check what needs updating
 		const contentChanged =
 			oldTask.originalMarkdown !== task.originalMarkdown ||
