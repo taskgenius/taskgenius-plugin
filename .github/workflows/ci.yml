@@ -14,6 +14,11 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
 
+            # Only the calendar submodule is needed to build; the docs submodule
+            # is not, so avoid `submodules: true` on checkout.
+            - name: Checkout calendar submodule
+              run: git submodule update --init packages/calendar
+
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
