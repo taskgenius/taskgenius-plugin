@@ -6,6 +6,16 @@ All notable changes to beta releases will be documented in this file.
 
 ## [9.14.0-beta.6](///compare/9.14.0-beta.5...9.14.0-beta.6) (2026-11-06)
 
+### Chores
+
+* add lint scripts, pin eslint, drop unused flags f9a38aa
+* ignore eslint autofix commit in git blame 3cc2eac
+* update calendar submodule to 0.16.2 3b6575a
+
+### Styles
+
+* apply eslint --fix (prefer-const, no-inferrable-types) e30638d
+
 ## [9.14.0-beta.5](///compare/9.14.0-beta.4...9.14.0-beta.5) (2026-06-28)
 
 ### Features

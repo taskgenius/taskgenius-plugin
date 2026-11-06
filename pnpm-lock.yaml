@@ -61,8 +61,8 @@ importers:
         specifier: ^7.0.5
         version: 7.0.5(release-it@19.0.6(@types/node@16.18.126)(magicast@0.3.5))
       '@release-it/conventional-changelog':
-        specifier: ^10.0.1
-        version: 10.0.2(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.2.1)(release-it@19.0.6(@types/node@16.18.126)(magicast@0.3.5))
+        specifier: ^10.0.6
+        version: 10.0.6(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.2.1)(release-it@19.0.6(@types/node@16.18.126)(magicast@0.3.5))
       '@types/jest':
         specifier: ^29.5.0
         version: 29.5.14
@@ -464,12 +464,12 @@ packages:
       conventional-commits-parser:
         optional: true
 
-  '@conventional-changelog/git-client@2.5.1':
-    resolution: {integrity: sha512-lAw7iA5oTPWOLjiweb7DlGEMDEvzqzLLa6aWOly2FSZ64IwLE8T458rC+o+WvI31Doz6joM7X2DoNog7mX8r4A==}
+  '@conventional-changelog/git-client@2.7.0':
+    resolution: {integrity: sha512-j7A8/LBEQ+3rugMzPXoKYzyUPpw/0CBQCyvtTR7Lmu4olG4yRC/Tfkq79Mr3yuPs0SUitlO2HwGP3gitMJnRFw==}
     engines: {node: '>=18'}
     peerDependencies:
       conventional-commits-filter: ^5.0.0
-      conventional-commits-parser: ^6.1.0
+      conventional-commits-parser: ^6.4.0
     peerDependenciesMeta:
       conventional-commits-filter:
         optional: true
@@ -1536,8 +1536,8 @@ packages:
     peerDependencies:
       release-it: '>=18.0.0 || >=19.0.0'
 
-  '@release-it/conventional-changelog@10.0.2':
-    resolution: {integrity: sha512-Ny+IK4LAwybv5zJrPbOd1Vz1eChk2TIlD5owahmPonqw+LghdLhXrPPGSfzY5XSBqTgUE/6DBlRRpgPK6yk/GQ==}
+  '@release-it/conventional-changelog@10.0.6':
+    resolution: {integrity: sha512-aUb0IkcsBTMcOH5PPQ9Jv9lEOOVu2+rSgkE1ny+dzsTziQm2BhDRAtaFK/dw/HflthuXMWrqhhyfJhAV1AOEPQ==}
     engines: {node: ^20.12.0 || >=22.0.0}
     peerDependencies:
       release-it: ^18.0.0 || ^19.0.0
@@ -1687,8 +1687,12 @@ packages:
     resolution: {integrity: sha512-3nWd8irxvDI6v856wpPCHZ+08iQR0oHTZfzAZmnbsLzf+Sf1odraP6uKOHDZToXq3RPRV/LbqGVlSCogm9cJjg==}
     engines: {node: '>=18'}
 
-  '@simple-libs/stream-utils@1.1.0':
-    resolution: {integrity: sha512-6rsHTjodIn/t90lv5snQjRPVtOosM7Vp0AKdrObymq45ojlgVwnpAqdc+0OBBrpEiy31zZ6/TKeIVqV1HwvnuQ==}
+  '@simple-libs/hosted-git-info@1.0.2':
+    resolution: {integrity: sha512-aAmGQdMH+ZinytKuA2832u0ATeOFNYNk4meBEXtB5xaPotUgggYNhq5tYU/v17wEbmTW5P9iHNqNrFyrhnqBAg==}
+    engines: {node: '>=18'}
+
+  '@simple-libs/stream-utils@1.2.0':
+    resolution: {integrity: sha512-KxXvfapcixpz6rVEB6HPjOUZT22yN6v0vI0urQSk1L8MlEWPDFCZkhw2xmkyoTGYeFw7tWTZd7e3lVzRZRN/EA==}
     engines: {node: '>=18'}
 
   '@sinclair/typebox@0.27.8':
@@ -1860,6 +1864,7 @@ packages:
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
+    deprecated: Potential CWE-502 - Update to 1.3.1 or higher
 
   '@vitest/coverage-v8@1.6.1':
     resolution: {integrity: sha512-6YeRZwuO4oTGKxD3bijok756oktHSIm3eczVVzNe3scqzuhLwltIF3S9ZL/vwOVIpURmU6SnZhziXXAfw8/Qlw==}
@@ -2044,6 +2049,7 @@ packages:
   basic-ftp@5.0.5:
     resolution: {integrity: sha512-4Bcg1P8xhUuqcii/S0Z9wiHIrQVPMermM1any+MX5GeGD7faD3/msQUDGLol9wOcz4/jbg/WJnGqoJF6LiBdtg==}
     engines: {node: '>=10.0.0'}
+    deprecated: Security vulnerability fixed in 5.2.1, please upgrade
 
   before-after-hook@4.0.0:
     resolution: {integrity: sha512-q6tR3RPqIB1pMiTRMFcZwuG5T8vwp+vUvEG0vuI6B+Rikh5BfPp2fQ82c925FOs+b0lcFQ8CFrL+KbilfZFhOQ==}
@@ -2259,50 +2265,63 @@ packages:
     resolution: {integrity: sha512-GGf2Nipn1RUCAktxuVauVr1e3r8QrLP/B0lEUsFktmGqc3ddbQkhoJZHJctVU829U1c6mTSWftrVOCHaL85Q3w==}
     engines: {node: '>=18'}
 
+  conventional-changelog-angular@8.3.1:
+    resolution: {integrity: sha512-6gfI3otXK5Ph5DfCOI1dblr+kN3FAm5a97hYoQkqNZxOaYa5WKfXH+AnpsmS+iUH2mgVC2Cg2Qw9m5OKcmNrIg==}
+    engines: {node: '>=18'}
+
   conventional-changelog-atom@5.0.0:
     resolution: {integrity: sha512-WfzCaAvSCFPkznnLgLnfacRAzjgqjLUjvf3MftfsJzQdDICqkOOpcMtdJF3wTerxSpv2IAAjX8doM3Vozqle3g==}
     engines: {node: '>=18'}
+    deprecated: This preset is deprecated. Please use conventional-changelog-conventionalcommits or conventional-changelog-angular instead.
 
   conventional-changelog-cli@5.0.0:
     resolution: {integrity: sha512-9Y8fucJe18/6ef6ZlyIlT2YQUbczvoQZZuYmDLaGvcSBP+M6h+LAvf7ON7waRxKJemcCII8Yqu5/8HEfskTxJQ==}
     engines: {node: '>=18'}
+    deprecated: This package is no longer maintained. Please use the conventional-changelog package instead.
     hasBin: true
 
   conventional-changelog-codemirror@5.0.0:
     resolution: {integrity: sha512-8gsBDI5Y3vrKUCxN6Ue8xr6occZ5nsDEc4C7jO/EovFGozx8uttCAyfhRrvoUAWi2WMm3OmYs+0mPJU7kQdYWQ==}
     engines: {node: '>=18'}
+    deprecated: This preset is deprecated. Please use conventional-changelog-conventionalcommits or conventional-changelog-angular instead.
 
   conventional-changelog-conventionalcommits@8.0.0:
     resolution: {integrity: sha512-eOvlTO6OcySPyyyk8pKz2dP4jjElYunj9hn9/s0OB+gapTO8zwS9UQWrZ1pmF2hFs3vw1xhonOLGcGjy/zgsuA==}
     engines: {node: '>=18'}
 
-  conventional-changelog-conventionalcommits@9.1.0:
-    resolution: {integrity: sha512-MnbEysR8wWa8dAEvbj5xcBgJKQlX/m0lhS8DsyAAWDHdfs2faDJxTgzRYlRYpXSe7UiKrIIlB4TrBKU9q9DgkA==}
+  conventional-changelog-conventionalcommits@9.3.1:
+    resolution: {integrity: sha512-dTYtpIacRpcZgrvBYvBfArMmK2xvIpv2TaxM0/ZI5CBtNUzvF2x0t15HsbRABWprS6UPmvj+PzHVjSx4qAVKyw==}
     engines: {node: '>=18'}
 
   conventional-changelog-core@8.0.0:
     resolution: {integrity: sha512-EATUx5y9xewpEe10UEGNpbSHRC6cVZgO+hXQjofMqpy+gFIrcGvH3Fl6yk2VFKh7m+ffenup2N7SZJYpyD9evw==}
     engines: {node: '>=18'}
+    deprecated: Deprecated and no longer maintained. Please use conventional-changelog instead.
 
   conventional-changelog-ember@5.0.0:
     resolution: {integrity: sha512-RPflVfm5s4cSO33GH/Ey26oxhiC67akcxSKL8CLRT3kQX2W3dbE19sSOM56iFqUJYEwv9mD9r6k79weWe1urfg==}
     engines: {node: '>=18'}
+    deprecated: This preset is deprecated. Please use conventional-changelog-conventionalcommits or conventional-changelog-angular instead.
 
   conventional-changelog-eslint@6.0.0:
     resolution: {integrity: sha512-eiUyULWjzq+ybPjXwU6NNRflApDWlPEQEHvI8UAItYW/h22RKkMnOAtfCZxMmrcMO1OKUWtcf2MxKYMWe9zJuw==}
     engines: {node: '>=18'}
+    deprecated: This preset is deprecated. Please use conventional-changelog-conventionalcommits or conventional-changelog-angular instead.
 
   conventional-changelog-express@5.0.0:
     resolution: {integrity: sha512-D8Q6WctPkQpvr2HNCCmwU5GkX22BVHM0r4EW8vN0230TSyS/d6VQJDAxGb84lbg0dFjpO22MwmsikKL++Oo/oQ==}
     engines: {node: '>=18'}
+    deprecated: This preset is deprecated. Please use conventional-changelog-conventionalcommits or conventional-changelog-angular instead.
 
   conventional-changelog-jquery@6.0.0:
     resolution: {integrity: sha512-2kxmVakyehgyrho2ZHBi90v4AHswkGzHuTaoH40bmeNqUt20yEkDOSpw8HlPBfvEQBwGtbE+5HpRwzj6ac2UfA==}
     engines: {node: '>=18'}
+    deprecated: This preset is deprecated. Please use conventional-changelog-conventionalcommits or conventional-changelog-angular instead.
 
   conventional-changelog-jshint@5.0.0:
     resolution: {integrity: sha512-gGNphSb/opc76n2eWaO6ma4/Wqu3tpa2w7i9WYqI6Cs2fncDSI2/ihOfMvXveeTTeld0oFvwMVNV+IYQIk3F3g==}
     engines: {node: '>=18'}
+    deprecated: This preset is deprecated. Please use conventional-changelog-conventionalcommits or conventional-changelog-angular instead.
 
   conventional-changelog-preset-loader@5.0.0:
     resolution: {integrity: sha512-SetDSntXLk8Jh1NOAl1Gu5uLiCNSYenB5tm0YVeZKePRIgDW9lQImromTwLa3c/Gae298tsgOM+/CYT9XAl0NA==}
@@ -2313,12 +2332,17 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  conventional-changelog-writer@8.4.0:
+    resolution: {integrity: sha512-HHBFkk1EECxxmCi4CTu091iuDpQv5/OavuCUAuZmrkWpmYfyD816nom1CvtfXJ/uYfAAjavgHvXHX291tSLK8g==}
+    engines: {node: '>=18'}
+    hasBin: true
+
   conventional-changelog@6.0.0:
     resolution: {integrity: sha512-tuUH8H/19VjtD9Ig7l6TQRh+Z0Yt0NZ6w/cCkkyzUbGQTnUEmKfGtkC9gGfVgCfOL1Rzno5NgNF4KY8vR+Jo3w==}
     engines: {node: '>=18'}
 
-  conventional-changelog@7.1.1:
-    resolution: {integrity: sha512-rlqa8Lgh8YzT3Akruk05DR79j5gN9NCglHtJZwpi6vxVeaoagz+84UAtKQj/sT+RsfGaZkt3cdFCjcN6yjr5sw==}
+  conventional-changelog@7.2.1:
+    resolution: {integrity: sha512-smcpqCeNRCAoL586/Iql8GfVsduP1JDrr7SAzKHWM5C5voDzKhc3QtqwVWeKMhvVw4iYfAr+znz1TF4kPXVm3A==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -2328,6 +2352,11 @@ packages:
 
   conventional-commits-parser@6.2.1:
     resolution: {integrity: sha512-20pyHgnO40rvfI0NGF/xiEoFMkXDtkF8FwHvk5BokoFoCuTQRI8vrNCNFWUOfuolKJMm1tPCHc8GgYEtr1XRNA==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  conventional-commits-parser@6.4.0:
+    resolution: {integrity: sha512-tvRg7FIBNlyPzjdG8wWRlPHQJJHI7DylhtRGeU9Lq+JuoPh5BKpPRX83ZdLrvXuOSu5Eo/e7SzOQhU4Hd2Miuw==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -2819,11 +2848,13 @@ packages:
   git-raw-commits@5.0.0:
     resolution: {integrity: sha512-I2ZXrXeOc0KrCvC7swqtIFXFN+rbjnC7b2T943tvemIOVNl+XP8YnA9UVwqFhzzLClnSA60KR/qEjLpXzs73Qg==}
     engines: {node: '>=18'}
+    deprecated: Deprecated and no longer maintained. Use @conventional-changelog/git-client instead.
     hasBin: true
 
   git-semver-tags@8.0.0:
     resolution: {integrity: sha512-N7YRIklvPH3wYWAR2vysaqGLPRcpwQ0GKdlqTiVN5w1UmCdaeY3K8s6DMKRCh54DDdzyt/OAB6C8jgVtb7Y2Fg==}
     engines: {node: '>=18'}
+    deprecated: Deprecated and no longer maintained. Use @conventional-changelog/git-client instead.
     hasBin: true
 
   git-up@8.1.1:
@@ -2845,7 +2876,7 @@ packages:
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
-    deprecated: Glob versions prior to v9 are no longer supported
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   globals@13.24.0:
     resolution: {integrity: sha512-AhO5QUcj8llrbG09iWhPU2B204J1xnPeL8kQmVorSsy+Sjj1sk8gIyh6cUocGmH4L0UuhAJy+hJMRA4mgA4mFQ==}
@@ -3545,6 +3576,9 @@ packages:
   moment@2.29.4:
     resolution: {integrity: sha512-5LC9SOxjSc2HF6vO2CyuTDNivEdoz2IvyJJGj6X8DJ0eFyfszE0QiEd+iXmBvUP3WHxSjFH/vIsA0EN00cgr8w==}
 
+  moment@2.31.0:
+    resolution: {integrity: sha512-0acOTfMiWOheYS4eoWb80yYMb/JLvVv9SHbs2PehaDzfUG0Bw855SKyk0IKTnPGa5+U2bmi3W68l1+sGLX/pvw==}
+
   monkey-around@3.0.0:
     resolution: {integrity: sha512-jL6uY2lEAoaHxZep1cNRkCZjoIWY4g5VYCjriEWmcyHU7w8NU1+JH57xE251UVTohK0lCxMjv0ZV4ByDLIXEpw==}
 
@@ -4122,6 +4156,11 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  semver@7.8.5:
+    resolution: {integrity: sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==}
+    engines: {node: '>=10'}
+    hasBin: true
+
   setimmediate@1.0.5:
     resolution: {integrity: sha512-MATJdZp8sLqDl/68LfQmbP8zKPLQNV6BIZoIgrscFDQ+RsvK/BxeDQOgyxKKoh0y/8h3BqVFnCqQ/gd+reiIXA==}
 
@@ -4663,10 +4702,12 @@ packages:
   whatwg-encoding@2.0.0:
     resolution: {integrity: sha512-p41ogyeMUrw3jWclHWTQg1k05DSVXPLcVxRTYsXUk+ZooOCZLcoYgPZ/HL/D/N+uQPOtcp1me1WhBEaX02mhWg==}
     engines: {node: '>=12'}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-encoding@3.1.1:
     resolution: {integrity: sha512-6qN4hJdMwfYBtE3YBTTHhoeuUrDBPZmbQaxWAqSALV/MeEnR5z1xd8UKud2RAkFoPkmB+hli1TZSnyi84xz1vQ==}
     engines: {node: '>=18'}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-mimetype@3.0.0:
     resolution: {integrity: sha512-nt+N2dzIutVRxARx1nghPKGv1xHikU7HKdfafKkLNLindmPU/ch3U31NOCGGA/dmPcmb1VlofO0vnKAcsm0o/Q==}
@@ -5125,14 +5166,23 @@ snapshots:
       conventional-commits-filter: 5.0.0
       conventional-commits-parser: 6.2.1
 
-  '@conventional-changelog/git-client@2.5.1(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.2.1)':
+  '@conventional-changelog/git-client@2.7.0(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.2.1)':
     dependencies:
       '@simple-libs/child-process-utils': 1.0.1
-      '@simple-libs/stream-utils': 1.1.0
-      semver: 7.7.3
+      '@simple-libs/stream-utils': 1.2.0
+      semver: 7.8.5
     optionalDependencies:
       conventional-commits-filter: 5.0.0
       conventional-commits-parser: 6.2.1
+
+  '@conventional-changelog/git-client@2.7.0(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.4.0)':
+    dependencies:
+      '@simple-libs/child-process-utils': 1.0.1
+      '@simple-libs/stream-utils': 1.2.0
+      semver: 7.8.5
+    optionalDependencies:
+      conventional-commits-filter: 5.0.0
+      conventional-commits-parser: 6.4.0
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -6170,16 +6220,16 @@ snapshots:
       release-it: 19.0.6(@types/node@16.18.126)(magicast@0.3.5)
       semver: 7.7.3
 
-  '@release-it/conventional-changelog@10.0.2(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.2.1)(release-it@19.0.6(@types/node@16.18.126)(magicast@0.3.5))':
+  '@release-it/conventional-changelog@10.0.6(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.2.1)(release-it@19.0.6(@types/node@16.18.126)(magicast@0.3.5))':
     dependencies:
-      '@conventional-changelog/git-client': 2.5.1(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.2.1)
+      '@conventional-changelog/git-client': 2.7.0(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.2.1)
       concat-stream: 2.0.0
-      conventional-changelog: 7.1.1(conventional-commits-filter@5.0.0)
-      conventional-changelog-angular: 8.1.0
-      conventional-changelog-conventionalcommits: 9.1.0
+      conventional-changelog: 7.2.1(conventional-commits-filter@5.0.0)
+      conventional-changelog-angular: 8.3.1
+      conventional-changelog-conventionalcommits: 9.3.1
       conventional-recommended-bump: 11.2.0
       release-it: 19.0.6(@types/node@16.18.126)(magicast@0.3.5)
-      semver: 7.7.3
+      semver: 7.8.5
     transitivePeerDependencies:
       - conventional-commits-filter
       - conventional-commits-parser
@@ -6292,12 +6342,12 @@ snapshots:
 
   '@simple-libs/child-process-utils@1.0.1':
     dependencies:
-      '@simple-libs/stream-utils': 1.1.0
+      '@simple-libs/stream-utils': 1.2.0
       '@types/node': 22.19.1
 
-  '@simple-libs/stream-utils@1.1.0':
-    dependencies:
-      '@types/node': 22.19.1
+  '@simple-libs/hosted-git-info@1.0.2': {}
+
+  '@simple-libs/stream-utils@1.2.0': {}
 
   '@sinclair/typebox@0.27.8': {}
 
@@ -6350,7 +6400,7 @@ snapshots:
 
   '@types/graceful-fs@4.1.9':
     dependencies:
-      '@types/node': 16.18.126
+      '@types/node': 24.10.1
 
   '@types/istanbul-lib-coverage@2.0.6': {}
 
@@ -6970,6 +7020,10 @@ snapshots:
     dependencies:
       compare-func: 2.0.0
 
+  conventional-changelog-angular@8.3.1:
+    dependencies:
+      compare-func: 2.0.0
+
   conventional-changelog-atom@5.0.0: {}
 
   conventional-changelog-cli@5.0.0(conventional-commits-filter@5.0.0):
@@ -6987,7 +7041,7 @@ snapshots:
     dependencies:
       compare-func: 2.0.0
 
-  conventional-changelog-conventionalcommits@9.1.0:
+  conventional-changelog-conventionalcommits@9.3.1:
     dependencies:
       compare-func: 2.0.0
 
@@ -7027,6 +7081,14 @@ snapshots:
       meow: 13.2.0
       semver: 7.7.3
 
+  conventional-changelog-writer@8.4.0:
+    dependencies:
+      '@simple-libs/stream-utils': 1.2.0
+      conventional-commits-filter: 5.0.0
+      handlebars: 4.7.8
+      meow: 13.2.0
+      semver: 7.8.5
+
   conventional-changelog@6.0.0(conventional-commits-filter@5.0.0):
     dependencies:
       conventional-changelog-angular: 8.1.0
@@ -7043,13 +7105,14 @@ snapshots:
     transitivePeerDependencies:
       - conventional-commits-filter
 
-  conventional-changelog@7.1.1(conventional-commits-filter@5.0.0):
+  conventional-changelog@7.2.1(conventional-commits-filter@5.0.0):
     dependencies:
-      '@conventional-changelog/git-client': 2.5.1(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.2.1)
+      '@conventional-changelog/git-client': 2.7.0(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.4.0)
+      '@simple-libs/hosted-git-info': 1.0.2
       '@types/normalize-package-data': 2.4.4
       conventional-changelog-preset-loader: 5.0.0
-      conventional-changelog-writer: 8.2.0
-      conventional-commits-parser: 6.2.1
+      conventional-changelog-writer: 8.4.0
+      conventional-commits-parser: 6.4.0
       fd-package-json: 2.0.0
       meow: 13.2.0
       normalize-package-data: 7.0.1
@@ -7062,9 +7125,14 @@ snapshots:
     dependencies:
       meow: 13.2.0
 
+  conventional-commits-parser@6.4.0:
+    dependencies:
+      '@simple-libs/stream-utils': 1.2.0
+      meow: 13.2.0
+
   conventional-recommended-bump@11.2.0:
     dependencies:
-      '@conventional-changelog/git-client': 2.5.1(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.2.1)
+      '@conventional-changelog/git-client': 2.7.0(conventional-commits-filter@5.0.0)(conventional-commits-parser@6.2.1)
       conventional-changelog-preset-loader: 5.0.0
       conventional-commits-filter: 5.0.0
       conventional-commits-parser: 6.2.1
@@ -7985,7 +8053,7 @@ snapshots:
       '@jest/expect': 29.7.0
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 16.18.126
+      '@types/node': 24.10.1
       chalk: 4.1.2
       co: 4.6.0
       dedent: 1.7.0
@@ -8093,7 +8161,7 @@ snapshots:
       '@jest/environment': 29.7.0
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 16.18.126
+      '@types/node': 24.10.1
       jest-mock: 29.7.0
       jest-util: 29.7.0
 
@@ -8279,7 +8347,7 @@ snapshots:
 
   jest-worker@29.7.0:
     dependencies:
-      '@types/node': 16.18.126
+      '@types/node': 24.10.1
       jest-util: 29.7.0
       merge-stream: 2.0.0
       supports-color: 8.1.1
@@ -8592,6 +8660,8 @@ snapshots:
 
   moment@2.29.4: {}
 
+  moment@2.31.0: {}
+
   monkey-around@3.0.0: {}
 
   mrmime@2.0.1: {}
@@ -8634,7 +8704,7 @@ snapshots:
   normalize-package-data@7.0.1:
     dependencies:
       hosted-git-info: 8.1.0
-      semver: 7.7.3
+      semver: 7.8.5
       validate-npm-package-license: 3.0.4
 
   normalize-path@3.0.0: {}
@@ -8681,7 +8751,7 @@ snapshots:
       '@codemirror/state': 6.5.2
       '@codemirror/view': 6.38.8
       '@types/codemirror': 5.60.8
-      moment: 2.29.4
+      moment: 2.31.0
 
   ohash@2.0.11: {}
 
@@ -9225,6 +9295,8 @@ snapshots:
   semver@7.7.2: {}
 
   semver@7.7.3: {}
+
+  semver@7.8.5: {}
 
   setimmediate@1.0.5: {}
 
