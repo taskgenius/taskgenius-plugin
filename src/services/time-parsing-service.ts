@@ -57,7 +57,7 @@ export class TimeParsingService {
 		string,
 		ParsedTimeResult | EnhancedParsedTimeResult
 	> = new Map();
-	private maxCacheSize: number = 100;
+	private maxCacheSize = 100;
 
 	// Time pattern regexes
 	private readonly TIME_PATTERNS = {
@@ -181,7 +181,7 @@ export class TimeParsingService {
 			/^([01]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/,
 		);
 		if (match24h) {
-			let hour = parseInt(match24h[1], 10);
+			const hour = parseInt(match24h[1], 10);
 			const minute = parseInt(match24h[2], 10);
 			const second = match24h[3] ? parseInt(match24h[3], 10) : undefined;
 
@@ -755,7 +755,7 @@ export class TimeParsingService {
 					}
 
 					// Check if this date expression has an associated time component
-					let matchingTimeExpr = timeExpressions.find(
+					const matchingTimeExpr = timeExpressions.find(
 						(te) =>
 							te.index >= index - 10 &&
 							te.index <= index + length + 10,
@@ -1261,7 +1261,7 @@ export class TimeParsingService {
 		// Helper function to get date for specific weekday
 		const getDateForWeekday = (
 			targetWeekday: number,
-			weekOffset: number = 0,
+			weekOffset = 0,
 		): Date => {
 			const currentWeekday = today.getDay();
 			let daysToAdd = targetWeekday - currentWeekday;

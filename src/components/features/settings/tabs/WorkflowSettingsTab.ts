@@ -53,7 +53,7 @@ export function renderWorkflowSettingsTab(
 		});
 
 	if (settingTab.plugin.settings.workflow.autoAddTimestamp) {
-		let fragment = document.createDocumentFragment();
+		const fragment = document.createDocumentFragment();
 		fragment.createEl("span", {
 			text: t("Timestamp format:"),
 		});
@@ -128,7 +128,7 @@ export function renderWorkflowSettingsTab(
 			});
 
 		if (settingTab.plugin.settings.workflow.calculateSpentTime) {
-			let fragment = document.createDocumentFragment();
+			const fragment = document.createDocumentFragment();
 			fragment.createEl("span", {
 				text: t("Format for spent time:"),
 			});

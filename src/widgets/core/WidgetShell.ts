@@ -8,7 +8,7 @@ export class WidgetShell extends Component {
 	public bodyEl: HTMLElement;
 
 	private linkButtonEl?: HTMLElement;
-	private linked: boolean = false;
+	private linked = false;
 	private onToggleLinked?: (linked: boolean) => void;
 
 	constructor(

@@ -279,7 +279,7 @@ export function datePickerExtension(app: App, plugin: TaskProgressBarPlugin) {
 		public readonly view: EditorView;
 		public readonly plugin: TaskProgressBarPlugin;
 		decorations: DecorationSet = Decoration.none;
-		public isDestroyed: boolean = false;
+		public isDestroyed = false;
 		private widgetRegistry: Map<string, WidgetInfo> = new Map();
 
 		constructor(view: EditorView) {

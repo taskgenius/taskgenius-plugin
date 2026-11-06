@@ -336,7 +336,7 @@ export class IcsManager extends Component {
 	 * Get all events from all enabled sources without blocking
 	 * This will return cached data immediately and optionally trigger background sync
 	 */
-	getAllEventsNonBlocking(triggerBackgroundSync: boolean = true): IcsEvent[] {
+	getAllEventsNonBlocking(triggerBackgroundSync = true): IcsEvent[] {
 		const events = this.getAllEvents();
 
 		// Optionally trigger background sync if data might be stale

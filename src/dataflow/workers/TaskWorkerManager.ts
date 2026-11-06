@@ -171,7 +171,7 @@ export class TaskWorkerManager extends Component {
 	/** Map of outstanding tasks by file path */
 	private outstanding: Map<string, Promise<any>> = new Map();
 	/** Whether the pool is currently active */
-	private active: boolean = true;
+	private active = true;
 	/** Worker pool options */
 	private options: WorkerPoolOptions;
 	/** Vault instance */
@@ -179,24 +179,24 @@ export class TaskWorkerManager extends Component {
 	/** Metadata cache for accessing file metadata */
 	private metadataCache: MetadataCache;
 	/** Next worker ID to assign */
-	private nextWorkerId: number = 0;
+	private nextWorkerId = 0;
 	/** Tracking progress for large operations */
-	private processedFiles: number = 0;
-	private totalFilesToProcess: number = 0;
+	private processedFiles = 0;
+	private totalFilesToProcess = 0;
 	/** Whether we're currently processing a large batch */
-	private isProcessingBatch: boolean = false;
+	private isProcessingBatch = false;
 	/** Maximum number of retry attempts for a task */
-	private maxRetries: number = 2;
+	private maxRetries = 2;
 	/** File metadata task parser */
 	private fileMetadataParser?: FileMetadataTaskParser;
 	/** Whether workers have been initialized to prevent multiple initialization */
-	private initialized: boolean = false;
+	private initialized = false;
 	/** Reference to task indexer for cache checking */
 	private taskIndexer?: any;
 	/** Effective per-task timeout in ms (resolved from options + debug override) */
 	private workerTimeoutMs: number;
 	/** Count of timed-out tasks. Exposed via getStats() and the orchestrator metrics. */
-	private timeoutCount: number = 0;
+	private timeoutCount = 0;
 	/** Performance statistics */
 	private stats = {
 		filesSkipped: 0,
@@ -461,7 +461,7 @@ export class TaskWorkerManager extends Component {
 		priority: TaskPriority = TaskPriority.NORMAL
 	): Promise<Task[]> {
 		// De-bounce repeated requests for the same file
-		let existing = this.outstanding.get(file.path);
+		const existing = this.outstanding.get(file.path);
 		if (existing) return existing;
 
 		// Check if we can use cached results
@@ -477,7 +477,7 @@ export class TaskWorkerManager extends Component {
 			}
 		}
 
-		let promise = deferred<Task[]>();
+		const promise = deferred<Task[]>();
 		this.outstanding.set(file.path, promise);
 
 		this.queueTaskWithPriority(file, promise, priority);
@@ -491,7 +491,7 @@ export class TaskWorkerManager extends Component {
 		file: TFile,
 		promise: Deferred<Task[]>,
 		priority: TaskPriority,
-		retries: number = 0
+		retries = 0
 	): void {
 		this.queues[priority].enqueue({
 			file,
@@ -862,7 +862,7 @@ export class TaskWorkerManager extends Component {
 			const parseResult = data as TaskParseResult;
 
 			// Combine worker tasks with file metadata tasks
-			let allTasks = [...parseResult.tasks];
+			const allTasks = [...parseResult.tasks];
 
 			if (this.fileMetadataParser) {
 				try {

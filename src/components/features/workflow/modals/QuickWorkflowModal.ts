@@ -17,7 +17,7 @@ export class QuickWorkflowModal extends Modal {
 	plugin: TaskProgressBarPlugin;
 	onSave: (workflow: WorkflowDefinition) => void;
 	workflow: Partial<WorkflowDefinition>;
-	templateType: string = "custom";
+	templateType = "custom";
 
 	// Predefined workflow templates
 	private templates = {

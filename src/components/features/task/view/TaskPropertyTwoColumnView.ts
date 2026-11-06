@@ -276,7 +276,7 @@ export class TaskPropertyTwoColumnView extends TwoColumnViewBase<string> {
 	 */
 	public updateTask(updatedTask: Task): void {
 		// Find if the task was previously indexed
-		let oldValues: string[] = [];
+		const oldValues: string[] = [];
 		for (const [value, tasks] of this.propertyValueMap) {
 			if (tasks.some((task) => task.id === updatedTask.id)) {
 				oldValues.push(value);

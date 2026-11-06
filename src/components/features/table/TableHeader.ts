@@ -12,8 +12,8 @@ export interface TableHeaderCallbacks {
  */
 export class TableHeader extends Component {
 	private headerEl: HTMLElement;
-	private taskCount: number = 0;
-	private isTreeMode: boolean = false;
+	private taskCount = 0;
+	private isTreeMode = false;
 	private availableColumns: Array<{
 		id: string;
 		title: string;

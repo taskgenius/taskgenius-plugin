@@ -55,7 +55,7 @@ export class TagsComponent extends Component {
 		isMultiSelect: false,
 	};
 	private allTagsMap: Map<string, Set<string>> = new Map(); // tag -> taskIds
-	private isTreeView: boolean = false;
+	private isTreeView = false;
 	private allTasksMap: Map<string, Task> = new Map();
 	constructor(
 		private parentEl: HTMLElement,

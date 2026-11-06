@@ -41,7 +41,7 @@ export class CountHabitCard extends HabitCard {
 			});
 
 		const today = getTodayLocalDateString();
-		let countToday = this.habit.completions[today] ?? 0;
+		const countToday = this.habit.completions[today] ?? 0;
 
 		const infoDiv = contentWrapper.createDiv(
 			{ cls: "habit-info" },

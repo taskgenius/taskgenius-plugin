@@ -227,7 +227,7 @@ export class QuadrantCardComponent extends Component {
 				const priorityEl = el.createDiv({ cls: classes });
 
 				// 根据优先级数字显示不同数量的感叹号
-				let icon = "!".repeat(numericPriority);
+				const icon = "!".repeat(numericPriority);
 				priorityEl.textContent = icon;
 			}
 

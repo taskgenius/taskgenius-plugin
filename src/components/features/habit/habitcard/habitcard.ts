@@ -12,7 +12,7 @@ import {
 
 function getDatesInRange(startDate: string, endDate: string): string[] {
 	const dates = [];
-	let currentDate = new Date(startDate);
+	const currentDate = new Date(startDate);
 	const endDateObj = new Date(endDate);
 
 	while (currentDate <= endDateObj) {
@@ -31,7 +31,7 @@ function getDatesInRange(startDate: string, endDate: string): string[] {
 }
 
 export class HabitCard extends Component {
-	heatmapDateRange: number = 30; // Default number of days for heatmaps
+	heatmapDateRange = 30; // Default number of days for heatmaps
 
 	constructor(
 		public habit: HabitProps,

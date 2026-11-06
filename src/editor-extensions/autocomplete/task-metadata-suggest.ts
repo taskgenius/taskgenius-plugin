@@ -26,7 +26,7 @@ interface SuggestOption {
 
 export class QuickCaptureSuggest extends EditorSuggest<SuggestOption> {
 	plugin: TaskProgressBarPlugin;
-	private isQuickCaptureMode: boolean = false;
+	private isQuickCaptureMode = false;
 	private taskMetadata: any = null;
 	private updateButtonState: any = null;
 	private dateButton: HTMLButtonElement | null = null;

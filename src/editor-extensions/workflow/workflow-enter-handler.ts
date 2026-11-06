@@ -657,7 +657,7 @@ function completeSubstageAndMoveToNextMainStage(
 		return;
 	}
 
-	let changes: { from: number; to: number; insert: string }[] = [];
+	const changes: { from: number; to: number; insert: string }[] = [];
 
 	const currentIndent = getIndentation(lineText).length;
 

@@ -39,7 +39,7 @@ export class TaskMigrationService {
 	 */
 	public migrateTaskToEnhanced(
 		task: Task<StandardTaskMetadata>, 
-		preserveOriginal: boolean = true
+		preserveOriginal = true
 	): EnhancedTask {
 		// Check if already migrated
 		if (this.isAlreadyMigrated(task)) {

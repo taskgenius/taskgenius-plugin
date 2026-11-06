@@ -42,7 +42,7 @@ class MockEditor {
 		return this.cursor;
 	}
 
-	setCursor(line: number, ch: number = 0) {
+	setCursor(line: number, ch = 0) {
 		this.cursor = { line, ch };
 	}
 

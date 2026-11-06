@@ -268,7 +268,7 @@ export class YearView extends CalendarViewComponent {
 			gridEnd = monthEnd.clone().add(daysToAddEnd, "days");
 		}
 
-		let currentDayIter = gridStart.clone();
+		const currentDayIter = gridStart.clone();
 		while (currentDayIter.isSameOrBefore(gridEnd, "day")) {
 			const isWeekend =
 				currentDayIter.day() === 0 || currentDayIter.day() === 6; // Sunday or Saturday

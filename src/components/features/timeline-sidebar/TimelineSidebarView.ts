@@ -70,12 +70,12 @@ export class TimelineSidebarView extends ItemView {
 	private markdownEditor: EmbeddableMarkdownEditor | null = null;
 	private currentDate: moment.Moment = moment();
 	private events: EnhancedTimelineEvent[] = [];
-	private isAutoScrolling: boolean = false;
+	private isAutoScrolling = false;
 
 	// Collapse state management
-	private isInputCollapsed: boolean = false;
-	private tempEditorContent: string = "";
-	private isAnimating: boolean = false;
+	private isInputCollapsed = false;
+	private tempEditorContent = "";
+	private isAnimating = false;
 	private collapsedHeaderEl: HTMLElement | null = null;
 	private quickInputHeaderEl: HTMLElement | null = null;
 
@@ -1017,7 +1017,7 @@ export class TimelineSidebarView extends ItemView {
 		});
 	}
 
-	private renderEvent(containerEl: HTMLElement, event: EnhancedTimelineEvent, showTime: boolean = true): void {
+	private renderEvent(containerEl: HTMLElement, event: EnhancedTimelineEvent, showTime = true): void {
 		const eventEl = containerEl.createDiv("timeline-event");
 		eventEl.setAttribute("data-event-id", event.id);
 

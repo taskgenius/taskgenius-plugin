@@ -75,7 +75,7 @@ export class QuadrantComponent extends Component {
 	private sortableInstances: Sortable[] = [];
 	private tasks: Task[] = [];
 	private allTasks: Task[] = [];
-	private currentViewId: string = "quadrant";
+	private currentViewId = "quadrant";
 	private params: {
 		onTaskStatusUpdate?: (
 			taskId: string,
@@ -94,7 +94,7 @@ export class QuadrantComponent extends Component {
 		order: "desc",
 		label: "Priority (High to Low)",
 	};
-	private hideEmptyColumns: boolean = false;
+	private hideEmptyColumns = false;
 
 		// Per-view override from Bases
 		private configOverride: Partial<QuadrantSpecificConfig> | null = null;
@@ -139,7 +139,7 @@ export class QuadrantComponent extends Component {
 			onTaskContextMenu?: (ev: MouseEvent, task: Task) => void;
 			onTaskUpdated?: (task: Task) => Promise<void>;
 		} = {},
-		viewId: string = "quadrant"
+		viewId = "quadrant"
 	) {
 		super();
 		this.app = app;
@@ -685,7 +685,7 @@ export class QuadrantComponent extends Component {
 
 	private applyFilters() {
 		// Apply active filters to tasks
-		let filteredTasks = [...this.allTasks];
+		const filteredTasks = [...this.allTasks];
 
 		// TODO: Apply active filters here if needed
 		// for (const filter of this.activeFilters) {

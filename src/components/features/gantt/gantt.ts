@@ -124,18 +124,18 @@ export class GanttComponent extends Component {
 	private dayWidth: number = DAY_WIDTH_DEFAULT;
 	private startDate: Date | null = null;
 	private endDate: Date | null = null;
-	private totalWidth: number = 0; // Total scrollable width
-	private totalHeight: number = 0; // Total content height
+	private totalWidth = 0; // Total scrollable width
+	private totalHeight = 0; // Total content height
 
-	private zoomLevel: number = 1; // Ratio based on default day width
+	private zoomLevel = 1; // Ratio based on default day width
 	private visibleStartDate: Date | null = null;
 	private visibleEndDate: Date | null = null;
 	private scrollContainerEl: HTMLElement;
 	private contentWrapperEl: HTMLElement; // Contains the SVG
 	private filterContainerEl: HTMLElement; // Container for filters
 	private headerContainerEl: HTMLElement; // Container for sticky header
-	private isScrolling: boolean = false;
-	private isZooming: boolean = false;
+	private isScrolling = false;
+	private isZooming = false;
 
 	// SVG groups (will be passed to child components)
 	private gridGroupEl: SVGGElement | null = null;
@@ -394,7 +394,7 @@ export class GanttComponent extends Component {
 
 	// --- Date Range and Timescale Calculations ---
 
-	private calculateDateRange(forceRecalculate: boolean = false): {
+	private calculateDateRange(forceRecalculate = false): {
 		startDate: Date;
 		endDate: Date;
 	} {
@@ -540,7 +540,7 @@ export class GanttComponent extends Component {
 
 			const taskStart =
 				task.metadata.startDate || task.metadata.scheduledDate;
-			let taskDue = task.metadata.dueDate;
+			const taskDue = task.metadata.dueDate;
 
 			if (taskStart) {
 				const startDate = new Date(taskStart);

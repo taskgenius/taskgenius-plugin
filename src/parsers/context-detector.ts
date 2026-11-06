@@ -78,7 +78,7 @@ export class ContextDetector {
 	 * @param startPos Starting position to search from
 	 * @returns Position of next unprotected hash, or -1 if none found
 	 */
-	public findNextUnprotectedHash(startPos: number = 0): number {
+	public findNextUnprotectedHash(startPos = 0): number {
 		let pos = startPos;
 		while (pos < this.content.length) {
 			const hashPos = this.content.indexOf("#", pos);

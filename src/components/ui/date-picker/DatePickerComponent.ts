@@ -30,7 +30,7 @@ export class DatePickerComponent extends Component {
 		app: App,
 		plugin?: TaskProgressBarPlugin,
 		initialDate?: string,
-		dateMark: string = "📅"
+		dateMark = "📅"
 	) {
 		super();
 		this.hostEl = hostEl;

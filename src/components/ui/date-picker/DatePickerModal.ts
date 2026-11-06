@@ -13,7 +13,7 @@ export class DatePickerModal extends Modal {
 		app: App,
 		plugin?: TaskProgressBarPlugin,
 		initialDate?: string,
-		dateMark: string = "📅"
+		dateMark = "📅"
 	) {
 		super(app);
 		this.plugin = plugin;

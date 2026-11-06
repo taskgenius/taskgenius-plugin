@@ -42,7 +42,7 @@ export class TaskListRendererComponent extends Component {
 		isTreeView: boolean,
 		allTasksMap: Map<string, Task>, // Make it optional but required for tree view
 		emptyMessage: string = t("No tasks found."),
-		append: boolean = false,
+		append = false,
 	) {
 		if (!append) {
 			this.cleanupComponents();

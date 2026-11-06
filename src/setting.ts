@@ -16,7 +16,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 	private debouncedApplySettings: () => void;
 	private debouncedApplyNotifications: () => void;
 
-	icon: string = "task-genius";
+	icon = "task-genius";
 	public containerEl: HTMLElement;
 
 	constructor(app: App, plugin: TaskProgressBarPlugin) {

@@ -18,17 +18,17 @@ export class QuadrantColumnComponent extends Component {
 	private quadrant: QuadrantDefinition;
 	private tasks: Task[] = [];
 	private cardComponents: QuadrantCardComponent[] = [];
-	private isContentLoaded: boolean = false;
+	private isContentLoaded = false;
 	private intersectionObserver: IntersectionObserver | null = null;
 	private scrollObserver: IntersectionObserver | null = null;
 	private loadingEl: HTMLElement | null = null;
 	private loadMoreEl: HTMLElement | null = null;
 
 	// Pagination and virtual scrolling
-	private currentPage: number = 0;
-	private pageSize: number = 20;
-	private isLoadingMore: boolean = false;
-	private hasMoreTasks: boolean = true;
+	private currentPage = 0;
+	private pageSize = 20;
+	private isLoadingMore = false;
+	private hasMoreTasks = true;
 	private renderedTasks: Task[] = [];
 
 	private params: {

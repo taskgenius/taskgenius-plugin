@@ -65,7 +65,7 @@ function getIndentation(text: string): string {
 function removeTrailingIndentation(
 	indentation: string,
 	app: App,
-	levels: number = 1
+	levels = 1
 ): string {
 	const indentUnit = buildIndentString(app);
 	const removal = indentUnit.repeat(levels);
@@ -371,8 +371,8 @@ export function handleWorkflowTransaction(
 			if (plugin.settings.workflow.autoRemoveLastStageMarker) {
 				const stageMarker = safelyFindStageMarker(line.text);
 				if (stageMarker) {
-					let fromPos = line.from + stageMarker.index;
-					let toPos =
+					const fromPos = line.from + stageMarker.index;
+					const toPos =
 						line.from + stageMarker.index + stageMarker[0].length;
 
 					stageRemovalChange = {
@@ -1113,8 +1113,8 @@ export function isLastWorkflowStageOrNotWorkflow(
 	}
 
 	let workflowType = workflowInfo.workflowType;
-	let currentStageId = workflowInfo.currentStage;
-	let currentSubStageId = workflowInfo.subStage;
+	const currentStageId = workflowInfo.currentStage;
+	const currentSubStageId = workflowInfo.subStage;
 
 	if (workflowType === "fromParent") {
 		const safeLineNumber = ensureWithinBounds(lineNumber, doc);
@@ -1418,8 +1418,8 @@ export function resolveWorkflowInfo(
 	}
 
 	let workflowType = workflowInfo.workflowType;
-	let stageId = workflowInfo.currentStage;
-	let subStageId = workflowInfo.subStage;
+	const stageId = workflowInfo.currentStage;
+	const subStageId = workflowInfo.subStage;
 
 	if (workflowType === "fromParent") {
 		const safeLineNumber = ensureWithinBounds(lineNumber, doc);
@@ -1490,7 +1490,7 @@ export function generateWorkflowTaskText(
 	nextStage: WorkflowStage,
 	indentation: string,
 	plugin: TaskProgressBarPlugin,
-	addSubtasks: boolean = true,
+	addSubtasks = true,
 	nextSubStage?: WorkflowSubStage
 ): string {
 	// Generate timestamp if configured

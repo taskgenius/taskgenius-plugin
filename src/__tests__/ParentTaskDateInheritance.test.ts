@@ -77,7 +77,7 @@ describe("Parent Task Date Inheritance", () => {
 	/**
 	 * Create a time component for testing
 	 */
-	function createTimeComponent(hour: number = 12): TimeComponent {
+	function createTimeComponent(hour = 12): TimeComponent {
 		return {
 			hour,
 			minute: 0,

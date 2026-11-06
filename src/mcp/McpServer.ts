@@ -94,7 +94,7 @@ function pickFields(obj: any, fields: string[]): any {
 function filterResponseFields(
 	result: any,
 	fields: string[],
-	stripNoise: boolean = true,
+	stripNoise = true,
 ): any {
 	let processed = result;
 
@@ -140,8 +140,8 @@ export class McpServer {
 	private authMiddleware: AuthMiddleware;
 	private taskBridge?: DataflowBridge;
 	private bridgeReady: Promise<void>;
-	private isRunning: boolean = false;
-	private requestCount: number = 0;
+	private isRunning = false;
+	private requestCount = 0;
 	private startTime?: Date;
 	private actualPort?: number;
 	private sessions: Map<string, { created: Date; lastAccess: Date }> =
@@ -186,7 +186,7 @@ export class McpServer {
 	/**
 	 * Truncate large data for logging
 	 */
-	private truncateForLog(data: any, maxLength: number = 500): any {
+	private truncateForLog(data: any, maxLength = 500): any {
 		const str = JSON.stringify(data);
 		if (str.length <= maxLength) {
 			return data;
@@ -313,7 +313,7 @@ export class McpServer {
 	 */
 	private async initializeTaskBridge(): Promise<void> {
 		try {
-			let queryAPI =
+			const queryAPI =
 				this.plugin.dataflowOrchestrator?.getQueryAPI() ??
 				new QueryAPI(
 					this.plugin.app,
@@ -329,7 +329,7 @@ export class McpServer {
 				}
 			}
 
-			let writeAPI =
+			const writeAPI =
 				this.plugin.writeAPI ??
 				new WriteAPI(
 					this.plugin.app,
@@ -1671,7 +1671,7 @@ export class McpServer {
 					this.requestCount++;
 
 					// Get session ID from headers
-					let sessionId = req.headers["mcp-session-id"] as string;
+					const sessionId = req.headers["mcp-session-id"] as string;
 
 					// Handle request body
 					// Set encoding to properly handle multi-byte UTF-8 characters

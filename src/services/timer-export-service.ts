@@ -36,7 +36,7 @@ export class TaskTimerExporter {
 	 * @param includeActive Whether to include currently active timers
 	 * @returns JSON string of exported data
 	 */
-	exportToJSON(includeActive: boolean = false): string {
+	exportToJSON(includeActive = false): string {
 		const exportData = this.prepareExportData(includeActive);
 		return JSON.stringify(exportData, null, 2);
 	}
@@ -46,7 +46,7 @@ export class TaskTimerExporter {
 	 * @param includeActive Whether to include currently active timers
 	 * @returns YAML string of exported data
 	 */
-	exportToYAML(includeActive: boolean = false): string {
+	exportToYAML(includeActive = false): string {
 		const exportData = this.prepareExportData(includeActive);
 		return this.convertToYAML(exportData);
 	}
@@ -421,7 +421,7 @@ export class TaskTimerExporter {
 	 * @param obj Object to convert
 	 * @returns YAML string
 	 */
-	private convertToYAML(obj: any, indent: number = 0): string {
+	private convertToYAML(obj: any, indent = 0): string {
 		const spaces = "  ".repeat(indent);
 		let yaml = "";
 
@@ -461,7 +461,7 @@ export class TaskTimerExporter {
 		// For production use, consider using a proper YAML library
 		const lines = yamlString.split("\n");
 		const result: any = {};
-		let currentObject = result;
+		const currentObject = result;
 		const objectStack: any[] = [result];
 		let currentKey = "";
 

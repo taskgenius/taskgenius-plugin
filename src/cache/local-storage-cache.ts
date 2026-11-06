@@ -19,7 +19,7 @@ export class LocalStorageCache {
 	/** Whether initialization is complete */
 	private initialized = false;
 	/** Current plugin version for cache invalidation */
-	private currentVersion: string = "unknown";
+	private currentVersion = "unknown";
 
 	/**
 	 * Create a new local storage cache
@@ -372,7 +372,7 @@ export class LocalStorageCache {
 	 */
 	public isVersionCompatible<T>(
 		cached: Cached<T>,
-		strictVersionCheck: boolean = false
+		strictVersionCheck = false
 	): boolean {
 		if (!cached.version) {
 			// Old cache format without version - consider incompatible

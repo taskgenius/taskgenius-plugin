@@ -375,7 +375,7 @@ class TaskProgressBarWidget extends WidgetType {
 			this.plugin?.settings.progressBarDisplayMode === "both" ||
 			this.plugin?.settings.progressBarDisplayMode === "text"
 		) {
-			let text = formatProgressText(
+			const text = formatProgressText(
 				{
 					completed: this.completed,
 					total: this.total,
@@ -524,13 +524,13 @@ export function taskProgressBarExtension(
 			progressDecorations: DecorationSet = Decoration.none;
 
 			constructor(public view: EditorView) {
-				let {progress} = this.getDeco(view);
+				const {progress} = this.getDeco(view);
 				this.progressDecorations = progress;
 			}
 
 			update(update: ViewUpdate) {
 				if (update.docChanged || update.viewportChanged) {
-					let {progress} = this.getDeco(update.view);
+					const {progress} = this.getDeco(update.view);
 					this.progressDecorations = progress;
 				}
 			}
@@ -548,7 +548,7 @@ export function taskProgressBarExtension(
 					};
 				}
 
-				for (let part of view.visibleRanges) {
+				for (const part of view.visibleRanges) {
 					let taskBulletCursor: RegExpCursor | SearchCursor;
 					let headingCursor: RegExpCursor | SearchCursor;
 					let nonTaskBulletCursor: RegExpCursor | SearchCursor;
@@ -632,7 +632,7 @@ export function taskProgressBarExtension(
 				view: EditorView
 			) {
 				while (!cursor.next().done) {
-					let {from, to} = cursor.value;
+					const {from, to} = cursor.value;
 					const headingLine = view.state.doc.lineAt(from);
 
 					if (
@@ -659,7 +659,7 @@ export function taskProgressBarExtension(
 
 					if (tasksNum.total === 0) continue;
 
-					let startDeco = Decoration.widget({
+					const startDeco = Decoration.widget({
 						widget: new TaskProgressBarWidget(
 							app,
 							plugin,
@@ -690,7 +690,7 @@ export function taskProgressBarExtension(
 				view: EditorView
 			) {
 				while (!cursor.next().done) {
-					let {from} = cursor.value;
+					const {from} = cursor.value;
 					const linePos = view.state.doc.lineAt(from)?.from;
 
 					if (!this.isPositionEnabledByHeading(view.state, linePos)) {
@@ -750,7 +750,7 @@ export function taskProgressBarExtension(
 
 					if (tasksNum.total === 0) continue;
 
-					let startDeco = Decoration.widget({
+					const startDeco = Decoration.widget({
 						widget: new TaskProgressBarWidget(
 							app,
 							plugin,
@@ -783,7 +783,7 @@ export function taskProgressBarExtension(
 				view: EditorView
 			) {
 				while (!cursor.next().done) {
-					let {from} = cursor.value;
+					const {from} = cursor.value;
 					const linePos = view.state.doc.lineAt(from)?.from;
 
 					if (!this.isPositionEnabledByHeading(view.state, linePos)) {
@@ -837,7 +837,7 @@ export function taskProgressBarExtension(
 
 					if (tasksNum.total === 0) continue;
 
-					let startDeco = Decoration.widget({
+					const startDeco = Decoration.widget({
 						widget: new TaskProgressBarWidget(
 							app,
 							plugin,
@@ -926,8 +926,8 @@ export function taskProgressBarExtension(
 			 */
 			private createTotalTaskRegex(
 				isHeading: boolean,
-				level: number = 0,
-				tabSize: number = 4
+				level = 0,
+				tabSize = 4
 			): RegExp {
 				// Check if we're using only specific marks for counting
 				if (plugin?.settings.useOnlyCountMarks) {
@@ -1005,8 +1005,8 @@ export function taskProgressBarExtension(
 			private createCompletedTaskRegex(
 				plugin: TaskProgressBarPlugin,
 				isHeading: boolean,
-				level: number = 0,
-				tabSize: number = 4
+				level = 0,
+				tabSize = 4
 			): RegExp {
 				// Extract settings
 				const useOnlyCountMarks = plugin?.settings.useOnlyCountMarks;
@@ -1414,13 +1414,13 @@ export function taskProgressBarExtension(
 					}
 				}
 
-				let completed: number = 0;
-				let inProgress: number = 0;
-				let abandoned: number = 0;
-				let notStarted: number = 0;
-				let planned: number = 0;
-				let total: number = 0;
-				let level: number = 0;
+				let completed = 0;
+				let inProgress = 0;
+				let abandoned = 0;
+				let notStarted = 0;
+				let planned = 0;
+				let total = 0;
+				let level = 0;
 
 				// Get tab size from vault config
 				const tabSize = this.getTabSize();

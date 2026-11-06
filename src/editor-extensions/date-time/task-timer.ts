@@ -480,7 +480,7 @@ class TaskTimerWidget extends WidgetType {
 	 */
 	private startTimer(): void {
 		try {
-			let taskId = this.getTaskId();
+			const taskId = this.getTaskId();
 
 			// If no existing block ID, generate one and insert it
 			if (!taskId) {

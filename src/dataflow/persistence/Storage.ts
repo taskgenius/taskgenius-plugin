@@ -63,7 +63,7 @@ export const Keys = {
 export class Storage {
 	private cache: LocalStorageCache;
 	private currentVersion: string;
-	private schemaVersion: number = 1;
+	private schemaVersion = 1;
 
 	constructor(appId: string, version?: string) {
 		this.currentVersion = version || "1.0.0"; // Use stable version instead of "unknown"

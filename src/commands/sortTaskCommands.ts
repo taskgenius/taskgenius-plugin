@@ -68,7 +68,7 @@ function getIndentationLevel(line: string): number {
 // --- Refactored Task Parsing using taskUtil ---
 export function parseTasksForSorting(
 	blockText: string,
-	lineOffset: number = 0,
+	lineOffset = 0,
 	filePath: string, // Added filePath
 	format: MetadataFormat, // Added format
 	plugin?: TaskProgressBarPlugin, // Added plugin for configurable prefix support
@@ -77,7 +77,7 @@ export function parseTasksForSorting(
 	const tasks: SortableTask[] = [];
 	// taskMap uses the absolute line number as key
 	const taskMap: { [lineNumber: number]: SortableTask } = {};
-	let currentParentStack: SortableTask[] = [];
+	const currentParentStack: SortableTask[] = [];
 
 	lines.forEach((line, index) => {
 		const lineNumber = lineOffset + index; // Calculate absolute line number (0-based)
@@ -728,7 +728,7 @@ function sortTasksRecursively(
 export function sortTasksInDocument(
 	view: EditorView,
 	plugin: TaskProgressBarPlugin,
-	fullDocument: boolean = false,
+	fullDocument = false,
 ): string | null {
 	const app = plugin.app;
 	const activeFile = app.workspace.getActiveFile(); // Assume command runs on active file
@@ -864,7 +864,7 @@ export function sortTasksInDocument(
 
 	// 4. Rebuild text directly from sorted blockTasks
 	const originalBlockLines = originalBlockText.split("\n");
-	let newBlockLines: string[] = [...originalBlockLines]; // Copy original lines
+	const newBlockLines: string[] = [...originalBlockLines]; // Copy original lines
 	const processedLineIndices = new Set<number>(); // Track processed line indices
 
 	// Find indices of all task lines

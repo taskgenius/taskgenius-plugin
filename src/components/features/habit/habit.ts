@@ -198,7 +198,7 @@ export class Habit extends Component {
 export class EventDetailModal extends Modal {
 	eventName: string;
 	onSubmit: (details: string) => void;
-	details: string = "";
+	details = "";
 
 	constructor(
 		app: App,
@@ -250,7 +250,7 @@ export class EventDetailModal extends Modal {
 	}
 
 	onClose() {
-		let {contentEl} = this;
+		const {contentEl} = this;
 		contentEl.empty();
 	}
 }

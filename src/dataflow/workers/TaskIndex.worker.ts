@@ -258,7 +258,7 @@ function extractDateFromPath(
 	}
 
 	// Try to match with the current path
-	let dateFromPath = parse(pathToMatch, settings.dailyNoteFormat, new Date());
+	const dateFromPath = parse(pathToMatch, settings.dailyNoteFormat, new Date());
 
 	// If no match, recursively try with subpaths
 	if (isNaN(dateFromPath.getTime()) && pathToMatch.includes("/")) {

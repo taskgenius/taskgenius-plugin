@@ -212,7 +212,7 @@ export class CalendarAuthManager extends Component {
 	private callbackServer: Server | null = null;
 
 	/** Current callback server port */
-	private callbackPort: number = 0;
+	private callbackPort = 0;
 
 	constructor() {
 		super();

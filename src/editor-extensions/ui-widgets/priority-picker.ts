@@ -408,9 +408,9 @@ export function priorityPickerExtension(
 		public readonly view: EditorView;
 		public readonly plugin: TaskProgressBarPlugin;
 		decorations: DecorationSet = Decoration.none;
-		private lastUpdate: number = 0;
+		private lastUpdate = 0;
 		private readonly updateThreshold: number = 50;
-		public isDestroyed: boolean = false;
+		public isDestroyed = false;
 
 		// Emoji priorities matcher
 		private readonly emojiMatch = new MatchDecorator({

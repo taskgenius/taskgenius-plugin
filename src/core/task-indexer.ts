@@ -370,21 +370,21 @@ export class TaskIndexer extends Component implements TaskIndexerInterface {
 	 */
 	private updateIndexMaps(task: Task): void {
 		// Update completed status index
-		let completedTasks =
+		const completedTasks =
 			this.taskCache.completed.get(task.completed) || new Set();
 		completedTasks.add(task.id);
 		this.taskCache.completed.set(task.completed, completedTasks);
 
 		// Update tag index
 		for (const tag of task.metadata.tags) {
-			let tagTasks = this.taskCache.tags.get(tag) || new Set();
+			const tagTasks = this.taskCache.tags.get(tag) || new Set();
 			tagTasks.add(task.id);
 			this.taskCache.tags.set(tag, tagTasks);
 		}
 
 		// Update project index
 		if (task.metadata.project) {
-			let projectTasks =
+			const projectTasks =
 				this.taskCache.projects.get(task.metadata.project) || new Set();
 			projectTasks.add(task.id);
 			this.taskCache.projects.set(task.metadata.project, projectTasks);
@@ -392,7 +392,7 @@ export class TaskIndexer extends Component implements TaskIndexerInterface {
 
 		// Update context index
 		if (task.metadata.context) {
-			let contextTasks =
+			const contextTasks =
 				this.taskCache.contexts.get(task.metadata.context) || new Set();
 			contextTasks.add(task.id);
 			this.taskCache.contexts.set(task.metadata.context, contextTasks);
@@ -401,21 +401,21 @@ export class TaskIndexer extends Component implements TaskIndexerInterface {
 		// Update date indexes
 		if (task.metadata.dueDate) {
 			const dateStr = formatDateForIndex(task.metadata.dueDate);
-			let dueTasks = this.taskCache.dueDate.get(dateStr) || new Set();
+			const dueTasks = this.taskCache.dueDate.get(dateStr) || new Set();
 			dueTasks.add(task.id);
 			this.taskCache.dueDate.set(dateStr, dueTasks);
 		}
 
 		if (task.metadata.startDate) {
 			const dateStr = formatDateForIndex(task.metadata.startDate);
-			let startTasks = this.taskCache.startDate.get(dateStr) || new Set();
+			const startTasks = this.taskCache.startDate.get(dateStr) || new Set();
 			startTasks.add(task.id);
 			this.taskCache.startDate.set(dateStr, startTasks);
 		}
 
 		if (task.metadata.scheduledDate) {
 			const dateStr = formatDateForIndex(task.metadata.scheduledDate);
-			let scheduledTasks =
+			const scheduledTasks =
 				this.taskCache.scheduledDate.get(dateStr) || new Set();
 			scheduledTasks.add(task.id);
 			this.taskCache.scheduledDate.set(dateStr, scheduledTasks);
@@ -423,7 +423,7 @@ export class TaskIndexer extends Component implements TaskIndexerInterface {
 
 		// Update priority index
 		if (task.metadata.priority !== undefined) {
-			let priorityTasks =
+			const priorityTasks =
 				this.taskCache.priority.get(task.metadata.priority) ||
 				new Set();
 			priorityTasks.add(task.id);
@@ -433,7 +433,7 @@ export class TaskIndexer extends Component implements TaskIndexerInterface {
 		// Update cancelled date index
 		if (task.metadata.cancelledDate) {
 			const dateStr = formatDateForIndex(task.metadata.cancelledDate);
-			let cancelledTasks =
+			const cancelledTasks =
 				this.taskCache.cancelledDate.get(dateStr) || new Set();
 			cancelledTasks.add(task.id);
 			this.taskCache.cancelledDate.set(dateStr, cancelledTasks);
@@ -441,7 +441,7 @@ export class TaskIndexer extends Component implements TaskIndexerInterface {
 
 		// Update onCompletion index
 		if (task.metadata.onCompletion) {
-			let onCompletionTasks =
+			const onCompletionTasks =
 				this.taskCache.onCompletion.get(task.metadata.onCompletion) ||
 				new Set();
 			onCompletionTasks.add(task.id);
@@ -454,7 +454,7 @@ export class TaskIndexer extends Component implements TaskIndexerInterface {
 		// Update dependsOn index
 		if (task.metadata.dependsOn && task.metadata.dependsOn.length > 0) {
 			for (const dependency of task.metadata.dependsOn) {
-				let dependsOnTasks =
+				const dependsOnTasks =
 					this.taskCache.dependsOn.get(dependency) || new Set();
 				dependsOnTasks.add(task.id);
 				this.taskCache.dependsOn.set(dependency, dependsOnTasks);
@@ -463,7 +463,7 @@ export class TaskIndexer extends Component implements TaskIndexerInterface {
 
 		// Update task ID index
 		if (task.metadata.id) {
-			let taskIdTasks =
+			const taskIdTasks =
 				this.taskCache.taskId.get(task.metadata.id) || new Set();
 			taskIdTasks.add(task.id);
 			this.taskCache.taskId.set(task.metadata.id, taskIdTasks);

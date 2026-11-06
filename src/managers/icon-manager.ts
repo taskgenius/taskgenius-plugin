@@ -262,7 +262,7 @@ export class TaskGeniusIconManager extends Component {
 		char: string,
 		encodedSvg: string,
 		fillColor: string,
-		requireChecked: boolean = true
+		requireChecked = true
 	): string {
 		// Escape special characters for CSS selector
 		const escapedChar = this.escapeCSSSelector(char);

@@ -318,7 +318,7 @@ export class EmbeddableMarkdownEditor {
 	}
 
 	// Set content in the editor
-	set(content: string, focus: boolean = false): void {
+	set(content: string, focus = false): void {
 		this.editor.set(content, focus);
 	}
 

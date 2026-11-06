@@ -503,7 +503,7 @@ export function taskStatusSwitcherExtension(
 				)
 					return;
 
-				let currentState: TaskState =
+				const currentState: TaskState =
 					Object.keys(marks).find((state) => marks[state] === mark) ||
 					remainingCycle[0];
 

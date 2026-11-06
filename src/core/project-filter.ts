@@ -7,7 +7,7 @@ import type { Task } from "../types/task";
  * Inclusive filter: select tasks whose effective project path starts with any selected path.
  * Falls back to matching metadata.project, then tgProject.name.
  */
-export function filterTasksByProjectPaths(tasks: Task[], selectedPaths: string[], separator: string = "/"): Task[] {
+export function filterTasksByProjectPaths(tasks: Task[], selectedPaths: string[], separator = "/"): Task[] {
   if (!selectedPaths || selectedPaths.length === 0) return tasks;
   const lowered = selectedPaths.map(p => (p || "").toLowerCase());
   return tasks.filter(t => {

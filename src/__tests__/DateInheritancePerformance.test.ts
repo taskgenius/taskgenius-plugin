@@ -49,7 +49,7 @@ describe("DateInheritanceAugmentor Performance", () => {
 		id: string,
 		line: number,
 		timeComponent?: TimeComponent,
-		hasDate: boolean = false
+		hasDate = false
 	): Task {
 		const metadata: EnhancedStandardTaskMetadata = {
 			tags: [],
@@ -81,7 +81,7 @@ describe("DateInheritanceAugmentor Performance", () => {
 	/**
 	 * Create a time component for testing
 	 */
-	function createTimeComponent(hour: number = 12): TimeComponent {
+	function createTimeComponent(hour = 12): TimeComponent {
 		return {
 			hour,
 			minute: 0,

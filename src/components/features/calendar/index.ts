@@ -1156,7 +1156,7 @@ export class CalendarComponent extends Component {
 
 		try {
 			const updates: any = { metadata: {} };
-			let updatedFields: string[] = [];
+			const updatedFields: string[] = [];
 
 			if (isAllDayEvent) {
 				const normalizedNewStart = startOfDay(newStartDate);

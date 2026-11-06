@@ -398,7 +398,7 @@ export class DesktopIntegrationManager extends Component {
 
 	private async buildTrayNativeImage(
 		nativeImage: any,
-		useTemplateImage: boolean = false
+		useTemplateImage = false
 	): Promise<any> {
 		try {
 			const size = Platform.isMacOS ? 14 : 24;

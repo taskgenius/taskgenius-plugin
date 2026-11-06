@@ -37,7 +37,7 @@ export class TreeComponent<T> extends Component {
 	private selectedNodes: Set<string> = new Set();
 	private expandedNodes: Set<string> = new Set();
 	private nodeRenderers: Map<string, TreeItemRenderer<T>> = new Map();
-	private isMultiSelectMode: boolean = false;
+	private isMultiSelectMode = false;
 
 	constructor(
 		private parentEl: HTMLElement,
@@ -269,7 +269,7 @@ export class TreeComponent<T> extends Component {
 	private autoExpandToLevel(
 		node: TreeNode<T>,
 		level: number,
-		currentLevel: number = 0,
+		currentLevel = 0,
 	): void {
 		if (currentLevel < level) {
 			node.isExpanded = true;

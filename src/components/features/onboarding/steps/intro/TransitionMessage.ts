@@ -7,7 +7,7 @@ export class TransitionMessage {
 	private container: HTMLElement;
 	private timer?: number;
 
-	constructor(container: HTMLElement, message: string, delay: number = 0) {
+	constructor(container: HTMLElement, message: string, delay = 0) {
 		this.container = container;
 		this.show(message, delay);
 	}

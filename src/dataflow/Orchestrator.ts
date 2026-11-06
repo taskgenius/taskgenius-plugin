@@ -61,10 +61,10 @@ export class DataflowOrchestrator {
 	private restoreByFilterDebounced: () => void;
 	private readonly RESTORE_BATCH_SIZE = 50;
 	private readonly RESTORE_BATCH_INTERVAL_MS = 100;
-	private lastFileFilterEnabled: boolean = false;
+	private lastFileFilterEnabled = false;
 
 	// Track last processed sequence to avoid infinite loops
-	private lastProcessedSeq: number = 0;
+	private lastProcessedSeq = 0;
 
 	constructor(
 		private app: App,
@@ -641,7 +641,7 @@ export class DataflowOrchestrator {
 	 */
 	private async processFileImmediate(
 		file: TFile,
-		forceInvalidate: boolean = false,
+		forceInvalidate = false,
 	): Promise<void> {
 		const filePath = file.path;
 
@@ -1011,7 +1011,7 @@ export class DataflowOrchestrator {
 		}
 
 		if (fileFilterChanged) {
-			const newEnabled: boolean = Boolean(settings?.fileFilter?.enabled);
+			const newEnabled = Boolean(settings?.fileFilter?.enabled);
 			const rulesCount = Array.isArray(settings?.fileFilter?.rules)
 				? settings.fileFilter.rules.filter((r: any) => r?.enabled)
 						.length
@@ -1324,7 +1324,7 @@ export class DataflowOrchestrator {
 		const extension = file.extension.toLowerCase();
 
 		// Parse based on file type
-		let tasks: Task[] = [];
+		const tasks: Task[] = [];
 
 		if (extension === "md") {
 			// Use ConfigurableTaskParser for markdown files

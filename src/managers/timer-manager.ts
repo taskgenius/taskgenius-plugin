@@ -684,7 +684,7 @@ export class TaskTimerManager {
 	 * Retrieve completed timer history
 	 * @returns Ordered list (newest first)
 	 */
-	getRecentCompletedTimers(limit: number = 50): CompletedTimerRecord[] {
+	getRecentCompletedTimers(limit = 50): CompletedTimerRecord[] {
 		const completed = this.getCompletedList();
 		if (limit && limit > 0) {
 			return completed.slice(0, limit);
@@ -722,7 +722,7 @@ export class TaskTimerManager {
 	 * Clean up expired or orphaned timers
 	 * @param maxAgeHours Maximum age in hours for keeping completed timers
 	 */
-	cleanup(maxAgeHours: number = 24): void {
+	cleanup(maxAgeHours = 24): void {
 		const activeList = this.getActiveList();
 		const now = Date.now();
 		const maxAge = maxAgeHours * 60 * 60 * 1000; // Convert to milliseconds

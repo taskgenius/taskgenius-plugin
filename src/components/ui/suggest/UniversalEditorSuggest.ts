@@ -37,7 +37,7 @@ export class UniversalEditorSuggest extends EditorSuggest<SuggestOption> {
 	plugin: TaskProgressBarPlugin;
 	private config: UniversalSuggestConfig;
 	private suggestOptions: SuggestOption[] = [];
-	private isEnabled: boolean = false;
+	private isEnabled = false;
 
 	constructor(
 		app: App,

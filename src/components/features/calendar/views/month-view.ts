@@ -73,14 +73,14 @@ export class MonthView extends CalendarViewComponent {
 		// Calculate grid start based on the week containing the start of the month, adjusted for the effective first day
 		const gridStart = startOfMonth.clone().weekday(effectiveFirstDay - 7); // moment handles wrapping correctly
 		// Calculate grid end based on the week containing the end of the month, adjusted for the effective first day
-		let gridEnd = endOfMonth.clone().weekday(effectiveFirstDay + 6); // moment handles wrapping correctly
+		const gridEnd = endOfMonth.clone().weekday(effectiveFirstDay + 6); // moment handles wrapping correctly
 
 		// Adjust grid coverage based on whether weekends are hidden
 		if (hideWeekends) {
 			// When weekends are hidden, we need fewer days to fill the grid
 			// Calculate how many work days we need (approximately 6 weeks * 5 work days = 30 days)
 			let workDaysCount = 0;
-			let tempIter = gridStart.clone();
+			const tempIter = gridStart.clone();
 
 			// Count existing work days in the current range
 			while (tempIter.isSameOrBefore(gridEnd, "day")) {
@@ -144,7 +144,7 @@ export class MonthView extends CalendarViewComponent {
 		// 3. Create day cells grid container
 		const gridContainer = this.containerEl.createDiv("calendar-month-grid");
 		const dayCells: { [key: string]: HTMLElement } = {}; // Store cells by date string 'YYYY-MM-DD'
-		let currentDayIter = gridStart.clone();
+		const currentDayIter = gridStart.clone();
 
 		while (currentDayIter.isSameOrBefore(gridEnd, "day")) {
 			const isWeekend =

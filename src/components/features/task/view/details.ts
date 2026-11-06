@@ -430,7 +430,7 @@ export class TaskDetailsComponent extends Component {
 		new ProjectSuggest(this.app, projectInput.inputEl, this.plugin);
 
 		// Tags field
-		let currentTags = (task.metadata.tags ?? [])
+		const currentTags = (task.metadata.tags ?? [])
 			.map((tag) => (tag.startsWith("#") ? tag.slice(1) : tag))
 			.filter((tag) => tag);
 

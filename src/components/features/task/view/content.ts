@@ -83,17 +83,17 @@ export class ContentComponent extends Component {
 
 	// Timer Statistics Panel
 	private timerStatisticsPanel: TimerStatisticsPanel | null = null;
-	private isShowingTimerStats: boolean = false;
+	private isShowingTimerStats = false;
 
 	// State
 	private currentViewId: ViewMode = "inbox"; // Renamed from currentViewMode
 	private selectedProjectForView: string | null = null; // Keep track if a specific project is filtered (for project view)
 	private focusFilter: string | null = null; // Keep focus filter if needed
-	private isTreeView: boolean = false;
-	private isRendering: boolean = false; // Guard against concurrent renders
-	private pendingForceRefresh: boolean = false; // Track if a force refresh is pending
-	private pendingVisibilityRetry: boolean = false; // Queue a retry when container becomes visible
-	private visibilityRetryCount: number = 0; // Limit visibility retry loop
+	private isTreeView = false;
+	private isRendering = false; // Guard against concurrent renders
+	private pendingForceRefresh = false; // Track if a force refresh is pending
+	private pendingVisibilityRetry = false; // Queue a retry when container becomes visible
+	private visibilityRetryCount = 0; // Limit visibility retry loop
 	private lastAllTasksSignature = "";
 	private lastNotFilteredTasksSignature = "";
 	constructor(
@@ -548,7 +548,7 @@ export class ContentComponent extends Component {
 	public setTasks(
 		tasks: Task[],
 		notFilteredTasks: Task[],
-		forceRefresh: boolean = false,
+		forceRefresh = false,
 	) {
 		const updateSignatures = () => {
 			this.lastAllTasksSignature = this.computeTaskSignature(tasks);
@@ -615,7 +615,7 @@ export class ContentComponent extends Component {
 
 		// Update title based on the view config
 		const viewConfig = getViewSettingOrDefault(this.plugin, viewId);
-		let title = t(viewConfig.name);
+		const title = t(viewConfig.name);
 
 		this.titleEl.setText(title);
 

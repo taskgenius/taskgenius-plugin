@@ -144,7 +144,7 @@ export class CanvasTaskUpdater {
 		try {
 			const lines = textNode.text.split("\n");
 			let taskFound = false;
-			let updatedLines = [...lines];
+			const updatedLines = [...lines];
 
 			// Find and update the task line. Prefer originalMarkdown matches, and
 			// only use stripped-content fallback when it identifies a single line.
@@ -741,7 +741,7 @@ export class CanvasTaskUpdater {
 	 */
 	public async deleteCanvasTask(
 		task: Task<CanvasTaskMetadata>,
-		deleteChildren: boolean = false,
+		deleteChildren = false,
 	): Promise<CanvasTaskUpdateResult> {
 		try {
 			// Get the Canvas file
@@ -856,7 +856,7 @@ export class CanvasTaskUpdater {
 		targetFilePath?: string,
 		targetNodeId?: string,
 		targetSection?: string,
-		preserveMetadata: boolean = true,
+		preserveMetadata = true,
 	): Promise<CanvasTaskUpdateResult> {
 		try {
 			// Create duplicate task content
@@ -990,12 +990,12 @@ export class CanvasTaskUpdater {
 	private deleteTaskFromTextNode(
 		textNode: CanvasTextData,
 		task: Task,
-		deleteChildren: boolean = false,
+		deleteChildren = false,
 	): CanvasTaskUpdateResult {
 		try {
 			const lines = textNode.text.split("\n");
 			let taskFound = false;
-			let updatedLines = [...lines];
+			const updatedLines = [...lines];
 			let taskIndex = -1;
 
 			// Find the task line
@@ -1128,7 +1128,7 @@ export class CanvasTaskUpdater {
 		// Find a good position for the new node (avoid overlaps)
 		const existingNodes = canvasData.nodes;
 		let x = 0;
-		let y = 0;
+		const y = 0;
 
 		if (existingNodes.length > 0) {
 			// Position new node to the right of existing nodes

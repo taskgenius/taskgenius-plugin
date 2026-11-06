@@ -120,7 +120,7 @@ export class DuplicateActionExecutor extends BaseActionExecutor {
 			const originalTaskLine = sourceLines[task.line];
 
 			// Create duplicate task line
-			let duplicateTaskLine = this.createDuplicateTaskLine(
+			const duplicateTaskLine = this.createDuplicateTaskLine(
 				originalTaskLine,
 				duplicateConfig,
 			);

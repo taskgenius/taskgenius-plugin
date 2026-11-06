@@ -222,7 +222,7 @@ export class FileTaskManagerImpl implements FileTaskManager {
 	fileTaskToPropertyUpdates(
 		task: FileTask,
 		mapping: FileTaskPropertyMapping = DEFAULT_FILE_TASK_MAPPING,
-		excludeContent: boolean = false,
+		excludeContent = false,
 	): Record<string, any> {
 		const updates: Record<string, any> = {};
 

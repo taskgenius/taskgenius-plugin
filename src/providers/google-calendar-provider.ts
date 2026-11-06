@@ -380,7 +380,7 @@ export class GoogleCalendarProvider extends CalendarProviderBase<GoogleCalendarS
 	private convertGoogleEvent(
 		gEvent: GoogleEvent,
 		calendarId: string,
-		canWrite: boolean = false,
+		canWrite = false,
 	): IcsEvent {
 		const isAllDay = !!gEvent.start.date;
 
@@ -507,7 +507,7 @@ export class GoogleCalendarProvider extends CalendarProviderBase<GoogleCalendarS
 	 */
 	private async makeAuthenticatedRequest<T>(
 		url: string,
-		method: string = "GET",
+		method = "GET",
 		body?: unknown,
 	): Promise<T> {
 		if (!this.config.auth) {
@@ -593,7 +593,7 @@ export class GoogleCalendarProvider extends CalendarProviderBase<GoogleCalendarS
 	 */
 	private async makeAuthenticatedRequestWithHeaders<T>(
 		url: string,
-		method: string = "GET",
+		method = "GET",
 		body?: unknown,
 		customHeaders?: Record<string, string>,
 	): Promise<{ data: T; status: number; headers: Record<string, string> }> {
@@ -992,7 +992,7 @@ export class GoogleCalendarProvider extends CalendarProviderBase<GoogleCalendarS
 	private toGoogleDateTime(
 		date: Date,
 		allDay: boolean,
-		isEndDate: boolean = false,
+		isEndDate = false,
 	): GoogleEventDateTime {
 		if (allDay) {
 			// For all-day end dates, Google API expects EXCLUSIVE date (day after the last day)

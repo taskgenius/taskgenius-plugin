@@ -367,7 +367,7 @@ export class BlockSelectionModal extends SuggestModal<{
 			const lines = fileContent.split("\n");
 
 			let insertPosition: number;
-			let indentLevel: number = 0;
+			let indentLevel = 0;
 
 			if (block.id === "beginning") {
 				insertPosition = 0;

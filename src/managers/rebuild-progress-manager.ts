@@ -9,10 +9,10 @@ import { Notice } from "obsidian";
  */
 export class RebuildProgressManager {
 	private notice: Notice | null = null;
-	private startTime: number = 0;
-	private processedFiles: number = 0;
-	private totalFiles: number = 0;
-	private tasksFound: number = 0;
+	private startTime = 0;
+	private processedFiles = 0;
+	private totalFiles = 0;
+	private tasksFound = 0;
 
 	/**
 	 * Start tracking rebuild progress
@@ -61,7 +61,7 @@ export class RebuildProgressManager {
 	/**
 	 * Increment processed files count and update progress
 	 */
-	public incrementProcessedFiles(tasksFound: number = 0): void {
+	public incrementProcessedFiles(tasksFound = 0): void {
 		this.processedFiles++;
 		this.tasksFound += tasksFound;
 

@@ -51,19 +51,19 @@ export class TableView extends Component {
 	private editingCell: { rowId: string; columnId: string } | null = null;
 
 	// State
-	private isTreeView: boolean = false;
-	private currentSortField: string = "";
+	private isTreeView = false;
+	private currentSortField = "";
 	private currentSortOrder: "asc" | "desc" = "asc";
-	private isLoading: boolean = false;
+	private isLoading = false;
 
 	// Performance optimization
 	private scrollRAF: number | null = null;
-	private lastScrollTime: number = 0;
-	private scrollVelocity: number = 0;
+	private lastScrollTime = 0;
+	private scrollVelocity = 0;
 	private lastViewport: { startIndex: number; endIndex: number } | null =
 		null;
 	private renderThrottleRAF: number | null = null;
-	private lastRenderTime: number = 0;
+	private lastRenderTime = 0;
 
 	// Callbacks
 	public onTaskSelected?: (task: Task | null) => void;

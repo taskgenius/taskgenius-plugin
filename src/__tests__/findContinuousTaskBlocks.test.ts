@@ -7,9 +7,9 @@ import {
 // 创建SortableTask的辅助函数
 function createMockTask(
 	lineNumber: number,
-	indentation: number = 0,
+	indentation = 0,
 	children: SortableTask[] = [],
-	completed: boolean = false
+	completed = false
 ): SortableTask {
 	const status = completed ? "x" : " ";
 	return {

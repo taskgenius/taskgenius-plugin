@@ -564,7 +564,7 @@ export class ProjectModal extends Modal {
 	private plugin: TaskProgressBarPlugin;
 	private onSave: (project: CustomProject) => void;
 	private nameInput: HTMLInputElement | null = null;
-	private selectedColor: string = "#3498db";
+	private selectedColor = "#3498db";
 	private eventListeners: Array<{
 		element: HTMLElement;
 		event: string;

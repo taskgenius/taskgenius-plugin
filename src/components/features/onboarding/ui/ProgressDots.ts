@@ -11,7 +11,7 @@ export interface ProgressDotsOptions {
 export class ProgressDots {
 	private container: HTMLElement;
 	private totalSteps: number;
-	private currentStep: number = 0;
+	private currentStep = 0;
 	private dots: HTMLElement[] = [];
 	private labels?: string[];
 

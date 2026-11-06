@@ -424,7 +424,7 @@ export class OutlookCalendarProvider extends CalendarProviderBase<OutlookCalenda
 	private convertOutlookEvent(
 		oEvent: GraphEvent,
 		calendarId: string,
-		canWrite: boolean = false,
+		canWrite = false,
 	): IcsEvent {
 		const isAllDay = oEvent.isAllDay || false;
 
@@ -434,7 +434,7 @@ export class OutlookCalendarProvider extends CalendarProviderBase<OutlookCalenda
 			? this.parseGraphDateTime(oEvent.start, isAllDay)
 			: new Date();
 
-		let dtend = oEvent.end
+		const dtend = oEvent.end
 			? this.parseGraphDateTime(oEvent.end, isAllDay)
 			: undefined;
 
@@ -656,7 +656,7 @@ export class OutlookCalendarProvider extends CalendarProviderBase<OutlookCalenda
 	 */
 	private async makeGraphRequest<T>(
 		url: string,
-		method: string = "GET",
+		method = "GET",
 		body?: unknown,
 	): Promise<T> {
 		if (!this.config.auth) {
@@ -744,7 +744,7 @@ export class OutlookCalendarProvider extends CalendarProviderBase<OutlookCalenda
 	 */
 	private async makeGraphRequestWithHeaders<T>(
 		url: string,
-		method: string = "GET",
+		method = "GET",
 		body?: unknown,
 		customHeaders?: Record<string, string>,
 	): Promise<{ data: T; status: number; headers: Record<string, string> }> {
@@ -1181,7 +1181,7 @@ export class OutlookCalendarProvider extends CalendarProviderBase<OutlookCalenda
 	private toGraphDateTime(
 		date: Date,
 		allDay: boolean,
-		isEndDate: boolean = false,
+		isEndDate = false,
 	): GraphDateTime {
 		if (allDay) {
 			// For all-day end dates, Outlook expects EXCLUSIVE date (day after the last day)

@@ -39,13 +39,13 @@ export class ViewConfigModal extends Modal {
 	private viewFilterRule: ViewFilterRule;
 	private plugin: TaskProgressBarPlugin;
 	private isCreate: boolean;
-	private isCopyMode: boolean = false;
+	private isCopyMode = false;
 	private sourceViewId: string | null = null;
 	private copySourceIdentifier: string | null = null;
 	private onSave: (config: ViewConfig, rules: ViewFilterRule) => void;
 	private originalViewConfig: string;
 	private originalViewFilterRule: string;
-	private hasChanges: boolean = false;
+	private hasChanges = false;
 
 	// Advanced filter component
 	private taskFilterComponent: TaskFilterComponent | null = null;

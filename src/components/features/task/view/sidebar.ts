@@ -20,7 +20,7 @@ export class SidebarComponent extends Component {
 	private plugin: TaskProgressBarPlugin;
 	private app: App;
 	private currentViewId: ViewMode = "inbox";
-	private isCollapsed: boolean = false;
+	private isCollapsed = false;
 
 	// Event handlers
 	public onViewModeChanged: (viewId: ViewMode) => void = () => {};

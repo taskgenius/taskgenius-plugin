@@ -94,13 +94,13 @@ export class TaskSpecificView extends ItemView {
 	private twoColumnViewComponents: Map<string, TaskPropertyTwoColumnView> =
 		new Map();
 	// UI state management (Sidebar state removed)
-	private isDetailsVisible: boolean = false;
+	private isDetailsVisible = false;
 	private detailsToggleBtn: HTMLElement;
 	private currentViewId: ViewMode = "inbox"; // Default or loaded from state
 	private currentProject?: string | null;
 	private currentSelectedTaskId: string | null = null;
 	private currentSelectedTaskDOM: HTMLElement | null = null;
-	private lastToggleTimestamp: number = 0;
+	private lastToggleTimestamp = 0;
 
 	private tabActionButton: HTMLElement;
 
@@ -689,7 +689,7 @@ export class TaskSpecificView extends ItemView {
 	private switchView(
 		viewId: ViewMode,
 		project?: string | null,
-		forceRefresh: boolean = false,
+		forceRefresh = false,
 	) {
 		this.currentViewId = viewId;
 		this.currentProject = project;
@@ -1160,8 +1160,8 @@ export class TaskSpecificView extends ItemView {
 	}
 
 	private async loadTasks(
-		forceSync: boolean = false,
-		skipViewUpdate: boolean = false,
+		forceSync = false,
+		skipViewUpdate = false,
 	) {
 		// Only use dataflow - TaskManager is deprecated
 		if (!this.plugin.dataflowOrchestrator) {
@@ -1202,7 +1202,7 @@ export class TaskSpecificView extends ItemView {
 	/**
 	 * Load tasks fast using cached data - for UI initialization
 	 */
-	private async loadTasksFast(skipViewUpdate: boolean = false) {
+	private async loadTasksFast(skipViewUpdate = false) {
 		// Only use dataflow
 		if (!this.plugin.dataflowOrchestrator) {
 			console.warn(

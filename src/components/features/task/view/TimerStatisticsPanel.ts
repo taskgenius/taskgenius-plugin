@@ -19,7 +19,7 @@ export class TimerStatisticsPanel extends Component {
 	private plugin: TaskProgressBarPlugin;
 	private tasks: Task[];
 	private timerManager: TaskTimerManager;
-	private hasActiveTimerInterval: boolean = false;
+	private hasActiveTimerInterval = false;
 	private activeTimerSignature = "";
 	private lastCleanup = 0;
 	private onTaskClick?: (task: Task | null) => void;

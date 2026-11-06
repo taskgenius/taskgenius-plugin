@@ -640,7 +640,7 @@ function applyDateOperations(
 		const docLength = tr.newDoc.length;
 		const validatedChanges = changes.map((change, i) => {
 			// Ensure positions are within the document bounds of newDoc
-			let validFrom = Math.min(Math.max(0, change.from), docLength);
+			const validFrom = Math.min(Math.max(0, change.from), docLength);
 			let validTo = Math.min(Math.max(0, change.to), docLength);
 
 			// Ensure from <= to
@@ -656,7 +656,7 @@ function applyDateOperations(
 		});
 
 		// Check if there are existing changes
-		let existingChanges: Array<{
+		const existingChanges: Array<{
 			fromA: number;
 			toA: number;
 			fromB: number;
@@ -802,7 +802,7 @@ function findMetadataInsertPosition(
 	// This handles content with special characters, links, etc.
 	let contentEnd = position;
 	let inLink = 0; // Track nested [[links]]
-	let inDataview = false; // Track [field:: value] metadata
+	const inDataview = false; // Track [field:: value] metadata
 	const remainingText = lineText.slice(position);
 
 	for (let i = 0; i < remainingText.length; i++) {

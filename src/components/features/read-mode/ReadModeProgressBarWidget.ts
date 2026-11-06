@@ -89,7 +89,7 @@ function loadProgressbar(
 	groupedElements: GroupElement[],
 	type: "dataview" | "normal"
 ) {
-	for (let group of groupedElements) {
+	for (const group of groupedElements) {
 		if (
 			group.parentElement.parentElement &&
 			group.parentElement?.parentElement.hasClass("task-list-item")
@@ -420,7 +420,7 @@ class ProgressBar extends Component {
 		}
 
 		// Set up event handlers
-		for (let el of this.group.childrenElement) {
+		for (const el of this.group.childrenElement) {
 			if (this.type === "normal") {
 				el.on("click", "input", () => {
 					setTimeout(() => {
@@ -956,7 +956,7 @@ class ProgressBar extends Component {
 
 		// Get all parent-child relationships to check for indentation
 		const parentChildMap = new Map<HTMLElement, HTMLElement[]>();
-		for (let element of this.group.childrenElement) {
+		for (const element of this.group.childrenElement) {
 			const parent = element.parentElement;
 			if (parent) {
 				if (!parentChildMap.has(parent)) {
@@ -966,7 +966,7 @@ class ProgressBar extends Component {
 			}
 		}
 
-		for (let element of this.group.childrenElement) {
+		for (const element of this.group.childrenElement) {
 			const checkboxElement = element.querySelector(
 				".task-list-item-checkbox"
 			);
@@ -1064,7 +1064,7 @@ class ProgressBar extends Component {
 		let notStarted = 0;
 		let total = 0;
 
-		for (let element of allTasks) {
+		for (const element of allTasks) {
 			// const isParentCustomGoal: boolean = checkIfParentElementHasGoalFormat(element.parentElement)
 			let subTaskGoal: null | number = null;
 			const useTaskGoal: boolean =
@@ -1145,7 +1145,7 @@ class ProgressBar extends Component {
 
 		// Get all parent-child relationships to check for indentation
 		const parentChildMap = new Map<HTMLElement, HTMLElement[]>();
-		for (let element of this.group.childrenElement) {
+		for (const element of this.group.childrenElement) {
 			const parent = element.parentElement;
 			if (parent) {
 				if (!parentChildMap.has(parent)) {
@@ -1158,7 +1158,7 @@ class ProgressBar extends Component {
 		const allTasks: HTMLElement[] = [];
 
 		// Check if the element is a top-level task or if countSubLevel is enabled
-		for (let element of this.group.childrenElement) {
+		for (const element of this.group.childrenElement) {
 			const checkboxElement = element.querySelector(
 				".task-list-item-checkbox"
 			);
@@ -1195,7 +1195,7 @@ class ProgressBar extends Component {
 				}
 			} else if (this.plugin?.settings.countSubLevel) {
 				const childrenTasks = element.findAll(".task-list-item");
-				for (let child of childrenTasks) {
+				for (const child of childrenTasks) {
 					total++;
 					allTasks.push(child);
 				}

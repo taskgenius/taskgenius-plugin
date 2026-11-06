@@ -13,7 +13,7 @@ describe("Badge Debug Helper", () => {
 		sourceId: string,
 		sourceName: string,
 		eventDate: Date,
-		color: string = "#ff6b6b"
+		color = "#ff6b6b"
 	): IcsTask {
 		const badgeSource: IcsSource = {
 			id: sourceId,

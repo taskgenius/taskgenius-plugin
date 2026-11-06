@@ -270,7 +270,7 @@ export class MarkdownTaskParser {
 	 */
 	parseLegacy(
 		input: string,
-		filePath: string = "",
+		filePath = "",
 		fileMetadata?: Record<string, any>,
 		projectConfigData?: Record<string, any>,
 		tgProject?: TgProject,
@@ -288,7 +288,7 @@ export class MarkdownTaskParser {
 	/**
 	 * Parse a single task line
 	 */
-	parseTask(line: string, filePath: string = "", lineNum: number = 0): Task {
+	parseTask(line: string, filePath = "", lineNum = 0): Task {
 		const enhancedTask = this.parse(line, filePath);
 		return this.convertToLegacyTask({
 			...enhancedTask[0],
@@ -1735,7 +1735,7 @@ export class MarkdownTaskParser {
 	 */
 	private inheritFileMetadata(
 		taskMetadata: Record<string, string>,
-		isSubtask: boolean = false,
+		isSubtask = false,
 	): Record<string, string> {
 		// Helper function to convert priority values to numbers
 		const convertPriorityValue = (value: any): string => {

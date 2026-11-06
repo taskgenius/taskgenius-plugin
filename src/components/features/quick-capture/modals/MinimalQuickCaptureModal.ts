@@ -44,7 +44,7 @@ interface TaskMetadata {
 export class MinimalQuickCaptureModal extends Modal {
 	plugin: TaskProgressBarPlugin;
 	markdownEditor: EmbeddableMarkdownEditor | null = null;
-	capturedContent: string = "";
+	capturedContent = "";
 	taskMetadata: TaskMetadata = {};
 
 	// Mode: 'checkbox' or 'file'

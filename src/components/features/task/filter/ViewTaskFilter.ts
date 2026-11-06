@@ -1130,7 +1130,7 @@ export class TaskFilterComponent extends Component {
 
 	// --- Local Storage Management ---
 	private saveStateToLocalStorage(
-		triggerRealtimeUpdate: boolean = true,
+		triggerRealtimeUpdate = true,
 	): void {
 		if (this.app) {
 			this.app.saveLocalStorage(

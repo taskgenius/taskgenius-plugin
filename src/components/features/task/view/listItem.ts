@@ -48,7 +48,7 @@ export class TaskListItemComponent extends Component {
 
 	// Timer update interval (managed by registerInterval, auto-cleaned on unload)
 	private timerEl: HTMLElement | null = null;
-	private hasActiveTimerInterval: boolean = false;
+	private hasActiveTimerInterval = false;
 
 	// Use shared editor manager instead of individual editors
 	private static editorManager: InlineEditorManager | null = null;
@@ -1252,8 +1252,8 @@ export class TaskListItemComponent extends Component {
 		this.task = task;
 
 		// Batch DOM updates to minimize reflows
-		let needsContentUpdate = false;
-		let needsMetadataUpdate = false;
+		const needsContentUpdate = false;
+		const needsMetadataUpdate = false;
 
 		// Check what needs updating
 		const contentChanged =

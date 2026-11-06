@@ -11,8 +11,8 @@ import { AuthMiddleware } from "./auth/AuthMiddleware";
 export class McpServerManager {
 	private server?: McpServer;
 	private config: McpServerConfig;
-	private autoRestartAttempts: number = 0;
-	private maxAutoRestartAttempts: number = 3;
+	private autoRestartAttempts = 0;
+	private maxAutoRestartAttempts = 3;
 
 	// Check if a port is available on the given host
 	private isPortAvailable(port: number, host: string): Promise<boolean> {

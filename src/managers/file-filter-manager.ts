@@ -36,8 +36,8 @@ export interface FileFilterConfig {
  */
 class PathTrieNode {
 	children: Map<string, PathTrieNode> = new Map();
-	isEndOfPath: boolean = false;
-	isFolder: boolean = false;
+	isEndOfPath = false;
+	isFolder = false;
 }
 
 /**
@@ -49,7 +49,7 @@ class PathTrie {
 	/**
 	 * Insert a path into the trie
 	 */
-	insert(path: string, isFolder: boolean = true): void {
+	insert(path: string, isFolder = true): void {
 		const parts = normalizePath(path)
 			.split("/")
 			.filter((part) => part.length > 0);

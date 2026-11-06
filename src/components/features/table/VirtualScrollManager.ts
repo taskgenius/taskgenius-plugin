@@ -7,28 +7,28 @@ import { VirtualScrollCallbacks, ViewportData } from "./TableTypes";
 export class VirtualScrollManager extends Component {
 	private scrollContainer: HTMLElement;
 	private viewport: ViewportData;
-	private rowHeight: number = 40; // Default row height in pixels
-	private bufferSize: number = 10; // Number of extra rows to render outside viewport
-	private isLoading: boolean = false;
-	private totalRows: number = 0;
-	private loadedRows: number = 0;
+	private rowHeight = 40; // Default row height in pixels
+	private bufferSize = 10; // Number of extra rows to render outside viewport
+	private isLoading = false;
+	private totalRows = 0;
+	private loadedRows = 0;
 
 	// Scroll handling
-	private lastScrollTop: number = 0;
+	private lastScrollTop = 0;
 	private scrollDirection: "up" | "down" = "down";
 	private scrollRAF: number | null = null;
-	private pendingScrollUpdate: boolean = false;
+	private pendingScrollUpdate = false;
 
 	// Performance optimization
-	private lastLoadTriggerTime: number = 0;
-	private loadCooldown: number = 500; // Minimum 500ms between load attempts
-	private isAtBottom: boolean = false;
-	private isAtTop: boolean = true;
+	private lastLoadTriggerTime = 0;
+	private loadCooldown = 500; // Minimum 500ms between load attempts
+	private isAtBottom = false;
+	private isAtTop = true;
 
 	// Height stability
 	private heightStabilizer: HTMLElement | null = null;
-	private stableHeight: number = 0;
-	private heightUpdateThrottle: number = 0;
+	private stableHeight = 0;
+	private heightUpdateThrottle = 0;
 
 	constructor(
 		private containerEl: HTMLElement,
@@ -64,7 +64,7 @@ export class VirtualScrollManager extends Component {
 	private setupScrollContainer() {
 		// For table view, we need to find the actual scrollable container
 		// which might be the table container, not the table itself
-		let scrollableContainer = this.scrollContainer;
+		const scrollableContainer = this.scrollContainer;
 
 		// If the container is not scrollable, look for a parent that is
 		if (

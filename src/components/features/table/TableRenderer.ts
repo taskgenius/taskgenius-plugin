@@ -29,10 +29,10 @@ interface AutoCompleteCache {
  */
 export class TableRenderer extends Component {
 	private resizeObserver: ResizeObserver | null = null;
-	private isResizing: boolean = false;
-	private resizeStartX: number = 0;
-	private resizeColumn: string = "";
-	private resizeStartWidth: number = 0;
+	private isResizing = false;
+	private resizeStartX = 0;
+	private resizeColumn = "";
+	private resizeStartWidth = 0;
 
 	// DOM节点缓存池
 	private rowPool: HTMLTableRowElement[] = [];
@@ -273,7 +273,7 @@ export class TableRenderer extends Component {
 	public renderTable(
 		rows: TableRow[],
 		selectedRows: Set<string>,
-		startIndex: number = 0,
+		startIndex = 0,
 		totalRows?: number,
 	) {
 		// Always clear empty state first if it exists

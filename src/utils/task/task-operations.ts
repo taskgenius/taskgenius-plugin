@@ -456,7 +456,7 @@ export function extractTags(
 	// Temporarily replace excluded segments (links, inline code) with placeholders
 	if (exclusions.length > 0) {
 		// Using spaces as placeholders maintains original string length and indices for subsequent operations.
-		let tempProcessedContent = processedContent.split("");
+		const tempProcessedContent = processedContent.split("");
 
 		for (const ex of exclusions) {
 			// Replace the content of the exclusion with spaces
@@ -537,7 +537,7 @@ export function extractTags(
 	let lastIndex = 0;
 	// Use the original `remainingContent` that has had tags removed but not context yet,
 	// but for context removal, we refer to `exclusions` based on the *original* content.
-	let contentForContextRemoval = contentWithoutTagsOrContext;
+	const contentForContextRemoval = contentWithoutTagsOrContext;
 
 	if (exclusions.length > 0) {
 		// Process content segments between exclusions

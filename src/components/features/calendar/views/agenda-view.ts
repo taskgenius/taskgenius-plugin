@@ -87,7 +87,7 @@ export class AgendaView extends CalendarViewComponent {
 			return;
 		}
 
-		let currentDayIter = rangeStart.clone();
+		const currentDayIter = rangeStart.clone();
 		while (currentDayIter.isSameOrBefore(rangeEnd, "day")) {
 			const dateStr = currentDayIter.format("YYYY-MM-DD");
 			if (eventsByDay[dateStr] && eventsByDay[dateStr].length > 0) {

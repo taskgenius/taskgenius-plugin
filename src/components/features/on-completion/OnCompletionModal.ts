@@ -20,8 +20,8 @@ export class OnCompletionModal extends Modal {
 	private configurator: OnCompletionConfigurator;
 	private options: OnCompletionModalOptions;
 	private plugin: TaskProgressBarPlugin;
-	private currentValue: string = "";
-	private isValid: boolean = false;
+	private currentValue = "";
+	private isValid = false;
 
 	constructor(
 		app: App,

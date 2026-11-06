@@ -32,7 +32,7 @@ const DAY_MAP = {
 
 class ReviewConfigureModal extends Modal {
 	private projectName: string;
-	private frequency: string = "";
+	private frequency = "";
 	private existingSetting: ProjectReviewSetting | null;
 	private plugin: TaskProgressBarPlugin;
 	private onSave: (setting: ProjectReviewSetting) => void;
@@ -271,7 +271,7 @@ export class ReviewComponent extends Component {
 		tasks: [], // This holds the filtered tasks for the selected project
 		setting: null,
 	};
-	private showAllTasks: boolean = false; // Default to filtered view
+	private showAllTasks = false; // Default to filtered view
 	private allTasksMap: Map<string, Task> = new Map();
 	constructor(
 		private parentEl: HTMLElement,

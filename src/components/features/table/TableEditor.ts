@@ -272,7 +272,7 @@ export class TableEditor extends Component {
 	 */
 	private createTextInput(
 		currentValue: string,
-		multiline: boolean = false
+		multiline = false
 	): HTMLInputElement {
 		const input = document.createElement("input");
 		input.type = "text";

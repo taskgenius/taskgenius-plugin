@@ -26,7 +26,7 @@ interface SuggestOption {
 
 export class MinimalQuickCaptureSuggest extends EditorSuggest<SuggestOption> {
 	plugin: TaskProgressBarPlugin;
-	private isMinimalMode: boolean = false;
+	private isMinimalMode = false;
 
 	constructor(app: App, plugin: TaskProgressBarPlugin) {
 		super(app);

@@ -86,7 +86,7 @@ export const createMockText = (content: string): Text => {
 			) {
 				const lastLineIndex = lines.length - 1;
 				const lastLine = lines[lastLineIndex];
-				let from = content.length - lastLine.length - 1; // Position after the last newline
+				const from = content.length - lastLine.length - 1; // Position after the last newline
 				return {
 					text: lastLine,
 					from: from,
@@ -637,10 +637,10 @@ export function createMockCanvasData(nodes: any[] = [], edges: any[] = []) {
 export function createMockCanvasTextNode(
 	id: string,
 	text: string,
-	x: number = 0,
-	y: number = 0,
-	width: number = 250,
-	height: number = 60
+	x = 0,
+	y = 0,
+	width = 250,
+	height = 60
 ) {
 	return {
 		type: "text" as const,
@@ -661,7 +661,7 @@ export function createMockCanvasTask(
 	content: string,
 	filePath: string,
 	nodeId: string,
-	completed: boolean = false,
+	completed = false,
 	originalMarkdown?: string
 ) {
 	return {

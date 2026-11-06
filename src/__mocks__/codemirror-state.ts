@@ -3,7 +3,7 @@
 export class Text {
 	content: string;
 
-	constructor(content: string = "") {
+	constructor(content = "") {
 		this.content = content;
 	}
 

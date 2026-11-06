@@ -63,15 +63,15 @@ export class ProjectsComponent extends Component {
 		isMultiSelect: false,
 	};
 	private allProjectsMap: Map<string, Set<string>> = new Map();
-	private isTreeView: boolean = false;
+	private isTreeView = false;
 	private allTasksMap: Map<string, Task> = new Map();
-	private isProjectTreeView: boolean = false;
+	private isProjectTreeView = false;
 	private projectTreeComponent?: ProjectTreeComponent;
 	private projectTree?: TreeNode<ProjectNodeData>;
 
 	private currentInfoProject: string | null = null;
 
-	private infoRenderGen: number = 0;
+	private infoRenderGen = 0;
 
 	constructor(
 		private parentEl: HTMLElement,

@@ -27,10 +27,10 @@ import { TaskTimerManager } from "@/managers/timer-manager";
 export class TaskTreeItemComponent extends Component {
 	public element: HTMLElement;
 	private task: Task;
-	private isSelected: boolean = false;
-	private isExpanded: boolean = true;
+	private isSelected = false;
+	private isExpanded = true;
 	private viewMode: string;
-	private indentLevel: number = 0;
+	private indentLevel = 0;
 	private parentContainer: HTMLElement;
 	private childrenContainer: HTMLElement;
 	private childComponents: TaskTreeItemComponent[] = [];
@@ -53,7 +53,7 @@ export class TaskTreeItemComponent extends Component {
 
 	// Timer update interval (managed by registerInterval, auto-cleaned on unload)
 	private timerEl: HTMLElement | null = null;
-	private hasActiveTimerInterval: boolean = false;
+	private hasActiveTimerInterval = false;
 
 	// Use shared editor manager instead of individual editors
 	private static editorManager: InlineEditorManager | null = null;
@@ -68,13 +68,13 @@ export class TaskTreeItemComponent extends Component {
 
 	// Selection management
 	private selectionManager: TaskSelectionManager | null = null;
-	private isTaskSelectedState: boolean = false;
+	private isTaskSelectedState = false;
 
 	constructor(
 		task: Task,
 		viewMode: string,
 		private app: App,
-		indentLevel: number = 0,
+		indentLevel = 0,
 		private childTasks: Task[] = [],
 		taskMap: Map<string, Task>,
 		private plugin: TaskProgressBarPlugin,

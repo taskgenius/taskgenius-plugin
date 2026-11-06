@@ -805,8 +805,8 @@ export class DateInheritanceService {
 	async extractDateFromParentHierarchy(
 		parentTask: Task,
 		context: DateResolutionContext,
-		maxDepth: number = 3,
-		currentDepth: number = 0
+		maxDepth = 3,
+		currentDepth = 0
 	): Promise<{ date: Date; source: string; depth: number } | null> {
 		if (currentDepth >= maxDepth) {
 			return null;

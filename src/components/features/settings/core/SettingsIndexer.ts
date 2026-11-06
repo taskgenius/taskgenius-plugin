@@ -13,7 +13,7 @@ import { t } from "@/translations/helper";
  */
 export class SettingsIndexer {
 	private index: SettingsSearchIndex;
-	private isInitialized: boolean = false;
+	private isInitialized = false;
 	private rootEl: HTMLElement | null = null;
 
 	constructor(rootEl?: HTMLElement | null) {
@@ -179,7 +179,7 @@ export class SettingsIndexer {
 	 * @param maxResults 最大结果数量
 	 * @returns 搜索结果数组
 	 */
-	public search(query: string, maxResults: number = 10): SearchResult[] {
+	public search(query: string, maxResults = 10): SearchResult[] {
 		if (!this.isInitialized) {
 			this.initialize();
 		}

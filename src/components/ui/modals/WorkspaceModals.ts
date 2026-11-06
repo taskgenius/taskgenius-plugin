@@ -41,10 +41,10 @@ export function createWorkspaceIconSelector(
 export class CreateWorkspaceModal extends Modal {
 	private nameInput: HTMLInputElement;
 	private baseSelect: HTMLSelectElement;
-	private selectedIcon: string = "layers";
-	private selectedColor: string = "#888888";
-	private name: string = "";
-	private selectWorkspaceId: string = "";
+	private selectedIcon = "layers";
+	private selectedColor = "#888888";
+	private name = "";
+	private selectWorkspaceId = "";
 
 	constructor(
 		private plugin: TaskProgressBarPlugin,

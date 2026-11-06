@@ -172,7 +172,7 @@ export class FilterDropdown extends Component {
 
 	private renderFilterValues(
 		values: string[],
-		searchTerm: string = ""
+		searchTerm = ""
 	): void {
 		// Remove existing value items and empty state, keeping back button and separator
 		const itemsToRemove = this.listContainer.querySelectorAll(
@@ -215,10 +215,10 @@ export class FilterDropdown extends Component {
 	private createListItem(
 		label: string,
 		onClick: () => void,
-		hasArrow: boolean = false,
-		isBackButton: boolean = false,
-		isValueItem: boolean = false,
-		categoryId: string = ""
+		hasArrow = false,
+		isBackButton = false,
+		isValueItem = false,
+		categoryId = ""
 	): HTMLElement {
 		const item = createEl("div", { cls: "filter-dropdown-item" });
 		if (isBackButton) item.classList.add("filter-dropdown-back");

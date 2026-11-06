@@ -162,7 +162,7 @@ export class McpLogModal extends Modal {
 				sessionId.setAttribute("title", log.sessionId);
 			}
 
-			let isExpanded: boolean = false;
+			let isExpanded = false;
 			// Toggle button for details
 			new ExtraButtonComponent(headerRow)
 				.setIcon("chevron-down")

@@ -34,9 +34,9 @@ const META_PREFIX = "meta:";
 export class InMemoryStorage {
 	private map = new Map<string, any>();
 	private currentVersion: string;
-	private schemaVersion: number = 1;
+	private schemaVersion = 1;
 
-	constructor(version: string = "1.0.0") {
+	constructor(version = "1.0.0") {
 		this.currentVersion = version;
 	}
 

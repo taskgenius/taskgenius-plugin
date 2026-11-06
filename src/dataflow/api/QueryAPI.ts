@@ -9,7 +9,7 @@ import { Repository } from "../indexer/Repository";
 export class QueryAPI {
 	private repository: Repository;
 	private taskCache: Task[] | null = null;
-	private cacheTimestamp: number = 0;
+	private cacheTimestamp = 0;
 	private readonly CACHE_DURATION = 100; // 100ms cache for synchronous access
 
 	// Promise cache for async operations to prevent duplicate requests

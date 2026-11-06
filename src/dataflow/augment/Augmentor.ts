@@ -44,7 +44,7 @@ export class Augmentor {
 	private dateInheritanceAugmentor?: DateInheritanceAugmentor;
 	private projectConfig?: ProjectConfiguration;
 	// Respect plugin setting: file frontmatter inheritance toggle
-	private fileFrontmatterInheritanceEnabled: boolean = true;
+	private fileFrontmatterInheritanceEnabled = true;
 
 	constructor(options?: {
 		inherit?: Record<string, "task" | "file" | "project" | "merge-array">;

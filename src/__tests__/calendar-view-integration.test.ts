@@ -84,7 +84,7 @@ describe("Calendar View Badge Integration", () => {
 		const badgesByDate: { [dateStr: string]: any[] } = {};
 
 		// Simulate iterating through each day in the month view
-		let currentDate = new Date(startDate);
+		const currentDate = new Date(startDate);
 		while (currentDate <= endDate) {
 			const dateStr = currentDate.toISOString().split("T")[0];
 			const badgeEvents = simulateGetBadgeEventsForDate(

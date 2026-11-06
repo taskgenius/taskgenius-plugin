@@ -271,7 +271,7 @@ export class CalendarComponent extends Component {
 		isSelected: boolean,
 		isPastDue: boolean,
 		isFuture: boolean,
-		isThisMonth: boolean = false
+		isThisMonth = false
 	) {
 		// Skip weekend days if showWeekends is false
 		const isWeekend = date.getDay() === 0 || date.getDay() === 6; // Sunday or Saturday

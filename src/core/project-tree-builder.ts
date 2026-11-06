@@ -14,7 +14,7 @@ import { getEffectiveProject } from "../utils/task/task-operations";
  * @param separator The path separator (default: "/")
  * @returns Array of path segments
  */
-export function parseProjectPath(projectName: string, separator: string = "/"): string[] {
+export function parseProjectPath(projectName: string, separator = "/"): string[] {
 	if (!projectName || !projectName.trim()) {
 		return [];
 	}
@@ -46,7 +46,7 @@ function escapeRegExp(string: string): string {
  */
 export function buildProjectTree(
 	projectsMap: Map<string, Set<string>>,
-	separator: string = "/"
+	separator = "/"
 ): TreeNode<ProjectNodeData> {
 	// Create root node
 	const root: TreeNode<ProjectNodeData> = {
@@ -160,7 +160,7 @@ function sortTreeAlphabetically(node: TreeNode<ProjectNodeData>): void {
  */
 export function buildProjectTreeFromTasks(
 	tasks: Task[],
-	separator: string = "/"
+	separator = "/"
 ): TreeNode<ProjectNodeData> {
 	// Build project map
 	const projectsMap = new Map<string, Set<string>>();

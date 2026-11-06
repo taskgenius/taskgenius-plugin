@@ -17,8 +17,8 @@ import { emit, Events, Seq } from "@/dataflow/events/Events";
 export class Repository {
 	private indexer: TaskIndexer;
 	private storage: Storage;
-	private lastSequence: number = 0;
-	private sourceSeq: number = 0; // Track source sequence to differentiate events
+	private lastSequence = 0;
+	private sourceSeq = 0; // Track source sequence to differentiate events
 	private icsEvents: Task[] = []; // Store ICS events separately
 	private fileTasks = new Map<string, Task>(); // Store file-level tasks
 

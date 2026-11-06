@@ -54,7 +54,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 	private startDateInput?: HTMLInputElement;
 	private dueDateInput?: HTMLInputElement;
 	private scheduledDateInput?: HTMLInputElement;
-	private includeTime: boolean = true;
+	private includeTime = true;
 
 	// File name input for file creation mode
 	private fileNameInput: FileNameInput | null = null;
@@ -71,7 +71,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 		app: App,
 		plugin: TaskProgressBarPlugin,
 		metadata?: TaskMetadata,
-		useFullFeaturedMode: boolean = false,
+		useFullFeaturedMode = false,
 	) {
 		// Determine initial mode from local storage, default to checkbox
 		let initialMode: QuickCaptureMode = "checkbox";

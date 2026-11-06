@@ -19,7 +19,7 @@ export class DatePickerPopover extends Component implements CloseableComponent {
 		app: App,
 		plugin?: TaskProgressBarPlugin,
 		initialDate?: string,
-		dateMark: string = "📅"
+		dateMark = "📅"
 	) {
 		super();
 		this.app = app;

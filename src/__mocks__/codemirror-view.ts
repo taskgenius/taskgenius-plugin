@@ -37,9 +37,9 @@ export class ViewPlugin {
 }
 
 export class ViewUpdate {
-	docChanged: boolean = false;
-	selectionSet: boolean = false;
-	viewportChanged: boolean = false;
+	docChanged = false;
+	selectionSet = false;
+	viewportChanged = false;
 	view: EditorView;
 
 	constructor(view: EditorView) {
@@ -77,7 +77,7 @@ export class Decoration {
 
 export class DecorationSet {
 	static empty = Decoration.none;
-	size: number = 0;
+	size = 0;
 
 	update(spec: any) {
 		return this;

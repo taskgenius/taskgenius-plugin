@@ -12,7 +12,7 @@ export class TreeManager extends Component {
 	private expandedNodes: Set<string> = new Set();
 	private treeNodes: Map<string, TreeNode> = new Map();
 	private columns: TableColumn[] = [];
-	private currentSortField: string = "";
+	private currentSortField = "";
 	private currentSortOrder: "asc" | "desc" = "asc";
 	private pluginSettings: any; // Plugin settings for sorting
 

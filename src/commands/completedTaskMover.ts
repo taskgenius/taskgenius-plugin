@@ -380,7 +380,7 @@ export class TaskUtils {
 		settings: any,
 		currentFile: TFile,
 		app: App,
-		isSourceFile: boolean = true
+		isSourceFile = true
 	): {
 		content: string;
 		linesToRemove: number[];
@@ -490,7 +490,7 @@ export class TaskUtils {
 		settings: any,
 		currentFile: TFile,
 		app: App,
-		isSourceFile: boolean = true
+		isSourceFile = true
 	): {
 		content: string;
 		linesToRemove: number[];
@@ -675,7 +675,7 @@ export class TaskUtils {
 						tasksToInclude.add(task.index);
 
 						// Add all parent tasks up to the root task
-						let currentTask = task;
+						const currentTask = task;
 						let parentIndex = this.findParentTaskIndex(
 							currentTask.index,
 							currentTask.indent,
@@ -837,7 +837,7 @@ export class TaskUtils {
 						tasksToInclude.add(task.index);
 
 						// Add all parent tasks up to the root task
-						let currentTask = task;
+						const currentTask = task;
 						let parentIndex = this.findParentTaskIndex(
 							currentTask.index,
 							currentTask.indent,
@@ -895,7 +895,7 @@ export class TaskUtils {
 
 					// Add marker to parent tasks that are preserved
 					if (parentTasksToPreserve.has(taskIndex)) {
-						let taskLine = this.addMarkerToIncompletedTask(
+						const taskLine = this.addMarkerToIncompletedTask(
 							task.line,
 							settings,
 							currentFile,
@@ -1336,7 +1336,7 @@ export class CompletedTaskBlockSelectionModal extends SuggestModal<{
 			const lines = fileContent.split("\n");
 
 			let insertPosition: number;
-			let indentLevel: number = 0;
+			let indentLevel = 0;
 
 			if (block.id === "beginning") {
 				insertPosition = 0;
@@ -1593,7 +1593,7 @@ export async function autoMoveCompletedTasks(
 		const lines = fileContent.split("\n");
 
 		let insertPosition: number;
-		let indentLevel: number = 0;
+		const indentLevel = 0;
 
 		// Determine insertion position based on mode
 		switch (defaultInsertionMode) {

@@ -360,7 +360,7 @@ export class IcsSettingsComponent {
 		});
 	}
 
-	private truncateUrl(url: string, maxLength: number = 50): string {
+	private truncateUrl(url: string, maxLength = 50): string {
 		if (url.length <= maxLength) return url;
 		return url.substring(0, maxLength - 3) + "...";
 	}

@@ -68,7 +68,7 @@ export abstract class TwoColumnViewBase<T extends string> extends Component {
 		tasks: [],
 		isMultiSelect: false,
 	};
-	protected isTreeView: boolean = false;
+	protected isTreeView = false;
 
 	// Events
 	public onTaskSelected: (task: Task) => void;

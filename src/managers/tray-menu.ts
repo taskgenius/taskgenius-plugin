@@ -31,7 +31,7 @@ export class TrayMenuBuilder {
 		}
 	}
 
-	private async buildDueTasks(limit: number = 5): Promise<Task[]> {
+	private async buildDueTasks(limit = 5): Promise<Task[]> {
 		const df = this.plugin.dataflowOrchestrator as any;
 		const queryAPI = df?.getQueryAPI?.();
 		if (!queryAPI) return [];

@@ -22,7 +22,7 @@ const CACHE_DURATION = 30000; // 30 seconds
 // Helper function to get cached data
 export async function getCachedData(
 	plugin: TaskProgressBarPlugin,
-	forceRefresh: boolean = false,
+	forceRefresh = false,
 ): Promise<GlobalAutoCompleteCache> {
 	const now = Date.now();
 
@@ -463,7 +463,7 @@ export class ImageSuggest extends CustomSuggest {
  * A class that provides file suggestions for the quick capture target field
  */
 export class FileSuggest extends AbstractInputSuggest<TFile> {
-	private currentTarget: string = "Quick Capture.md";
+	private currentTarget = "Quick Capture.md";
 	scope: Scope;
 	onFileSelected: (file: TFile) => void;
 

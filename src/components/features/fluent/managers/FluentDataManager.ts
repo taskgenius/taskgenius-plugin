@@ -321,7 +321,7 @@ export class FluentDataManager extends Component {
 
 		// Get timer manager instance if timer feature is enabled
 		let timerManager: TaskTimerManager | null = null;
-		let activeTimerBlockIds: Set<string> = new Set();
+		const activeTimerBlockIds: Set<string> = new Set();
 
 		if (this.plugin.settings.taskTimer?.enabled) {
 			timerManager = new TaskTimerManager(this.plugin.settings.taskTimer);

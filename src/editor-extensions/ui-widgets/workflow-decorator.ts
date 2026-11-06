@@ -302,9 +302,9 @@ export function workflowDecoratorExtension(
 	return ViewPlugin.fromClass(
 		class implements PluginValue {
 			decorations: DecorationSet = Decoration.none;
-			private lastDocVersion: number = 0;
-			private lastViewportFrom: number = 0;
-			private lastViewportTo: number = 0;
+			private lastDocVersion = 0;
+			private lastViewportFrom = 0;
+			private lastViewportTo = 0;
 			private decorationCache = new Map<string, Range<Decoration>>();
 			private updateTimeout: number | null = null;
 			private readonly MAX_CACHE_SIZE = 100; // Limit cache size to prevent memory leaks

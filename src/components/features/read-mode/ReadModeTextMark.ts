@@ -391,7 +391,7 @@ class TaskTextMark extends Component {
 			return null;
 		}
 
-		let currentState: string =
+		const currentState: string =
 			Object.keys(marks).find((state) => marks[state] === mark) ||
 			remainingCycle[0];
 

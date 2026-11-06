@@ -2901,7 +2901,7 @@ export class WriteAPI {
 					}
 
 					// Start from base date and keep month anchor for rollover handling
-					let nextDate = new Date(baseDate);
+					const nextDate = new Date(baseDate);
 					const monthAnchor = baseDate.getDate();
 
 					const advance = () => {
@@ -2959,7 +2959,7 @@ export class WriteAPI {
 				const interval = parseInt(simpleMatch[1]);
 				const unit = simpleMatch[2];
 
-				let nextDate = new Date(baseDate);
+				const nextDate = new Date(baseDate);
 				const monthAnchor = baseDate.getDate();
 
 				const advance = () => {

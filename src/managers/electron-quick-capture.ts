@@ -13,7 +13,7 @@ export class ElectronQuickCapture {
 	// private ownerWindow: any = null; // Removed - no longer using parent window
 	private captureResolve: ((value: any) => void) | null = null;
 	private captureReject: ((reason?: any) => void) | null = null;
-	private isClosingNormally: boolean = false;
+	private isClosingNormally = false;
 
 	constructor(plugin: TaskProgressBarPlugin) {
 		this.plugin = plugin;

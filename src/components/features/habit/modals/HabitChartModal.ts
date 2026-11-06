@@ -41,8 +41,8 @@ export class HabitChartModal extends Modal {
 		const controls = contentEl.createDiv({ cls: "habit-chart-controls" });
 		const earliestYear = Number(this.earliestDateStr.slice(0, 4));
 		const currentYear = new Date().getFullYear();
-		let selectedRange: string = "all"; // all | 7d | 30d | 365d | year
-		let selectedYear: string = String(currentYear);
+		let selectedRange = "all"; // all | 7d | 30d | 365d | year
+		let selectedYear = String(currentYear);
 
 		const rangeSetting = new Setting(controls)
 			.setName(t("Range"))
@@ -173,7 +173,7 @@ export class HabitChartModal extends Modal {
 					cls: `heatmap-cell heatmap-cell-square`,
 				});
 				cell.dataset.date = dateStr;
-				let tooltip =
+				const tooltip =
 					`${dateStr}: ` +
 					(cellValue == null
 						? t("Missed")
@@ -219,7 +219,7 @@ export class HabitChartModal extends Modal {
 					cls: `heatmap-cell heatmap-cell-square`,
 				});
 				cell.dataset.date = dateStr;
-				let tooltip =
+				const tooltip =
 					`${dateStr}: ` +
 					(cellValue == null
 						? t("Missed")

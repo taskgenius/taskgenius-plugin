@@ -61,12 +61,12 @@ const LAST_USED_MODE_KEY = "task-genius.lastUsedQuickCaptureMode";
 export abstract class BaseQuickCaptureModal extends Modal {
 	plugin: TaskProgressBarPlugin;
 	protected markdownEditor: EmbeddableMarkdownEditor | null = null;
-	protected capturedContent: string = "";
+	protected capturedContent = "";
 	protected taskMetadata: TaskMetadata = {};
 	protected currentMode: QuickCaptureMode;
 	protected suggestManager: SuggestManager;
-	protected inlineModeAvailable: boolean = true;
-	protected fileModeAvailable: boolean = false;
+	protected inlineModeAvailable = true;
+	protected fileModeAvailable = false;
 
 	// UI Elements
 	protected headerContainer: HTMLElement | null = null;
@@ -74,9 +74,9 @@ export abstract class BaseQuickCaptureModal extends Modal {
 	protected footerContainer: HTMLElement | null = null;
 
 	// Settings
-	protected tempTargetFilePath: string = "";
+	protected tempTargetFilePath = "";
 	protected preferMetadataFormat: "dataview" | "tasks" = "tasks";
-	protected keepOpenAfterCapture: boolean = false;
+	protected keepOpenAfterCapture = false;
 
 	constructor(
 		app: App,

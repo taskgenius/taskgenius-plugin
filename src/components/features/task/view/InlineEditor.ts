@@ -37,9 +37,9 @@ export class InlineEditor extends Component {
 	private containerEl: HTMLElement;
 	private task: Task;
 	private options: InlineEditorOptions;
-	private isEditing: boolean = false;
+	private isEditing = false;
 	private originalTask: Task | null = null;
-	private isSaving: boolean = false;
+	private isSaving = false;
 
 	// Edit elements - only created when needed
 	private contentInput: HTMLTextAreaElement | null = null;

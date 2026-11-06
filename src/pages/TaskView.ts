@@ -102,7 +102,7 @@ export class TaskView extends ItemView {
 	private currentViewId: ViewMode = "inbox";
 	private currentSelectedTaskId: string | null = null;
 	private currentSelectedTaskDOM: HTMLElement | null = null;
-	private lastToggleTimestamp: number = 0;
+	private lastToggleTimestamp = 0;
 	private habitComponent: Habit;
 
 	private tabActionButton: HTMLElement;
@@ -995,7 +995,7 @@ export class TaskView extends ItemView {
 	private switchView(
 		viewId: ViewMode,
 		project?: string | null,
-		forceRefresh: boolean = false,
+		forceRefresh = false,
 	) {
 		// Exit selection mode when switching views
 		if (this.selectionManager.isSelectionMode) {
@@ -1463,8 +1463,8 @@ export class TaskView extends ItemView {
 	}
 
 	private async loadTasks(
-		forceSync: boolean = false,
-		skipViewUpdate: boolean = false,
+		forceSync = false,
+		skipViewUpdate = false,
 	) {
 		// Only use dataflow - TaskManager is deprecated
 		if (!this.plugin.dataflowOrchestrator) {
@@ -1499,7 +1499,7 @@ export class TaskView extends ItemView {
 	/**
 	 * Load tasks fast using cached data - for UI initialization
 	 */
-	private async loadTasksFast(skipViewUpdate: boolean = false) {
+	private async loadTasksFast(skipViewUpdate = false) {
 		// Only use dataflow
 		if (!this.plugin.dataflowOrchestrator) {
 			console.warn(

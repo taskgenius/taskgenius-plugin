@@ -150,7 +150,7 @@ export class CanvasTaskOperationUtils {
 	 */
 	public formatTaskForCanvas(
 		task: Task,
-		preserveMetadata: boolean = true
+		preserveMetadata = true
 	): string {
 		if (task.originalMarkdown && preserveMetadata) {
 			return task.originalMarkdown;
@@ -210,7 +210,7 @@ export class CanvasTaskOperationUtils {
 		// Find a good position for the new node (avoid overlaps)
 		const existingNodes = canvasData.nodes;
 		let x = 0;
-		let y = 0;
+		const y = 0;
 
 		if (existingNodes.length > 0) {
 			// Position new node to the right of existing nodes

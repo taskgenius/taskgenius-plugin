@@ -56,7 +56,7 @@ export class ForecastComponent extends Component {
 	private dateSections: DateSection[] = [];
 	private focusFilter: string | null = null;
 	private windowFocusHandler: () => void;
-	private isTreeView: boolean = false;
+	private isTreeView = false;
 	private treeComponents: TaskTreeItemComponent[] = [];
 	private allTasksMap: Map<string, Task> = new Map();
 
@@ -1131,7 +1131,7 @@ export class ForecastComponent extends Component {
 			const date = new Date(year, month - 1, day);
 			const tasks = dateMap.get(dateKey)!;
 
-			let title = this.formatSectionTitleForDate(date);
+			const title = this.formatSectionTitleForDate(date);
 
 			this.dateSections.push({
 				title: title,

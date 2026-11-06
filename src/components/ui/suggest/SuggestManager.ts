@@ -19,7 +19,7 @@ export class SuggestManager {
 	private config: SuggestManagerConfig;
 	private activeSuggests: Map<string, EditorSuggest<any>> = new Map();
 	private originalSuggestsOrder: EditorSuggest<any>[] = [];
-	private isManaging: boolean = false;
+	private isManaging = false;
 
 	constructor(app: App, plugin: TaskProgressBarPlugin, config?: Partial<SuggestManagerConfig>) {
 		this.app = app;
@@ -131,7 +131,7 @@ export class SuggestManager {
 	/**
 	 * Enable suggests for a specific editor context
 	 */
-	enableForEditor(editor: Editor, contextId: string = "default"): UniversalEditorSuggest {
+	enableForEditor(editor: Editor, contextId = "default"): UniversalEditorSuggest {
 		const suggest = this.createUniversalSuggest(contextId, {
 			contextFilter: (ed, file) => ed === editor,
 		});

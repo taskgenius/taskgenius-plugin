@@ -43,7 +43,7 @@ export class TaskMetadataEditor extends Component {
 	private plugin: TaskProgressBarPlugin;
 	private app: App;
 	private isCompactMode: boolean;
-	private activeTab: string = "overview"; // Default active tab
+	private activeTab = "overview"; // Default active tab
 
 	onMetadataChange: (event: MetadataChangeEvent) => void;
 

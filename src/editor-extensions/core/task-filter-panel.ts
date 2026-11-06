@@ -48,7 +48,7 @@ export const updateHiddenTaskRanges =
 export const taskFilterState = StateField.define<boolean>({
 	create: () => false,
 	update(value, tr) {
-		for (let e of tr.effects) {
+		for (const e of tr.effects) {
 			if (e.is(toggleTaskFilter)) {
 				if (tr.state.field(editorInfoField)?.file) {
 					value = e.value;
@@ -67,7 +67,7 @@ export const taskFilterState = StateField.define<boolean>({
 export const activeFiltersState = StateField.define<TaskFilterOptions>({
 	create: () => ({ ...DEFAULT_FILTER_OPTIONS }),
 	update(value, tr) {
-		for (let e of tr.effects) {
+		for (const e of tr.effects) {
 			if (e.is(updateActiveFilters)) {
 				value = e.value;
 			}
@@ -207,7 +207,7 @@ export const hiddenTaskRangesState = StateField.define<
 	create: () => [],
 	update(value, tr) {
 		// Update if there's an explicit update effect
-		for (let e of tr.effects) {
+		for (const e of tr.effects) {
 			if (e.is(updateHiddenTaskRanges)) {
 				return e.value;
 			}
@@ -1382,7 +1382,7 @@ function findAllTasks(
 			// Extract priority
 			priorityRegex.lastIndex = 0;
 			const priorityMatch = priorityRegex.exec(taskText);
-			let priority = priorityMatch ? priorityMatch[0] : undefined;
+			const priority = priorityMatch ? priorityMatch[0] : undefined;
 
 			// Extract tags
 			tagRegex.lastIndex = 0;
@@ -1395,7 +1395,7 @@ function findAllTasks(
 			// Extract date
 			dateRegex.lastIndex = 0;
 			const dateMatch = dateRegex.exec(taskText);
-			let date = dateMatch ? dateMatch[0] : undefined;
+			const date = dateMatch ? dateMatch[0] : undefined;
 
 			// Create the task object
 			const task: Task = {

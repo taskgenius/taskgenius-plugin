@@ -48,7 +48,7 @@ export class ProjectDataWorkerManager {
 	// Worker round-robin index for load balancing
 	private currentWorkerIndex = 0;
 	// Whether workers have been initialized to prevent multiple initialization
-	private initialized: boolean = false;
+	private initialized = false;
 
 	constructor(options: ProjectDataWorkerManagerOptions) {
 		this.vault = options.vault;

@@ -27,8 +27,8 @@ export class HabitEditDialog extends Modal {
 	habitData: BaseHabitData | null = null;
 	onSubmit: (habit: BaseHabitData) => void;
 	isNew: boolean;
-	habitType: string = "daily";
-	iconInput: string = "circle-check";
+	habitType = "daily";
+	iconInput = "circle-check";
 
 	constructor(
 		app: App,
@@ -527,7 +527,7 @@ export class HabitEditDialog extends Modal {
 		// Event editor function
 		const createEventEditor = (
 			event: ScheduledEvent = { name: "", details: "" },
-			propertyKey: string = ""
+			propertyKey = ""
 		) => {
 			const row = eventsContainer.createDiv({ cls: "habit-event-row" });
 

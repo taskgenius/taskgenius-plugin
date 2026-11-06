@@ -33,10 +33,10 @@ export class OnCompletionConfigurator extends Component {
 	private actionTypeDropdown: DropdownComponent;
 	private configContainer: HTMLElement;
 	private currentConfig: OnCompletionConfig | null = null;
-	private currentRawValue: string = "";
-	private isInternalUpdate: boolean = false;
+	private currentRawValue = "";
+	private isInternalUpdate = false;
 	private lastActionType: OnCompletionActionType | null = null;
-	private isUserConfiguring: boolean = false;
+	private isUserConfiguring = false;
 
 	// Action-specific input components
 	private taskIdsInput?: TextComponent;

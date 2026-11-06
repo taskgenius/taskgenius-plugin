@@ -70,7 +70,7 @@ export const toggleQuickCapture = StateEffect.define<boolean>();
 export const quickCaptureState = StateField.define<boolean>({
 	create: () => false,
 	update(value, tr) {
-		for (let e of tr.effects) {
+		for (const e of tr.effects) {
 			if (e.is(toggleQuickCapture)) {
 				if (tr.state.field(editorInfoField)?.file) {
 					value = e.value;
@@ -345,7 +345,7 @@ function createQuickCapturePanel(view: EditorView): Panel {
 	});
 
 	// Task metadata state
-	let taskMetadata: TaskMetadata = {};
+	const taskMetadata: TaskMetadata = {};
 
 	// Date button
 	const dateButton = quickActionsContainer.createEl("button", {

@@ -805,7 +805,7 @@ export class FluentActionHandlers extends Component {
 	private openDatePicker(
 		task: Task,
 		dateType: TaskDateType,
-		isPostpone: boolean = false
+		isPostpone = false
 	): void {
 		const currentDate = task.metadata?.[dateType];
 		const initialDate =

@@ -93,11 +93,11 @@ function sanitizeFilePath(filePath: string): string {
 export class QuickCaptureModal extends Modal {
 	plugin: TaskProgressBarPlugin;
 	markdownEditor: EmbeddableMarkdownEditor | null = null;
-	capturedContent: string = "";
+	capturedContent = "";
 
-	tempTargetFilePath: string = "";
+	tempTargetFilePath = "";
 	taskMetadata: TaskMetadata = {};
-	useFullFeaturedMode: boolean = false;
+	useFullFeaturedMode = false;
 
 	previewContainerEl: HTMLElement | null = null;
 	markdownRenderer: MarkdownRendererComponent | null = null;
@@ -124,7 +124,7 @@ export class QuickCaptureModal extends Modal {
 		app: App,
 		plugin: TaskProgressBarPlugin,
 		metadata?: TaskMetadata,
-		useFullFeaturedMode: boolean = false,
+		useFullFeaturedMode = false,
 	) {
 		super(app);
 		this.plugin = plugin;
