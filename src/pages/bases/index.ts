@@ -45,8 +45,7 @@ export {
  * - task-genius-calendar: Calendar layout
  * - task-genius-kanban: Kanban board
  * - task-genius-gantt: Gantt chart
- * - task-genius-review: Task review interface
- * - task-genius-habits: Habit tracking
+ * * - task-genius-habits: Habit tracking
  * - task-genius-flagged: High-priority flagged tasks
  * - task-genius-unified: Configurable unified view
  * - task-genius-custom: Fully customizable view

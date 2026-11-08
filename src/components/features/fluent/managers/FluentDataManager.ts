@@ -7,6 +7,8 @@ import { isDataflowEnabled } from "@/dataflow/createDataflow";
 import { Events, on } from "@/dataflow/events/Events";
 import { sortTasks } from "@/commands/sortTaskCommands";
 import { TaskTimerManager } from "@/managers/timer-manager";
+import { PresetTaskFilter } from "@/common/setting-definition";
+import { evaluateFilterNode, parseAdvancedFilterQuery } from "@/utils/task/filter-compatibility";
 
 /**
  * FluentDataManager - Stateless data loading, filtering, and sorting executor
@@ -52,6 +54,7 @@ export class FluentDataManager extends Component {
 			selectedProject: string | undefined;
 			searchQuery: string;
 			filterInputValue: string;
+			activeTaskPreset: PresetTaskFilter["options"] | null;
 		},
 		private isInitializing: () => boolean,
 	) {
@@ -197,6 +200,65 @@ export class FluentDataManager extends Component {
 				filteredTasks,
 				filterOptions.v2Filters,
 			);
+		}
+
+		const preset = filterState.activeTaskPreset;
+		if (preset) {
+			const marks = this.plugin.settings.taskStatuses;
+			const split = (value?: string) => String(value || "").split("|").map(mark => mark.toLowerCase());
+			const inProgress = split(marks?.inProgress);
+			const completed = split(marks?.completed);
+			const abandoned = split(marks?.abandoned);
+			const planned = split(marks?.planned);
+			const notStarted = split(marks?.notStarted || " ");
+			const statusMatch = (task: Task) => {
+				const mark = String(task.status ?? " ").toLowerCase();
+				if (task.completed || completed.includes(mark)) return preset.includeCompleted;
+				if (abandoned.includes(mark)) return preset.includeAbandoned;
+				if (inProgress.includes(mark)) return preset.includeInProgress;
+				if (planned.includes(mark)) return preset.includePlanned;
+				if (notStarted.includes(mark)) return preset.includeNotStarted;
+				return preset.includeNotStarted;
+			};
+			const queryMatch = (task: Task) => {
+				const query = preset.advancedFilterQuery?.trim();
+				if (!query) return true;
+				const mark = String(task.status ?? " ").toLowerCase();
+				const statusName = task.completed || completed.includes(mark) ? "completed"
+					: abandoned.includes(mark) ? "abandoned"
+					: inProgress.includes(mark) ? "in-progress"
+					: planned.includes(mark) ? "planned"
+					: "not-started";
+				return evaluateFilterNode(parseAdvancedFilterQuery(query), { ...task, statusName });
+			};
+			const directMatches = new Set<string>();
+			for (const task of filteredTasks) {
+				const matchesQuery = queryMatch(task);
+				const matchesPreset = preset.filterMode === "EXCLUDE" ? !matchesQuery : matchesQuery;
+				if (statusMatch(task) && matchesPreset) directMatches.add(task.id);
+			}
+			const included = new Set(directMatches);
+			const allById = new Map(tasks.map(task => [task.id, task]));
+			for (const id of directMatches) {
+				const task = allById.get(id);
+				if (!task) continue;
+				const parentId = task.metadata?.parent;
+				if (preset.includeParentTasks && parentId) included.add(parentId);
+				if (preset.includeSiblingTasks && parentId) {
+					for (const sibling of tasks) if (sibling.metadata?.parent === parentId) included.add(sibling.id);
+				}
+				if (preset.includeChildTasks) {
+					const addChildren = (parent: Task) => {
+						for (const childId of parent.metadata?.children || []) {
+							included.add(childId);
+							const child = allById.get(childId);
+							if (child) addChildren(child);
+						}
+					};
+					addChildren(task);
+				}
+			}
+			filteredTasks = tasks.filter(task => included.has(task.id));
 		}
 
 		console.log(

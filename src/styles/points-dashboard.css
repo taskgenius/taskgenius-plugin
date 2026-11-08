@@ -1,0 +1,31 @@
+.tg-points-page {
+	box-sizing: border-box;
+	width: 100%;
+	height: 100%;
+	overflow: auto;
+	padding: clamp(18px, 3vw, 42px);
+	color: var(--text-normal);
+	background: radial-gradient(ellipse at 85% 0%, color-mix(in srgb, var(--interactive-accent) 12%, transparent), transparent 42%);
+}
+.tg-points-header { display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; margin:0 auto 26px; max-width:1220px; }
+.tg-points-heading { font-size:1.8em; font-weight:700; letter-spacing:-.025em; }
+.tg-points-subtitle,.tg-points-date,.tg-points-label { color:var(--text-muted); }
+.tg-points-summary,.tg-points-columns { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; max-width:1220px; margin:0 auto 18px; }
+.tg-points-card,.tg-points-panel { border:1px solid var(--background-modifier-border); border-radius:16px; background:color-mix(in srgb,var(--background-secondary) 88%,transparent); box-shadow:0 10px 34px color-mix(in srgb,#000 10%,transparent); }
+.tg-points-card { min-height:118px; padding:22px; }
+.tg-points-card.is-primary { background:linear-gradient(130deg,color-mix(in srgb,var(--interactive-accent) 18%,var(--background-secondary)),var(--background-secondary)); }
+.tg-points-balance { margin-top:10px; font-size:2.5em; font-weight:750; }
+.tg-points-columns { grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr); align-items:start; }
+.tg-points-panel { padding:22px; min-width:0; }
+.tg-points-panel h3 { margin:0 0 18px; }
+.tg-points-entry,.tg-reward-card { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:14px 0; border-top:1px solid var(--background-modifier-border); }
+.tg-points-delta { color:var(--color-green); font-weight:650; white-space:nowrap; }
+.tg-points-delta.is-negative { color:var(--color-red); }
+.tg-points-date { margin-top:4px; font-size:.82em; }
+.tg-points-shop-header,.tg-reward-actions { display:flex; align-items:center; gap:8px; }
+.tg-points-shop-header { justify-content:space-between; }
+.tg-reward-actions button { padding:4px 8px; }
+.tg-reward-name { font-weight:600; }
+.tg-points-empty { padding:24px 0; color:var(--text-muted); }
+@media(max-width:850px) { .tg-points-columns { grid-template-columns:1fr; } .tg-points-summary { grid-template-columns:1fr 1fr; } }
+@media(max-width:520px) { .tg-points-summary { grid-template-columns:1fr; } .tg-points-header { align-items:flex-start; flex-direction:column; } .tg-points-panel { padding:16px; } }

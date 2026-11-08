@@ -183,6 +183,7 @@ export class TaskMetadataEditor extends Component {
 	}
 
 	private populateDetailsTabContent(pane: HTMLElement): void {
+		this.createPointsEditor(pane);
 		this.createProjectEditor(pane);
 		this.createTagsEditor(pane);
 		this.createContextEditor(pane);
@@ -204,6 +205,7 @@ export class TaskMetadataEditor extends Component {
 		});
 
 		// Project editor
+		this.createPointsEditor(metadataContainer);
 		this.createProjectEditor(metadataContainer);
 
 		// Tags editor
@@ -251,6 +253,21 @@ export class TaskMetadataEditor extends Component {
 		this.createOnCompletionEditor(metadataContainer);
 		this.createDependsOnEditor(metadataContainer);
 		this.createIdEditor(metadataContainer);
+	}
+
+	private createPointsEditor(container: HTMLElement): void {
+		const field = container.createDiv({ cls: "field-container task-points-field" });
+		field.createEl("label", { text: t("Task points") });
+		const input = new TextComponent(field.createDiv());
+		input.setPlaceholder(t("Default points"));
+		input.inputEl.type = "number";
+		input.inputEl.min = "0";
+		input.setValue(this.task.metadata.points == null ? "" : String(this.task.metadata.points));
+		input.onChange(value => {
+			const trimmed = value.trim();
+			const points = Number(trimmed);
+			if (!trimmed || Number.isFinite(points)) this.notifyMetadataChange("points", trimmed === "" ? undefined : Math.max(0, points));
+		});
 	}
 
 	/**

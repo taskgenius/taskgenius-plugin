@@ -175,6 +175,8 @@ export interface HabitDefinition {
 	 * alternate-day schedule.
 	 */
 	intervalDays: number;
+	/** Number of consecutive days available to log one interval occurrence. */
+	intervalWindowDays?: number;
 	/** Fixed calendar cycle, or a new interval after actual completion. */
 	intervalMode?: "fixed" | "completion";
 	/**
@@ -320,8 +322,10 @@ export interface NewHabitOptions {
 	weekdays: number[];
 	monthDay: number;
 	intervalDays: number;
+	intervalWindowDays?: number;
 	/** Fixed calendar cycle, or a new interval after actual completion. */
 	intervalMode?: "fixed" | "completion";
+	restartIntervalCycle?: boolean;
 	times: string[];
 	target: number;
 	unit: string;

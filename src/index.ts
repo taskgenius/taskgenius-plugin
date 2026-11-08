@@ -80,6 +80,7 @@ import "./styles/task-status.css";
 import "./styles/task-selection.css";
 import "./styles/quadrant/quadrant.css";
 import "./styles/onboarding.css";
+import "./styles/points-dashboard.css";
 import "./styles/universal-suggest.css";
 import "./styles/noise.css";
 import "./styles/changelog.css";
@@ -511,9 +512,9 @@ export default class TaskProgressBarPlugin extends Plugin {
 		this.initializeWriteAPI();
 		this.initializeOnCompletionManager();
 
-		if (this.settings.rewards.enableRewards) {
-			this.initializeRewardManager();
-		}
+		// Points are part of the built-in dashboard even when random rewards are
+		// disabled. RewardManager owns both point awards and optional rewards.
+		this.initializeRewardManager();
 
 		this.scheduleExtendedCommands();
 

@@ -23,6 +23,7 @@ import { t } from "@/translations/helper";
 import { ViewMode, TopNavigation } from "../components/FluentTopNavigation";
 import { TaskSelectionManager } from "@/components/features/task/selection/TaskSelectionManager";
 import { ErrorContext } from "@/types/fluent-types";
+import { PointsDashboard } from "@/components/features/rewards/PointsDashboard";
 
 type ManagedViewComponent = {
 	containerEl: HTMLElement;
@@ -83,6 +84,7 @@ export class FluentComponentManager extends Component {
 	private projectsComponent: ProjectsComponent;
 	private reviewComponent: ReviewComponent;
 	private habitComponent: Habit;
+	private pointsComponent: PointsDashboard;
 	private calendarComponent: CalendarComponent;
 	private kanbanComponent: KanbanComponent;
 	private ganttComponent: GanttComponent;
@@ -320,6 +322,10 @@ export class FluentComponentManager extends Component {
 		this.habitComponent = new Habit(this.plugin, this.contentArea);
 		this.parentView.addChild(this.habitComponent);
 		this.habitComponent.load();
+
+		this.pointsComponent = new PointsDashboard(this.app, this.plugin, this.contentArea);
+		this.parentView.addChild(this.pointsComponent);
+		this.pointsComponent.load();
 
 		// Initialize CalendarComponent
 		this.calendarComponent = new CalendarComponent(
@@ -571,6 +577,9 @@ export class FluentComponentManager extends Component {
 			} else {
 				// Standard view types
 				switch (viewId) {
+					case "points":
+						targetComponent = this.pointsComponent;
+						break;
 					case "habit":
 						targetComponent = this.habitComponent;
 						break;

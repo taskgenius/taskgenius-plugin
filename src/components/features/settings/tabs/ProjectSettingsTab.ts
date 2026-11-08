@@ -7,9 +7,17 @@ export function renderProjectSettingsTab(
 	containerEl: HTMLElement,
 ) {
 	new Setting(containerEl)
-		.setName(t("Project Management"))
+		.setName(t("Project notes"))
+		.setDesc(t("Create, edit and archive project Markdown notes from the Projects page. New tasks assigned to a project are moved into its note."))
+		.setHeading();
+	const legacySection = containerEl.createEl("details", { cls: "tg-legacy-project-settings" });
+	legacySection.createEl("summary", { text: t("Legacy project detection settings") });
+	containerEl = legacySection.createDiv({ cls: "tg-legacy-project-settings-content" });
+
+	new Setting(containerEl)
+		.setName(t("Additional project detection"))
 		.setDesc(
-			t("Configure project display, organization and metadata mappings"),
+			t("Compatibility options for existing path, tag and config-file project setups. These do not affect new project notes."),
 		)
 		.setHeading();
 

@@ -282,17 +282,11 @@ export function renderIndexSettingsTab(
 		const isDataviewFormat =
 			settingTab.plugin.settings.preferMetadataFormat === "dataview";
 
-		// Project tag prefix
+		// Keep this only as a reader setting for existing project markers.
 		new Setting(containerEl)
-			.setName(t("Project tag prefix"))
+			.setName(t("Legacy project marker prefix"))
 			.setDesc(
-				isDataviewFormat
-					? t(
-							"Customize the prefix used for project tags in dataview format (e.g., 'project' for [project:: myproject]). Changes require reindexing.",
-						)
-					: t(
-							"Customize the prefix used for project tags (e.g., 'project' for #project/myproject). Changes require reindexing.",
-						),
+				t("Used only to recognize existing project markers while migrating old tasks. New project assignments use project notes.")
 			)
 			.addText((text) => {
 				text.setPlaceholder("project")

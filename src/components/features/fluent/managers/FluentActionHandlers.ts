@@ -197,7 +197,6 @@ export class FluentActionHandlers extends Component {
 			}
 
 			const updated = writeResult.task || updatedTask;
-
 			// Notify about task update
 			this.onTaskUpdated?.(originalTask.id, updated);
 
@@ -1050,6 +1049,7 @@ export class FluentActionHandlers extends Component {
 	 * Handle navigation to a view or create new task
 	 */
 	handleNavigate(viewId: string): void {
+		if (viewId === "review") viewId = "projects";
 		if (viewId === "new-task") {
 			new QuickCaptureModal(this.app, this.plugin).open();
 		} else {

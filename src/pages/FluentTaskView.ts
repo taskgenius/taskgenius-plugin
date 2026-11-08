@@ -31,6 +31,7 @@ import { FluentWorkspaceStateManager } from "@/components/features/fluent/manage
 import { FluentActionHandlers } from "@/components/features/fluent/managers/FluentActionHandlers";
 import { TaskSelectionManager } from "@/components/features/task/selection/TaskSelectionManager";
 import { getViewSettingOrDefault } from "@/common/setting-definition";
+import { PresetTaskFilter } from "@/common/setting-definition";
 
 export const FLUENT_TASK_VIEW = "fluent-task-genius-view";
 
@@ -92,6 +93,7 @@ export class FluentTaskView extends ItemView {
 	// Filter state
 	private currentFilterState: RootFilterState | null = null;
 	private liveFilterState: RootFilterState | null = null;
+	private activeTaskPreset: PresetTaskFilter["options"] | null = null;
 
 	// Selection state
 	private selectedTask: Task | null = null;
@@ -360,7 +362,7 @@ export class FluentTaskView extends ItemView {
 			const restored =
 				this.workspaceStateManager.restoreFilterStateFromWorkspace();
 			if (restored?.activeViewId) {
-				this.currentViewId = restored.activeViewId;
+				this.currentViewId = restored.activeViewId === "review" ? "projects" : restored.activeViewId;
 			}
 			this.workspaceStateManager.syncFilterState(restored, {
 				setLiveFilterState: (state) => {
@@ -475,6 +477,7 @@ export class FluentTaskView extends ItemView {
 				selectedProject: this.viewState.selectedProject || undefined,
 				searchQuery: this.viewState.searchQuery || "",
 				filterInputValue: this.viewState.filterInputValue || "",
+				activeTaskPreset: this.activeTaskPreset,
 			}),
 			() => this.isInitializing
 		);
@@ -882,9 +885,12 @@ export class FluentTaskView extends ItemView {
 			this.plugin,
 			(query: string) => this.actionHandlers.handleSearch(query),
 			(mode: ViewMode) => this.actionHandlers.handleViewModeChange(mode),
-			() => {
-				// Filter click callback (currently unused)
-				// Note: Filter functionality is implemented in FluentLayoutManager via addAction
+			(presetId) => {
+				this.activeTaskPreset = presetId
+					? this.plugin.settings.taskFilter?.presetTaskFilters?.find(preset => preset.id === presetId)?.options || null
+					: null;
+				this.filteredTasks = this.dataManager.applyFilters(this.tasks);
+				this.updateView();
 			},
 			() => {
 				// Sort click callback (future extension point)
@@ -1019,7 +1025,7 @@ export class FluentTaskView extends ItemView {
 						const restored =
 							this.workspaceStateManager.restoreFilterStateFromWorkspace();
 						if (restored?.activeViewId) {
-							this.currentViewId = restored.activeViewId;
+							this.currentViewId = restored.activeViewId === "review" ? "projects" : restored.activeViewId;
 						}
 						this.workspaceStateManager.syncFilterState(restored, {
 							setLiveFilterState: (state) => {

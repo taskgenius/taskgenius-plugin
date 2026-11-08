@@ -1,5 +1,10 @@
 /** Simplified Chinese translations, keyed by the English source string. */
 export const zh: Record<string, string> = {
+	"Check-in window": "签到窗口",
+	"You can complete this habit on any of these days in each interval. Missed windows do not shift the next fixed cycle.": "每个周期中的任意一天都可完成；错过窗口不会改变下一个固定周期。",
+	"Restart cycle from today": "从今天重新开始周期",
+	"Keep past records and start a new interval cycle today.": "保留过去的记录，从今天开始新的间隔周期。",
+	"Interval window days key": "间隔签到窗口天数属性名",
 	"Interval schedule key": "间隔排期方式属性名",
 	"This note is managed by Task Genius.": "此笔记由 Task Genius 管理。",
 	// Commands and ribbon

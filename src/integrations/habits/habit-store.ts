@@ -255,6 +255,7 @@ export class HabitStore {
 				365,
 			),
 			intervalMode: fm[k.intervalMode] === "completion" ? "completion" : "fixed",
+			intervalWindowDays: this.clampInt(this.readNumber(fm[k.intervalWindowDays], 1), 1, this.readNumber(fm[k.intervalDays], 2)),
 			times: this.readTimes(fm[`${k.time}s`], fm[k.time]),
 			target: this.readNumber(fm[k.target], 1),
 			unit: typeof fm[k.unit] === "string" ? (fm[k.unit] as string) : "",
@@ -594,6 +595,7 @@ export class HabitStore {
 		delete fm[`${k.weekday}s`];
 		delete fm[k.monthDay];
 		delete fm[k.intervalDays];
+		delete fm[k.intervalWindowDays];
 		delete fm[k.intervalMode];
 		if (options.frequency === "weekly") {
 			fm[k.frequency] = "weekly";
@@ -609,6 +611,7 @@ export class HabitStore {
 		} else if (options.frequency === "interval") {
 			fm[k.frequency] = "interval";
 			fm[k.intervalDays] = this.clampInt(options.intervalDays, 2, 365);
+			if ((options.intervalWindowDays ?? 1) > 1) fm[k.intervalWindowDays] = this.clampInt(options.intervalWindowDays ?? 1, 1, options.intervalDays ?? 2);
 			if (options.intervalMode === "completion") fm[k.intervalMode] = "completion";
 		} else if (
 			options.frequency === "flexibleWeekly" ||
@@ -1313,6 +1316,7 @@ export class HabitStore {
 				delete fm[k.goalDirection];
 			}
 			this.writeFrequency(fm, options);
+			if (options.frequency === "interval" && options.restartIntervalCycle) fm[k.startDate] = toDateKey(new Date());
 			this.writeTimes(fm, options);
 			this.writeNoteFields(fm, options, cleanName);
 			if (

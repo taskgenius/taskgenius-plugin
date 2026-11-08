@@ -48,6 +48,8 @@ export class FluentSidebar extends Component {
 		today: { icon: "calendar-days", label: () => t("Today") },
 		upcoming: { icon: "calendar", label: () => t("Upcoming") },
 		flagged: { icon: "flag", label: () => t("Flagged") },
+		points: { icon: "sparkles", label: () => t("Points and rewards") },
+	projects: { icon: "folder-kanban", label: () => t("Project plans") },
 	};
 
 	private otherItems: FluentTaskNavigationItem[] = [];
@@ -158,6 +160,7 @@ export class FluentSidebar extends Component {
 		const config = this.plugin.settings.viewConfiguration;
 		return config
 			.filter((v) => {
+				if (v.id === "review") return false;
 				const r = v.region || "top";
 				return (
 					r === region &&

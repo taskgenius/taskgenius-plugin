@@ -25,6 +25,7 @@ import {
 	ProgressData,
 } from "@/editor-extensions/ui-widgets/progress-bar-widget";
 import { QuickCaptureModal } from "@/components/features/quick-capture/modals/QuickCaptureModalWithSwitch";
+import { ProjectFileManager } from "@/managers/project-file-manager";
 
 interface SelectedProjects {
 	projects: string[];
@@ -351,18 +352,29 @@ export class ProjectsComponent extends Component {
 	private buildProjectsIndex() {
 		// Clear existing index
 		this.allProjectsMap.clear();
+		const projectFiles = new ProjectFileManager(this.app);
+		const projectNotes = projectFiles.list();
+		const archivedProjects = new Set(
+			projectNotes.filter(project => project.archived).map(project => project.name.toLocaleLowerCase()),
+		);
 
 		// Build a map of projects to task IDs using sourceTasks (filtered tasks)
 		// This ensures the sidebar only shows projects that have matching tasks
 		this.sourceTasks.forEach((task) => {
 			const effectiveProject = getEffectiveProject(task);
-			if (effectiveProject) {
+			if (effectiveProject && !archivedProjects.has(effectiveProject.toLocaleLowerCase())) {
 				if (!this.allProjectsMap.has(effectiveProject)) {
 					this.allProjectsMap.set(effectiveProject, new Set());
 				}
 				this.allProjectsMap.get(effectiveProject)?.add(task.id);
 			}
 		});
+		// Include active project notes even when a project has no tasks yet.
+		for (const project of projectNotes) {
+			if (!project.archived && !this.allProjectsMap.has(project.name)) {
+				this.allProjectsMap.set(project.name, new Set());
+			}
+		}
 
 		// Build project tree if in tree view
 		if (this.isProjectTreeView) {

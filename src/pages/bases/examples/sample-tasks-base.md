@@ -86,9 +86,9 @@ config:
   taskTags: tags
 ```
 
-### 6. Review View for Daily Processing
+### 6. Project View for Active Tasks
 ```base
-view: task-genius-review
+view: task-genius-projects
 from: "Tasks"
 where: status != "x" AND (due_date <= date("today") OR priority >= 3)
 config:

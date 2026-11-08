@@ -17,6 +17,7 @@ await build({
     export {DEFAULT_SETTINGS, DEFAULT_FRONTMATTER_KEYS} from './src/integrations/habits/settings';
     export {planLegacyHabits, importLegacyHabits} from './src/integrations/habits/legacy-import';
     export {isDue, isActive, isComplete, habitStats} from './src/integrations/habits/stats';
+    export {resolveTaskPoints, taskCompletionTransactionId} from './src/managers/points-utils';
     export {t} from './src/integrations/habits/i18n';
     export {ReminderSync} from './src/integrations/habits/reminders';
     export {NoteHabitSync, computeNoteValue} from './src/integrations/habits/note-habit';
@@ -32,7 +33,7 @@ await build({
 });
 const {TaskGeniusHabits, HabitStore, DEFAULT_SETTINGS, DEFAULT_FRONTMATTER_KEYS,
   planLegacyHabits, importLegacyHabits, isDue, isActive, isComplete, habitStats, t, vaultFixture,
-  ReminderSync, NoteHabitSync, computeNoteValue, applyCommentLog, parseCommentLog, generateSummary, ExportModal} = await import(pathToFileURL(path.join(directory, 'integration.mjs')));
+  ReminderSync, NoteHabitSync, computeNoteValue, applyCommentLog, parseCommentLog, generateSummary, ExportModal, resolveTaskPoints, taskCompletionTransactionId} = await import(pathToFileURL(path.join(directory, 'integration.mjs')));
 const settings = extra => ({...structuredClone(DEFAULT_SETTINGS), ...extra});
 const date = value => {const [year, month, day] = value.split('-').map(Number); return new Date(year, month - 1, day);};
 const habit = extra => ({type:'binary', goalDirection:'min', frequency:'interval', intervalMode:'completion', intervalDays:2, startDate:'2026-11-01', records:{}, pauses:[], reschedules:[], failed:[], skipped:[], target:1, ...extra});
@@ -42,6 +43,36 @@ test('rolling intervals remain due after a miss, then restart from the actual co
   for (const [key, expected] of [['2026-10-31',false],['2026-11-01',true],['2026-11-02',false],['2026-11-03',true],['2026-11-04',true],['2026-11-05',false],['2026-11-06',true]]) assert.equal(isDue(h, date(key)), expected, key);
   assert.equal(isComplete(h, '2026-11-04'), true);
   assert.equal(isActive(h, date('2026-11-05')), false);
+});
+
+test('interval habits offer a multi-day check-in window and score one completion per cycle', () => {
+  const h = habit({intervalMode:'fixed', intervalDays:4, intervalWindowDays:3, startDate:'2026-11-01', records:{'2026-11-02':1}});
+  for (const day of ['2026-11-01','2026-11-02','2026-11-03']) assert.equal(isActive(h,date(day)),true,day);
+  assert.equal(isDue(h,date('2026-11-03')),true);
+  assert.equal(isComplete(h,'2026-11-03'),true);
+  assert.equal(isActive(h,date('2026-11-04')),false);
+  assert.equal(isActive(h,date('2026-11-05')),true);
+  assert.equal(isDue(h,date('2026-11-07')),true);
+  assert.equal(isComplete(h,'2026-11-07'),false);
+});
+
+test('completion-anchored windows restart after a late check-in', () => {
+  const h = habit({intervalMode:'completion', intervalDays:4, intervalWindowDays:3, startDate:'2026-11-01', records:{'2026-11-03':1}});
+  assert.equal(isActive(h,date('2026-11-03')),true);
+  assert.equal(isDue(h,date('2026-11-03')),true);
+  assert.equal(isComplete(h,'2026-11-03'),true);
+  assert.equal(isActive(h,date('2026-11-04')),false);
+  assert.equal(isActive(h,date('2026-11-07')),true);
+  assert.equal(isDue(h,date('2026-11-09')),true);
+});
+
+test('task points use per-task values, then configured defaults, and dedupe completion records', () => {
+  assert.equal(resolveTaskPoints({metadata:{points:25},originalMarkdown:'- [x] task [points:: 4]'},10),25);
+  assert.equal(resolveTaskPoints({originalMarkdown:'- [x] task [points:: 4]'},10),4);
+  assert.equal(resolveTaskPoints({originalMarkdown:'- [x] task [积分:: 6]'},10),6);
+  assert.equal(resolveTaskPoints({},10),10);
+  assert.equal(resolveTaskPoints({metadata:{points:-4}},10),0);
+  assert.equal(taskCompletionTransactionId({id:'task-1',metadata:{completedDate:'2026-11-08'}}), 'task:task-1:2026-11-08');
 });
 test('partial, failed, skipped and future records cannot shift earlier rolling due dates', () => {
   const h = habit({type:'repetition',target:3,records:{'2026-11-01':3,'2026-11-03':2,'2026-11-04':3,'2026-11-09':3}, failed:['2026-11-04']});

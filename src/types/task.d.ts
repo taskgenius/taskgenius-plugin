@@ -55,6 +55,7 @@ export interface StandardTaskMetadata {
 	area?: string;
 	/** Priority level (1-5, higher is more important) */
 	priority?: number;
+	points?: number;
 
 	/** Parent task ID for hierarchical tasks */
 	parent?: string;

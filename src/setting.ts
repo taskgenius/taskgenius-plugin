@@ -80,13 +80,13 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 			id: "view-settings",
 			name: t("Views"),
 			icon: "layout",
-			category: "core",
+			category: "display",
 		},
 		{
 			id: "interface",
 			name: t("Interface"),
 			icon: "layout-dashboard",
-			category: "core",
+			category: "display",
 		},
 		{
 			id: "file-filter",
@@ -127,7 +127,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 			id: "project",
 			name: t("Projects"),
 			icon: "folder-open",
-			category: "core",
+			category: "management",
 		},
 
 		// Workflow & Automation
@@ -147,7 +147,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 			id: "quick-capture",
 			name: t("Quick Capture"),
 			icon: "zap",
-			category: "workflow",
+			category: "management",
 		},
 		{
 			id: "task-timer",
@@ -165,7 +165,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 			id: "timeline-sidebar",
 			name: t("Timeline Sidebar"),
 			icon: "clock",
-			category: "workflow",
+			category: "display",
 		},
 
 		// Gamification
@@ -187,7 +187,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 			id: "calendar-views",
 			name: t("Calendar Views"),
 			icon: "calendar-range",
-			category: "integration",
+			category: "display",
 		},
 		{
 			id: "ics-integration",
@@ -304,7 +304,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 		const categories = {
 			core: { name: t("Core Settings"), tabs: [] as typeof this.tabs },
 			display: {
-				name: t("Display & Progress"),
+				name: t("Views & Display"),
 				tabs: [] as typeof this.tabs,
 			},
 			management: {

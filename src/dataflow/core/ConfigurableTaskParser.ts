@@ -1803,7 +1803,15 @@ export class MarkdownTaskParser {
 			!this.config.fileMetadataInheritance
 				?.inheritFromFrontmatterForSubtasks
 		) {
-			// Legacy behavior: do not inherit for subtasks
+			// Keep general frontmatter inheritance disabled for subtasks, but
+			// project membership is a file-level relationship and must follow a
+			// task when its parent and children move into a project note.
+			const projectKey =
+				this.config.projectConfig?.metadataConfig?.metadataKey || "project";
+			const projectValue = this.fileMetadata?.[projectKey] ?? this.fileMetadata?.project;
+			if (projectValue !== undefined && projectValue !== null && String(projectValue).trim()) {
+				inherited.project = String(projectValue).trim();
+			}
 			return inherited;
 		}
 

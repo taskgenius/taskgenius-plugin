@@ -1,16 +1,18 @@
-import { Component, Platform, setIcon, Menu, Modal, App } from "obsidian";
+import { Component, setIcon, Menu, Modal, App, Notice } from "obsidian";
 import TaskProgressBarPlugin from "@/index";
 import { Task } from "@/types/task";
 import { getEffectiveProject } from "@/utils/task/task-operations";
-import {
-	ProjectPopover,
-	ProjectModal,
-	EditProjectModal,
-} from "./ProjectPopover";
+import { EditProjectModal } from "./ProjectPopover";
 import type { CustomProject } from "@/common/setting-definition";
 import { t } from "@/translations/helper";
 import { onWorkspaceSwitched } from "@/components/features/fluent/events/ui-event";
 import { Events, on } from "@/dataflow/events/Events";
+import {
+	ProjectFileManager,
+	ProjectCreateModal,
+	ProjectTaskModal,
+	ProjectEditModal,
+} from "@/managers/project-file-manager";
 
 export interface Project {
 	id: string;
@@ -46,11 +48,11 @@ export class ProjectList extends Component {
 	private containerEl: HTMLElement;
 	private plugin: TaskProgressBarPlugin;
 	private projects: Project[] = [];
+	private taskSnapshot: Task[] = [];
 	private activeProjectId: string | null = null;
 	private projectLoad = 0;
 	private disposed = false;
 	private onProjectSelect: (projectId: string) => void;
-	private currentPopover: ProjectPopover | null = null;
 	private currentSort: SortOption = "name-asc";
 	private readonly STORAGE_KEY = "task-genius-project-sort";
 	private readonly EXPANDED_KEY = "task-genius-project-expanded";
@@ -138,12 +140,6 @@ export class ProjectList extends Component {
 			this.refreshTimeoutId = null;
 		}
 
-		// Clean up any open popover
-		if (this.currentPopover) {
-			this.removeChild(this.currentPopover);
-			this.currentPopover = null;
-		}
-
 		// Clear container
 		this.containerEl.empty();
 	}
@@ -159,11 +155,16 @@ export class ProjectList extends Component {
 			tasks = this.plugin.preloadedTasks || [];
 		}
 		if (this.disposed || request !== this.projectLoad) return;
+		this.taskSnapshot = tasks;
 		const projectMap = new Map<string, Project>();
+		const projectFiles = this.createProjectFileManager();
+		const archivedNames = new Set(
+			projectFiles.list().filter((project) => project.archived).map((project) => project.name),
+		);
 
 		tasks.forEach((task: Task) => {
 			const projectName = getEffectiveProject(task);
-			if (!projectName) {
+			if (!projectName || archivedNames.has(projectName)) {
 				return;
 			}
 
@@ -188,6 +189,24 @@ export class ProjectList extends Component {
 		});
 
 		this.projects = Array.from(projectMap.values());
+
+		// Project notes are the canonical project records. Merge them into the
+		// sidebar even when they do not currently contain any indexed tasks.
+		for (const record of projectFiles.list()) {
+			if (record.archived) continue;
+			const existing = this.projects.find((project) => project.name === record.name);
+			if (!existing) {
+				this.projects.push({
+					id: record.name,
+					name: record.name,
+					filterKey: record.name,
+					displayName: record.name,
+					color: this.generateColorForProject(record.name),
+					taskCount: 0,
+					createdAt: record.file.stat.ctime,
+				});
+			}
+		}
 
 		// Load custom projects
 		this.loadCustomProjects();
@@ -723,43 +742,11 @@ export class ProjectList extends Component {
 	}
 
 	private handleAddProject(buttonEl: HTMLElement) {
-		// Clean up any existing popover
-		if (this.currentPopover) {
-			this.removeChild(this.currentPopover);
-			this.currentPopover = null;
-		}
-
-		if (Platform.isPhone) {
-			// Mobile: Use Obsidian Modal
-			const modal = new ProjectModal(
-				this.plugin.app,
-				this.plugin,
-				async (project) => {
-					await this.saveProject(project);
-				},
-			);
-			modal.open();
-		} else {
-			// Desktop: Use popover
-			this.currentPopover = new ProjectPopover(
-				this.plugin,
-				buttonEl,
-				async (project) => {
-					await this.saveProject(project);
-					if (this.currentPopover) {
-						this.removeChild(this.currentPopover);
-						this.currentPopover = null;
-					}
-				},
-				() => {
-					if (this.currentPopover) {
-						this.removeChild(this.currentPopover);
-						this.currentPopover = null;
-					}
-				},
-			);
-			this.addChild(this.currentPopover);
-		}
+		new ProjectCreateModal(
+			this.plugin.app,
+			this.createProjectFileManager(),
+			() => this.loadProjects(),
+		).open();
 	}
 
 	private async saveProject(project: CustomProject) {
@@ -840,6 +827,11 @@ export class ProjectList extends Component {
 		});
 	}
 
+	private createProjectFileManager(): ProjectFileManager {
+		const prefixes = Object.values(this.plugin.settings.projectTagPrefix || {}).map(String);
+		return new ProjectFileManager(this.plugin.app, prefixes.length ? prefixes : ["project"]);
+	}
+
 	public showSortMenu(buttonEl: HTMLElement) {
 		const menu = new Menu();
 
@@ -905,38 +897,67 @@ export class ProjectList extends Component {
 
 	private showProjectContextMenu(event: MouseEvent, project: Project) {
 		const menu = new Menu();
+		const projectFiles = this.createProjectFileManager();
+		const projectFile = projectFiles.find(project.name);
+		if (projectFile) {
+			menu.addItem((item) => item
+				.setTitle(t("Open project note"))
+				.setIcon("file-text")
+				.onClick(() => void this.plugin.app.workspace.getLeaf(false).openFile(projectFile.file)));
+			menu.addItem((item) => item
+				.setTitle(t("Edit project details"))
+				.setIcon("pencil")
+				.onClick(() => new ProjectEditModal(
+					this.plugin.app,
+					projectFiles,
+					projectFile,
+					() => this.loadProjects(),
+				).open()));
+			menu.addItem((item) => item
+				.setTitle(projectFile.archived ? t("Restore project") : t("Archive project"))
+				.setIcon(projectFile.archived ? "archive-restore" : "archive")
+				.onClick(async () => {
+					await projectFiles.setArchived(project.name, !projectFile.archived);
+					await this.loadProjects();
+				}));
+			menu.addItem((item) => item
+				.setTitle(t("Add task to project"))
+				.setIcon("plus")
+				.onClick(() => new ProjectTaskModal(
+					this.plugin.app,
+					projectFiles,
+					project.name,
+					() => this.loadProjects(),
+				).open()));
+			menu.showAtMouseEvent(event);
+			return;
+		}
 
-		// Check if this is a custom project
-		const isCustomProject =
-			this.plugin.settings.projectConfig?.customProjects?.some(
-				(cp) => cp.id === project.id || cp.name === project.name,
-			);
-
-		// Edit Project option
-		menu.addItem((item) => {
-			item.setTitle(t("Edit Project")).setIcon("edit");
-
-			if (isCustomProject) {
-				item.onClick(() => {
-					this.editProject(project);
-				});
-			} else {
-				item.setDisabled(true);
-			}
-		});
-
-		// Delete Project option
-		menu.addItem((item) => {
-			item.setTitle(t("Delete Project")).setIcon("trash");
-
-			if (isCustomProject) {
-				item.onClick(() => {
-					this.deleteProject(project);
-				});
-			} else {
-				item.setDisabled(true);
-			}
-		});
+		menu.addItem((item) => item
+			.setTitle(t("Create project note and move tasks"))
+			.setIcon("folder-plus")
+			.onClick(async () => {
+				try {
+					const projectNote = await projectFiles.create(project.name);
+					if (!projectNote) return;
+					const matchingTasks = this.taskSnapshot.filter(task => getEffectiveProject(task) === project.name);
+										const canvasTasks = matchingTasks.filter(task => task.metadata?.sourceType === "canvas" || task.filePath.toLowerCase().endsWith(".canvas"));
+					const markdownTasks = matchingTasks.filter(task => !canvasTasks.includes(task));
+					let movedCount = await projectFiles.moveTasks(markdownTasks, project.name);
+					for (const task of canvasTasks) {
+						const result = await this.plugin.writeAPI?.updateTask({
+							taskId: task.id,
+							updates: { metadata: { ...task.metadata, project: project.name } as any },
+						});
+						if (result?.success) movedCount++;
+					}
+					new Notice(`${t("Project note created; tasks moved")}: ${movedCount}`);
+					await this.loadProjects();
+				} catch (error) {
+					console.error("Failed to migrate legacy project tasks", error);
+					new Notice(t("Failed to move project tasks"));
+				}
+			}));
 
 		menu.showAtMouseEvent(event);
 	}

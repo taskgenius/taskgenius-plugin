@@ -50,6 +50,7 @@ export function isFlexible(habit: HabitDefinition): boolean {
  * log an occurrence whenever it actually happens.
  */
 export function isActive(habit: HabitDefinition, date: Date): boolean {
+	if (habit.frequency === "interval" && (habit.intervalWindowDays || 1) > 1) return !!intervalWindow(habit, date)?.active;
 	return isDue(habit, date) || isFlexible(habit);
 }
 
@@ -242,6 +243,33 @@ export function intervalAnchor(habit: HabitDefinition): Date | null {
 	return null;
 }
 
+function intervalWindow(habit: HabitDefinition, date: Date) {
+	const anchor = intervalAnchor(habit);
+	if (!anchor) return null;
+	const interval = Math.max(2, habit.intervalDays || 2);
+	const window = Math.max(1, Math.min(interval, habit.intervalWindowDays || 1));
+	const key = toDateKey(date);
+	let base = anchor;
+	if (habit.intervalMode === "completion" && habit.goalDirection !== "max") {
+		for (let cycle = 0; cycle < 10000; cycle++) {
+			const nextStart = addDays(base, interval);
+			if (date < nextStart) break;
+			const startKey = toDateKey(base);
+			const endKey = toDateKey(addDays(base, window - 1));
+			const completed = Object.keys(habit.records).filter(day => day >= startKey && day <= endKey).filter(day => {
+				const value = habit.records[day] ?? 0;
+				return value > 0 && !isFailedOn(habit, day) && !isSkippedOn(habit, day) && !isPausedOn(habit, day) && (habit.type === "binary" || value >= habit.target);
+			}).sort().pop();
+			base = completed ? addDays(fromDateKey(completed) || base, interval) : nextStart;
+		}
+	}
+	const elapsed = Math.round((startOfDay(date).getTime() - startOfDay(base).getTime()) / MS_PER_DAY);
+	if (elapsed < 0) return { active: false, due: false, start: base, end: addDays(base, window - 1) };
+	const offset = elapsed % interval;
+	const start = addDays(date, -offset);
+	return { active: offset < window, due: offset === window - 1, start, end: addDays(start, window - 1) };
+}
+
 /**
  * True when the habit is due on the given date.
  *
@@ -291,6 +319,7 @@ export function isDue(habit: HabitDefinition, date: Date): boolean {
 		);
 	}
 	if (habit.frequency === "interval") {
+		if ((habit.intervalWindowDays || 1) > 1) return !!intervalWindow(habit, date)?.due;
 		if (habit.intervalMode === "completion" && habit.goalDirection !== "max") {
 			// Only earlier successful records can move this day's due date.
 			// Future records and partial counts never rewrite its history.
@@ -382,6 +411,16 @@ export function isComplete(habit: HabitDefinition, dateKey: string): boolean {
 		if (habit.goalDirection === "max" && dateKey < trackingStartKey(habit)) return false;
 		const date = fromDateKey(dateKey);
 		return date ? meetsFlexibleTarget(habit, flexiblePeriodTotal(habit, date)) : false;
+	}
+	if (habit.frequency === "interval" && (habit.intervalWindowDays || 1) > 1) {
+		const date = fromDateKey(dateKey);
+		const window = date ? intervalWindow(habit, date) : null;
+		if (!window?.due) return false;
+		return Object.keys(habit.records).some(day => {
+			if (day < toDateKey(window.start) || day > toDateKey(window.end)) return false;
+			const value = habit.records[day] ?? 0;
+			return value > 0 && !isFailedOn(habit, day) && !isSkippedOn(habit, day) && !isPausedOn(habit, day) && (habit.type === "binary" || value >= habit.target);
+		});
 	}
 	// "Fail for today" is a deliberate miss: it wins over any logged value,
 	// and over a limit habit's "silence is clean" default.

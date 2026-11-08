@@ -3,7 +3,6 @@ import { TaskProgressBarSettingTab } from "@/setting";
 import { t } from "@/translations/helper";
 import { ConfirmModal } from "@/components/ui/modals/ConfirmModal";
 import { DEFAULT_SETTINGS } from "@/common/setting-definition";
-import { ONBOARDING_VIEW_TYPE } from "@/components/features/onboarding/OnboardingView";
 
 export function renderAboutSettingsTab(
 	settingTab: TaskProgressBarSettingTab,
@@ -45,28 +44,6 @@ export function renderAboutSettingsTab(
 			button.setButtonText(t("Open Documentation")).onClick(() => {
 				window.open("https://taskgenius.md/docs/getting-started");
 			});
-		});
-
-	// Onboarding/Help Section
-	new Setting(containerEl)
-		.setName(t("Onboarding"))
-		.setDesc(t("Restart the welcome guide and setup wizard"))
-		.addButton((button) => {
-			button
-				.setButtonText(t("Restart Onboarding"))
-				.setIcon("graduation-cap")
-				.onClick(async () => {
-					// Reset onboarding status
-					await settingTab.plugin.onboardingConfigManager.resetOnboarding();
-
-					if (typeof (settingTab as any).setting.close === "function") {
-						(settingTab as any).setting.close();
-
-						settingTab.plugin.app.workspace.getLeaf().setViewState({
-							type: ONBOARDING_VIEW_TYPE,
-						});
-					}
-				});
 		});
 
 	new Setting(containerEl)

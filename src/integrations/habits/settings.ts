@@ -62,6 +62,7 @@ export interface FrontmatterKeys {
 	weekday: string;
 	monthDay: string;
 	intervalDays: string;
+	intervalWindowDays: string;
 	intervalMode: string;
 	time: string;
 	goalDirection: string;
@@ -101,6 +102,7 @@ export const DEFAULT_FRONTMATTER_KEYS: FrontmatterKeys = {
 	weekday: "weekday",
 	monthDay: "monthDay",
 	intervalDays: "intervalDays",
+	intervalWindowDays: "intervalWindowDays",
 	intervalMode: "intervalMode",
 	time: "time",
 	goalDirection: "goalDirection",
@@ -1084,6 +1086,7 @@ const FRONTMATTER_KEY_GROUPS: {
 			["weekday", () => t("Weekday key")],
 			["monthDay", () => t("Month day key")],
 			["intervalDays", () => t("Interval days key")],
+			["intervalWindowDays", () => t("Interval window days key")],
 			["intervalMode", () => t("Interval schedule key")],
 			["time", () => t("Planned time key")],
 		],

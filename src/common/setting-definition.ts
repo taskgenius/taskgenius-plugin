@@ -486,6 +486,16 @@ export interface RewardItem {
 	inventory: number; // Remaining count (-1 for unlimited)
 	imageUrl?: string; // Optional image URL
 	condition?: string; // Optional condition string for triggering (e.g., "#project AND #milestone")
+	pointCost?: number;
+}
+
+export interface PointsLedgerEntry {
+	id: string;
+	delta: number;
+	label: string;
+	createdAt: number;
+	source: "task" | "manual" | "redemption";
+	taskId?: string;
 }
 
 export interface OccurrenceLevel {
@@ -498,6 +508,8 @@ export interface RewardSettings {
 	rewardItems: RewardItem[];
 	occurrenceLevels: OccurrenceLevel[];
 	showRewardType: "modal" | "notice"; // Type of reward display - modal (default) or notice
+	pointsPerTask?: number;
+	pointsLedger?: PointsLedgerEntry[];
 }
 
 export interface HabitSettings {
@@ -1402,7 +1414,7 @@ export const DEFAULT_SETTINGS: TaskProgressBarSettings = {
 		},
 		{
 			id: "projects",
-			name: t("Projects"),
+			name: t("Project plans"),
 			icon: "folders",
 			type: "default",
 			visible: true,
@@ -1598,6 +1610,8 @@ export const DEFAULT_SETTINGS: TaskProgressBarSettings = {
 	// Reward Settings Defaults (NEW)
 	rewards: {
 		enableRewards: false,
+		pointsPerTask: 10,
+		pointsLedger: [],
 		rewardItems: [
 			{
 				id: "reward-tea",

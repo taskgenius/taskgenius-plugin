@@ -223,6 +223,8 @@ export class HabitModal extends Modal {
 	private monthDay = new Date().getDate();
 	private intervalDays = 2;
 	private intervalMode: "fixed" | "completion" = "fixed";
+	private intervalWindowDays = 1;
+	private restartIntervalCycle = false;
 	private times: string[] = [];
 	private target = 1;
 	private unit = "";
@@ -291,6 +293,7 @@ export class HabitModal extends Modal {
 			} else if (editing.frequency === "interval") {
 				this.intervalDays = editing.intervalDays;
 				this.intervalMode = editing.intervalMode ?? "fixed";
+				this.intervalWindowDays = editing.intervalWindowDays ?? 1;
 			}
 			this.times = [...editing.times];
 			// A limit habit's target may legitimately be 0 ("none at all");
@@ -648,6 +651,8 @@ export class HabitModal extends Modal {
 							monthDay: this.monthDay,
 							intervalDays: this.intervalDays,
 							intervalMode: this.intervalMode,
+							intervalWindowDays: this.intervalWindowDays,
+							restartIntervalCycle: this.restartIntervalCycle,
 							// The time picker is hidden for flexible
 							// frequencies, so a stale value from before the
 							// frequency changed must not persist unseen.
@@ -1000,6 +1005,22 @@ export class HabitModal extends Modal {
 						},
 					);
 				});
+			new Setting(contentEl)
+				.setName(t("Check-in window"))
+				.setDesc(t("You can complete this habit on any of these days in each interval. Missed windows do not shift the next fixed cycle."))
+				.addText(text => {
+					applyNumeric(text.inputEl, 1, this.intervalDays);
+					text.setValue(String(this.intervalWindowDays)).onChange(value => {
+						const parsed = Math.round(Number(value));
+						if (Number.isFinite(parsed)) this.intervalWindowDays = Math.min(this.intervalDays, Math.max(1, parsed));
+					});
+				});
+			if (this.editing) {
+				new Setting(contentEl)
+					.setName(t("Restart cycle from today"))
+					.setDesc(t("Keep past records and start a new interval cycle today."))
+					.addToggle(toggle => toggle.setValue(false).onChange(value => this.restartIntervalCycle = value));
+			}
 		}
 
 		if (this.frequency === "monthly") {

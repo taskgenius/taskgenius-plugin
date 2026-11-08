@@ -22,6 +22,7 @@ import {
 } from "@/utils/file/file-operations";
 import { Events, emit } from "../events/Events";
 import { CanvasTaskUpdater } from "@/parsers/canvas-task-updater";
+import { ProjectFileManager } from "@/managers/project-file-manager";
 import { rrulestr } from "rrule";
 import { EMOJI_TAG_REGEX, TOKEN_CONTEXT_REGEX } from "@/common/regex-define";
 import { BulkOperationResult } from "@/types/selection";
@@ -324,8 +325,13 @@ export class WriteAPI {
 				return { success: false, error: "Task not found" };
 			}
 
-			// Check if this is a Canvas task
+			// Canvas checkboxes live inside JSON nodes, so project assignment must
+			// convert them to Markdown instead of writing a project tag into Canvas.
 			if (CanvasTaskUpdater.isCanvasTask(originalTask)) {
+				const requestedCanvasProject = args.updates.metadata?.project?.trim();
+				if (requestedCanvasProject && (requestedCanvasProject !== originalTask.metadata?.project || !originalTask.filePath.toLowerCase().endsWith(".md"))) {
+					return this.moveCanvasTaskToProject(originalTask, requestedCanvasProject);
+				}
 				return this.updateCanvasTask(args);
 			}
 
@@ -339,6 +345,25 @@ export class WriteAPI {
 					args.updates,
 					args.taskId,
 				);
+			}
+
+			const requestedProject = args.updates.metadata?.project?.trim();
+			const projectMove = !!requestedProject && requestedProject !== originalTask.metadata?.project;
+			const prefixes = Object.values(this.plugin.settings.projectTagPrefix || {}).map(String);
+			const projectFiles = projectMove
+				? new ProjectFileManager(this.app, prefixes.length ? prefixes : ["project"])
+				: null;
+			if (projectMove && projectFiles && requestedProject) {
+				const destination = await projectFiles.create(requestedProject);
+				if (!destination) return { success: false, error: "Could not create project note" };
+				// New membership belongs to the destination note's frontmatter.
+				args = {
+					...args,
+					updates: {
+						...args.updates,
+						metadata: { ...args.updates.metadata, project: undefined } as any,
+					},
+				};
 			}
 
 			const file = this.vault.getAbstractFileByPath(
@@ -489,6 +514,7 @@ export class WriteAPI {
 						esc2(projectKey2),
 						esc2(contextKey2),
 						"priority",
+						"points",
 						"repeat",
 						"start",
 						"scheduled",
@@ -558,6 +584,7 @@ export class WriteAPI {
 						"project",
 						"context",
 						"priority",
+						"points",
 						"repeat",
 						"startDate",
 						"dueDate",
@@ -727,6 +754,7 @@ export class WriteAPI {
 								onCompletion: mergedMd.onCompletion,
 								dependsOn: mergedMd.dependsOn,
 								id: mergedMd.id,
+								points: mergedMd.points,
 							});
 							taskLine = `${checkboxPrefix}${taskContent}${
 								newMetadata ? ` ${newMetadata}` : ""
@@ -788,6 +816,18 @@ export class WriteAPI {
 				},
 				originalMarkdown: taskLine,
 			};
+
+			if (projectMove && requestedProject && projectFiles) {
+				try {
+					const moved = await projectFiles.moveTask(updatedTaskObj, requestedProject);
+					if (!moved) throw new Error("Could not move task to project note");
+				} catch (moveError) {
+					// Treat updating the task and moving it as one operation. If the
+					// destination write fails, restore the source file snapshot.
+					await this.vault.modify(file, content);
+					throw moveError;
+				}
+			}
 
 			// Emit write operation complete
 			emit(this.app, Events.WRITE_OPERATION_COMPLETE, {
@@ -2078,10 +2118,12 @@ export class WriteAPI {
 		onCompletion?: string;
 		dependsOn?: string[] | string;
 		id?: string;
+		points?: number;
 	}): string {
 		const metadata: string[] = [];
 		const useDataviewFormat =
 			this.plugin.settings.preferMetadataFormat === "dataview";
+		if (typeof args.points === "number" && Number.isFinite(args.points) && args.points >= 0) metadata.push(`[points:: ${args.points}]`);
 
 		// Tags
 		if (args.tags?.length) {
@@ -2372,7 +2414,46 @@ export class WriteAPI {
 		return base.getTime();
 	}
 
-	// ===== Canvas Task Methods =====
+		private async moveCanvasTaskToProject(task: Task, projectName: string): Promise<{ success: boolean; task?: Task; error?: string }> {
+		const prefixes = Object.values(this.plugin.settings.projectTagPrefix || {}).map(String);
+		const manager = new ProjectFileManager(this.app, prefixes.length ? prefixes : ["project"]);
+		let block = "";
+		try {
+			const project = await manager.create(projectName);
+			if (!project) return { success: false, error: "Could not create project note" };
+			const descendants: Task[] = [];
+			const seen = new Set<string>([task.id]);
+			const queue = [...(task.metadata?.children || [])];
+			while (queue.length) {
+				const childId = queue.shift()!;
+				if (seen.has(childId)) continue;
+				seen.add(childId);
+				const child = await Promise.resolve(this.getTaskById(childId));
+				if (!child) continue;
+				if (!CanvasTaskUpdater.isCanvasTask(child) || child.filePath !== task.filePath) {
+					return { success: false, error: "Canvas subtasks cannot be moved safely as one project task." };
+				}
+				descendants.push(child);
+				queue.push(...(child.metadata?.children || []));
+			}
+			const ordered = [task, ...descendants].sort((a, b) => a.line - b.line);
+			block = ordered.map(item => manager.stripProjectMarkers(item.originalMarkdown, projectName)).filter(Boolean).join("\n");
+			if (!block || !(await manager.appendTaskBlock(projectName, ordered.map(item => item.originalMarkdown)))) {
+				return { success: false, error: "Could not write Canvas task to the project note" };
+			}
+			const deleted = await this.deleteCanvasTask({ taskId: task.id, deleteChildren: descendants.length > 0 });
+			if (!deleted.success) {
+				await manager.removeTaskBlock(projectName, block);
+				block = "";
+				return { success: false, error: deleted.error || "Could not remove Canvas task after moving" };
+			}
+			return { success: true, task: { ...task, filePath: project.file.path, metadata: { ...task.metadata, project: projectName }, originalMarkdown: block.split("\n")[0] } };
+		} catch (error) {
+			if (block) await manager.removeTaskBlock(projectName, block).catch(() => undefined);
+			return { success: false, error: String(error) };
+		}
+	}
+// ===== Canvas Task Methods =====
 
 	/**
 	 * Update a Canvas task

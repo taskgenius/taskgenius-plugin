@@ -61,7 +61,7 @@ export class TopNavigation extends Component {
 		plugin: TaskProgressBarPlugin,
 		private onSearch: (query: string) => void,
 		private onViewModeChange: (mode: ViewMode) => void,
-		private onFilterClick: () => void,
+		private onFilterClick: (presetId: string | null) => void,
 		private onSortClick: () => void,
 		private onSettingsClick: () => void,
 		availableModes?: ViewMode[],
@@ -199,6 +199,25 @@ export class TopNavigation extends Component {
 			.onChange((value) => {
 				this.onSearch(value);
 			});
+		const filterButton = searchContainer.createEl("button", {
+			cls: "fluent-nav-icon-button tg-quick-filter-button",
+			attr: { "aria-label": t("Quick filters") },
+		});
+		setIcon(filterButton, "list-filter");
+		this.registerDomEvent(filterButton, "click", (event) => {
+			const menu = new Menu();
+			const presets = this.plugin.settings.taskFilter?.presetTaskFilters || [];
+			if (!presets.length) {
+				menu.addItem(item => item.setTitle(t("No saved filters")).setDisabled(true));
+			} else {
+				menu.addItem(item => item.setTitle(t("Clear quick filter")).setIcon("x").onClick(() => this.onFilterClick(null)));
+				menu.addSeparator();
+				for (const preset of presets) {
+					menu.addItem(item => item.setTitle(preset.name).setIcon("filter").onClick(() => this.onFilterClick(preset.id)));
+				}
+			}
+			menu.showAtMouseEvent(event);
+		});
 
 		// Center section - View mode tabs
 		const centerSection = this.containerEl.createDiv({
