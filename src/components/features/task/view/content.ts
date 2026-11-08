@@ -9,7 +9,7 @@ import {
 import { Task } from "@/types/task";
 import { TaskListItemComponent } from "./listItem"; // Re-import needed components
 import { ViewMode, getViewSettingOrDefault } from "@/common/setting-definition"; // 导入 SortCriterion
-import { tasksToTree } from "@/utils/ui/tree-view-utils"; // Re-import needed utils
+import { tasksToTree, buildVisibleTaskTree } from "@/utils/ui/tree-view-utils"; // Re-import needed utils
 import { TaskTreeItemComponent } from "./treeItem"; // Re-import needed components
 import { t } from "@/translations/helper";
 import TaskProgressBarPlugin from "@/index";
@@ -91,6 +91,12 @@ export class ContentComponent extends Component {
 	private focusFilter: string | null = null; // Keep focus filter if needed
 	private isTreeView: boolean = false;
 	private externallyFiltered = false;
+	private searchQuery = "";
+	public setSearchQuery(query: string): void {
+		if (this.searchQuery === query) return;
+		this.searchQuery = query; this.pendingForceRefresh = true;
+		this.debounceRefreshTaskList();
+	}
 	private isRendering: boolean = false; // Guard against concurrent renders
 	private pendingForceRefresh: boolean = false; // Track if a force refresh is pending
 	private pendingVisibilityRetry: boolean = false; // Queue a retry when container becomes visible
@@ -388,7 +394,7 @@ export class ContentComponent extends Component {
 		sectionEl.setAttribute("data-level", level.toString());
 
 		// Restore expanded state from localStorage
-		group.isExpanded = getGroupExpandedState(this.currentViewId, group.key);
+		group.isExpanded = !!this.searchQuery.trim() || getGroupExpandedState(this.currentViewId, group.key);
 
 		// Section header
 		const headerEl = sectionEl.createDiv({
@@ -1045,12 +1051,8 @@ export class ContentComponent extends Component {
 			const renderTarget = document.createDocumentFragment();
 
 			if (this.isTreeView) {
-				const taskMap = new Map<string, Task>();
-				// Add all non-filtered tasks to the taskMap
-				this.notFilteredTasks.forEach((task) =>
-					taskMap.set(task.id, task)
-				);
-				this.rootTasks = tasksToTree(this.filteredTasks); // Calculate root tasks
+				const { taskMap, roots } = buildVisibleTaskTree(this.filteredTasks);
+				this.rootTasks = roots;
 				// Sort roots according to view's sort criteria (fallback to sensible defaults)
 				const viewSortCriteria =
 					this.plugin.settings.viewConfiguration.find(
@@ -1230,18 +1232,9 @@ export class ContentComponent extends Component {
 		const start = this.nextRootTaskIndex;
 		const end = Math.min(start + countToLoad, this.rootTasks.length);
 
-		// Make sure all non-filtered tasks are in the taskMap
-		this.notFilteredTasks.forEach((task) => {
-			if (!taskMap.has(task.id)) {
-				taskMap.set(task.id, task);
-			}
-		});
-
 		for (let i = start; i < end; i++) {
 			const rootTask = this.rootTasks[i];
-			const childTasks = this.notFilteredTasks.filter(
-				(task) => task.metadata.parent === rootTask.id
-			);
+			const childTasks = (rootTask.metadata.children || []).map(id => taskMap.get(id)).filter((task): task is Task => !!task);
 
 			const treeComponent = new TaskTreeItemComponent(
 				rootTask,

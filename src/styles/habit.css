@@ -590,3 +590,12 @@
 
 .tg-dependency-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .tg-dependency-chip { display: flex; align-items: center; gap: 6px; border-radius: var(--radius-s); padding: 4px 8px; background: var(--background-secondary); }
+
+.tg-native-habit-cell[data-heat="0"] { background: var(--background-modifier-border); }
+.tg-native-habit-cell[data-heat="1"] { background: color-mix(in srgb, var(--habit-accent, var(--interactive-accent)) 35%, var(--background-primary)); }
+.tg-native-habit-cell[data-heat="2"] { background: color-mix(in srgb, var(--habit-accent, var(--interactive-accent)) 72%, var(--background-primary)); }
+.tg-native-habit-cell[data-heat="3"] { background: var(--habit-accent, var(--interactive-accent)); box-shadow: inset 0 0 0 1px var(--text-accent); }
+.tg-native-habit-cell.is-over-limit, .tg-native-habit-controls .is-over-limit { background: var(--background-modifier-error); color: var(--text-error); }
+.tg-native-habit-goal { margin-top: 10px; color: var(--text-muted); font-size: var(--font-ui-small); }
+
+.tg-native-heat-legend { display: flex; gap: 12px; flex-wrap: wrap; margin: 0 0 12px; color: var(--text-muted); font-size: var(--font-ui-smaller); }

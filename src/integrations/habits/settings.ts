@@ -191,6 +191,7 @@ export interface HabitsPluginSettings {
 	 * or a compact list with one row per habit.
 	 */
 	dashboardLayout: DashboardLayout;
+	nativeLayout?: "cards" | "dashboard";
 	/** How many cards are visible at once in the carousel on wide screens. */
 	cardsPerView: number;
 	/** The base order of habit cards. `name` is the original behaviour. */
@@ -639,6 +640,10 @@ export class HabitsSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl).setName(t("Layout")).setHeading();
+
+		new Setting(containerEl).setName(t("Task Genius habit layout")).setDesc(t("Choose the page layout. Habit goals, schedules and records stay the same."))
+			.addDropdown(dropdown => dropdown.addOption("cards", t("Task Genius cards")).addOption("dashboard", t("Dashboard layout"))
+				.setValue(this.plugin.settings.nativeLayout || "cards").onChange(async value => { this.plugin.settings.nativeLayout = value === "dashboard" ? "dashboard" : "cards"; await this.plugin.saveSettings(); }));
 
 		new Setting(containerEl)
 			.setName(t("Dashboard layout"))

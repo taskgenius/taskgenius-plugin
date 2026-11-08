@@ -285,6 +285,8 @@ export class KanbanComponent extends Component {
 	}
 
 	private renderCycleSelector(container: HTMLElement): void {
+		const choices = (this.plugin.settings.statusCycles || []).filter(cycle => cycle.enabled && !/^default\s*cycle$|^默认周期$/i.test(cycle.name.trim()));
+		if (!choices.length) return;
 		// Only show cycle selector in status grouping mode
 		const kanbanConfig = this.getEffectiveKanbanConfig();
 		if (kanbanConfig?.groupBy !== "status") {
@@ -325,9 +327,7 @@ export class KanbanComponent extends Component {
 			menu.addSeparator();
 
 			// Get enabled cycles, sorted by priority
-			const enabledCycles = (this.plugin.settings.statusCycles || [])
-				.filter((c) => c.enabled)
-				.sort((a, b) => a.priority - b.priority);
+			const enabledCycles = choices.slice().sort((a, b) => a.priority - b.priority);
 
 			if (enabledCycles.length === 0) {
 				menu.addItem((item) => {

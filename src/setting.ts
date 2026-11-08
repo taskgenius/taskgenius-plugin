@@ -173,7 +173,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 		// Gamification
 		{
 			id: "reward",
-			name: t("Points"),
+			name: t("Points and rewards"),
 			icon: "gift",
 			category: "gamification",
 		},

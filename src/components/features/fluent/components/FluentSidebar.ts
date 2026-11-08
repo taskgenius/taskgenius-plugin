@@ -48,8 +48,7 @@ export class FluentSidebar extends Component {
 		today: { icon: "calendar-days", label: () => t("Today") },
 		upcoming: { icon: "calendar", label: () => t("Upcoming") },
 		flagged: { icon: "flag", label: () => t("Flagged") },
-		points: { icon: "sparkles", label: () => t("Points") },
-		rewards: { icon: "gift", label: () => t("Rewards") },
+		points: { icon: "sparkles", label: () => t("Points and rewards") },
 		projects: { icon: "folder-kanban", label: () => t("Projects") },
 		gantt: { icon: "gantt-chart", label: () => t("Project Gantt") },
 	};
@@ -953,6 +952,8 @@ export class FluentSidebar extends Component {
 					});
 			});
 
+		}
+
 			menu.addItem((item) => {
 				item.setTitle(t("Hide in sidebar"))
 					.setIcon("eye-off")
@@ -975,8 +976,6 @@ export class FluentSidebar extends Component {
 						);
 					});
 			});
-		}
-
 		// Delete (for custom views only)
 		const view = this.plugin.settings.viewConfiguration.find(
 			(v) => v.id === viewId,

@@ -28,6 +28,8 @@ export class QuadrantColumnComponent extends Component {
 	private currentPage: number = 0;
 	private pageSize: number = 20;
 	private isLoadingMore: boolean = false;
+	private renderRevision = 0;
+	private disposed = false;
 	private hasMoreTasks: boolean = true;
 	private renderedTasks: Task[] = [];
 
@@ -106,6 +108,7 @@ export class QuadrantColumnComponent extends Component {
 	}
 
 	override onunload() {
+		this.disposed = true; this.renderRevision++;
 		this.cleanup();
 		if (this.intersectionObserver) {
 			this.intersectionObserver.disconnect();
@@ -128,7 +131,7 @@ export class QuadrantColumnComponent extends Component {
 	private cleanup() {
 		// Clean up card components
 		this.cardComponents.forEach((card) => {
-			card.onunload();
+			this.removeChild(card);
 		});
 		this.cardComponents = [];
 	}
@@ -321,7 +324,7 @@ export class QuadrantColumnComponent extends Component {
 	}
 
 	private async loadContent() {
-		if (this.isContentLoaded) return;
+		if (this.disposed || this.isContentLoaded) return;
 
 		this.isContentLoaded = true;
 
@@ -343,7 +346,7 @@ export class QuadrantColumnComponent extends Component {
 	}
 
 	private async loadMoreTasks() {
-		if (this.isLoadingMore) {
+		if (this.disposed || this.isLoadingMore) {
 			return;
 		}
 
@@ -356,6 +359,7 @@ export class QuadrantColumnComponent extends Component {
 			return;
 		}
 
+		const revision = this.renderRevision;
 		this.isLoadingMore = true;
 		this.showLoadMoreIndicator();
 
@@ -375,7 +379,8 @@ export class QuadrantColumnComponent extends Component {
 			this.renderedTasks.push(...tasksToLoad);
 
 			// Render the new batch of tasks
-			await this.renderTaskBatch(tasksToLoad);
+			await this.renderTaskBatch(tasksToLoad, revision);
+			if (this.disposed || revision !== this.renderRevision) return;
 
 			// Update pagination
 			this.currentPage++;
@@ -391,7 +396,7 @@ export class QuadrantColumnComponent extends Component {
 		} catch (error) {
 			console.error("Error loading more tasks:", error);
 		} finally {
-			this.isLoadingMore = false;
+			if (revision === this.renderRevision) this.isLoadingMore = false;
 		}
 	}
 
@@ -409,61 +414,12 @@ export class QuadrantColumnComponent extends Component {
 
 
 
-	public setTasks(tasks: Task[]) {
-		console.log(
-			`setTasks called for ${this.quadrant.id} with ${tasks.length} tasks`
-		);
-
-		// Check if tasks have actually changed to avoid unnecessary re-renders
-		if (this.areTasksEqual(this.tasks, tasks)) {
-			console.log(
-				`Tasks unchanged for ${this.quadrant.id}, skipping setTasks`
-			);
-			return;
-		}
-
-		this.tasks = tasks;
-		this.updateCount();
-
-		// Reset pagination state
-		this.currentPage = 0;
-		this.renderedTasks = [];
-		this.hasMoreTasks = tasks.length > this.pageSize;
-
-		// Always try to load content immediately if we have tasks
-		if (tasks.length > 0) {
-			if (this.isContentLoaded) {
-				// Re-render immediately if already loaded
-				this.renderTasks();
-			} else {
-				// For small task counts, load immediately without lazy loading
-				if (tasks.length <= this.pageSize) {
-					console.log(
-						`Small task count (${tasks.length}), loading immediately for ${this.quadrant.id}`
-					);
-					// Force immediate loading for small task counts
-					setTimeout(() => {
-						this.loadContent();
-					}, 50);
-				} else {
-					// More aggressive loading strategy - load content for all columns
-					// since the quadrant view is typically small enough to show all columns
-					setTimeout(() => {
-						if (!this.isContentLoaded) {
-							console.log(
-								`Force loading content for ${this.quadrant.id} after setTasks (aggressive)`
-							);
-							this.loadContent();
-						}
-					}, 100);
-				}
-			}
-		} else {
-			// Handle empty state
-			if (this.isContentLoaded) {
-				this.showEmptyState();
-			}
-		}
+	public setTasks(tasks: Task[], force = false) {
+		if (this.disposed || (!force && this.areTasksEqual(this.tasks, tasks))) return;
+		this.tasks = tasks.map(task => ({ ...task, metadata: { ...task.metadata, tags: [...(task.metadata.tags || [])], children: [...(task.metadata.children || [])] } }));
+		this.updateCount(); this.isContentLoaded = true;
+		this.loadingEl?.remove(); this.loadingEl = null;
+		void this.renderTasks();
 	}
 
 	/**
@@ -540,26 +496,7 @@ export class QuadrantColumnComponent extends Component {
 	/**
 	 * Force update tasks even if they appear to be the same
 	 */
-	public forceSetTasks(tasks: Task[]) {
-		console.log(
-			`forceSetTasks called for ${this.quadrant.id} with ${tasks.length} tasks`
-		);
-
-		this.tasks = tasks;
-		this.updateCount();
-
-		// Reset pagination state
-		this.currentPage = 0;
-		this.renderedTasks = [];
-		this.hasMoreTasks = tasks.length > this.pageSize;
-
-		// Always re-render
-		if (this.isContentLoaded) {
-			this.renderTasks();
-		} else {
-			this.loadContent();
-		}
-	}
+	public forceSetTasks(tasks: Task[]) { this.setTasks(tasks, true); }
 
 	/**
 	 * Update a single task in the column
@@ -668,7 +605,7 @@ export class QuadrantColumnComponent extends Component {
 
 		if (cardIndex !== -1) {
 			const card = this.cardComponents[cardIndex];
-			card.onunload();
+			this.removeChild(card);
 			card.containerEl.remove();
 			this.cardComponents.splice(cardIndex, 1);
 		}
@@ -719,7 +656,9 @@ export class QuadrantColumnComponent extends Component {
 	}
 
 	private async renderTasks() {
-		if (!this.contentEl) return;
+		if (this.disposed || !this.contentEl) return;
+		const revision = ++this.renderRevision;
+		this.isLoadingMore = false;
 
 		// Clean up existing components
 		this.cleanup();
@@ -731,8 +670,10 @@ export class QuadrantColumnComponent extends Component {
 		this.currentPage = 0;
 		this.renderedTasks = [];
 		this.hasMoreTasks = this.tasks.length > this.pageSize;
+		this.hideLoadMoreIndicator();
 
 		await this.loadMoreTasks();
+		if (this.disposed || revision !== this.renderRevision) return;
 
 		// Show empty state if no tasks
 		if (this.tasks.length === 0) {
@@ -740,14 +681,15 @@ export class QuadrantColumnComponent extends Component {
 		}
 	}
 
-	private async renderTaskBatch(tasks: Task[]) {
-		if (!tasks.length) return;
+	private async renderTaskBatch(tasks: Task[], revision = this.renderRevision) {
+		if (!tasks.length || this.disposed || revision !== this.renderRevision) return;
 
 		const fragment = document.createDocumentFragment();
 
 		// Render tasks in smaller sub-batches to prevent UI blocking
 		const subBatchSize = 5;
 		for (let i = 0; i < tasks.length; i += subBatchSize) {
+			if (this.disposed || revision !== this.renderRevision) return;
 			const subBatch = tasks.slice(i, i + subBatchSize);
 
 			subBatch.forEach((task) => {
@@ -789,6 +731,7 @@ export class QuadrantColumnComponent extends Component {
 			}
 		}
 
+		if (this.disposed || revision !== this.renderRevision) return;
 		this.contentEl.appendChild(fragment);
 
 		// Force a scroll check after rendering
@@ -830,6 +773,7 @@ export class QuadrantColumnComponent extends Component {
 	}
 
 	private showEmptyState() {
+		this.cleanup(); this.contentEl.empty();
 		const emptyEl = this.contentEl.createDiv("tg-quadrant-empty-state");
 
 		const iconEl = emptyEl.createDiv("tg-quadrant-empty-icon");

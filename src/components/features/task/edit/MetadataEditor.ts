@@ -187,7 +187,6 @@ export class TaskMetadataEditor extends Component {
 		this.createProjectEditor(pane);
 		this.createTagsEditor(pane);
 		this.createContextEditor(pane);
-		this.createOnCompletionEditor(pane);
 		this.createDependsOnEditor(pane);
 	}
 
@@ -248,7 +247,6 @@ export class TaskMetadataEditor extends Component {
 		// Recurrence rule editor
 
 		// New fields
-		this.createOnCompletionEditor(metadataContainer);
 		this.createDependsOnEditor(metadataContainer);
 	}
 

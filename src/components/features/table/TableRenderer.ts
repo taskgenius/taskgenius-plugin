@@ -225,6 +225,8 @@ export class TableRenderer extends Component {
 	 */
 	private renderHeader() {
 		this.headerEl.empty();
+		for (const column of this.columns) if (column.id === "status") column.width = Math.max(112, column.width);
+		this.tableEl.style.minWidth = `${this.columns.reduce((sum, column) => sum + column.width, 0)}px`;
 
 		const headerRow = this.headerEl.createEl("tr", "task-table-header-row");
 
@@ -232,7 +234,7 @@ export class TableRenderer extends Component {
 			const th = headerRow.createEl("th", "task-table-header-cell");
 			th.dataset.columnId = column.id;
 			th.style.width = `${column.width}px`;
-			th.style.minWidth = `${Math.min(column.width, 50)}px`;
+			th.style.minWidth = `${column.id === "status" ? 112 : Math.min(column.width, 50)}px`;
 
 			// Create header content container
 			const headerContent = th.createDiv("task-table-header-content");
@@ -1470,6 +1472,7 @@ export class TableRenderer extends Component {
 	 * Update column width
 	 */
 	private updateColumnWidth(columnId: string, newWidth: number) {
+		if (columnId === "status") newWidth = Math.max(112, newWidth);
 		// Update header
 		const headerCell = this.headerEl.querySelector(
 			`th[data-column-id="${columnId}"]`,
@@ -1494,6 +1497,7 @@ export class TableRenderer extends Component {
 		if (column) {
 			column.width = newWidth;
 		}
+		this.tableEl.style.minWidth = `${this.columns.reduce((sum, item) => sum + item.width, 0)}px`;
 	}
 
 	/**

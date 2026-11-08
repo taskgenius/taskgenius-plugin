@@ -115,7 +115,7 @@ export class TableView extends Component {
 			{
 				id: "status",
 				title: t("Status"),
-				width: this.config.columnWidths.status || 64,
+				width: Math.max(112, this.config.columnWidths.status || 112),
 				sortable: this.config.sortableColumns,
 				resizable: this.config.resizableColumns,
 				type: "status",

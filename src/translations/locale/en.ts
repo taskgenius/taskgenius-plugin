@@ -3365,6 +3365,9 @@ const translations = {
 	"Choose a saved filter beside search. Edit its rules here using dropdowns.": "Choose a saved filter beside search. Edit its rules here using dropdowns.",
 	"Reset filter preset": "Reset filter preset",
 
+	"Earn points and redeem rewards in one place.": "Earn points and redeem rewards in one place.",
+	"Search bonuses, rewards and records": "Search bonuses, rewards and records",
+
 };
 
 export default translations;

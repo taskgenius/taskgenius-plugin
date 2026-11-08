@@ -26,7 +26,6 @@ import {
 	getEffectiveProject,
 	isProjectReadonly,
 } from "@/utils/task/task-operations";
-import { OnCompletionConfigurator } from "@/components/features/on-completion/OnCompletionConfigurator";
 import {
 	timestampToLocalDateString,
 	localDateStringToTimestamp,
@@ -544,9 +543,6 @@ export class TaskDetailsComponent extends Component {
 			addTagFromInput();
 		});
 
-		tagsField
-			.createSpan({ cls: "field-description" })
-			.setText(t("Click + to add tags. Click × on a tag to remove it."));
 
 		renderTags();
 
@@ -639,12 +635,6 @@ export class TaskDetailsComponent extends Component {
 				task.metadata.cancelledDate
 			);
 		}
-
-		// On completion action
-		const onCompletionField = this.createFormField(
-			this.editFormEl,
-			t("On Completion")
-		);
 
 		// Create a debounced save function
 		const saveTask = debounce(async () => {
@@ -788,53 +778,6 @@ export class TaskDetailsComponent extends Component {
 		requestSave = () => saveTask();
 
 		// Use OnCompletionConfigurator directly
-		const onCompletionConfigurator = new OnCompletionConfigurator(
-			onCompletionField,
-			this.plugin,
-			{
-				initialValue: task.metadata.onCompletion || "",
-				onChange: (value) => {
-					console.log(value, "onCompletion value changed");
-					// Use smarter save logic: allow basic configurations to save immediately
-					// and allow partial configurations for complex types
-					const config = onCompletionConfigurator.getConfig();
-					const shouldSave = this.shouldTriggerOnCompletionSave(
-						config,
-						value
-					);
-
-					if (shouldSave) {
-						// Trigger save - the saveTask function will get the latest value
-						// from onCompletionConfigurator.getValue() to avoid data races
-						saveTask();
-					}
-				},
-				onValidationChange: (isValid, error) => {
-					// Show validation feedback
-					const existingMessage = onCompletionField.querySelector(
-						".oncompletion-validation-message"
-					);
-					if (existingMessage) {
-						existingMessage.remove();
-					}
-
-					if (error) {
-						const messageEl = onCompletionField.createDiv({
-							cls: "oncompletion-validation-message error",
-							text: error,
-						});
-					} else if (isValid) {
-						const messageEl = onCompletionField.createDiv({
-							cls: "oncompletion-validation-message success",
-							text: t("Configuration is valid"),
-						});
-					}
-				},
-			}
-		);
-
-		this.addChild(onCompletionConfigurator);
-
 		// Dependencies are selected by task title; identifiers are managed internally.
 		const dependsOnField = this.createFormField(this.editFormEl, t("Depends On"));
 		const dependencyPicker = renderTaskDependencies(this.app, this.plugin, dependsOnField, task, () => saveTask());

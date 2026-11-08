@@ -3182,6 +3182,9 @@ const translations = {
 	"Choose a saved filter beside search. Edit its rules here using dropdowns.": "在搜索框旁直接选择预设；在这里通过下拉选项编辑规则。",
 	"Reset filter preset": "恢复默认预设",
 
+	"Earn points and redeem rewards in one place.": "统一记录积分与加分，并兑换奖励。",
+	"Search bonuses, rewards and records": "搜索加分项、奖励和流水",
+
 };
 
 export default translations;

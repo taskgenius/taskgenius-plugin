@@ -15,6 +15,7 @@ await build({
   stdin: {contents: `export {TaskGeniusHabits} from './src/integrations/habits/task-genius-host';
     export {HabitStore} from './src/integrations/habits/habit-store';
     export {NativeHabitCards} from './src/integrations/habits/ui/native-cards';
+    export {nativeCardHeat} from './src/integrations/habits/ui/native-card-state';
     export {DEFAULT_SETTINGS, DEFAULT_FRONTMATTER_KEYS} from './src/integrations/habits/settings';
     export {planLegacyHabits, importLegacyHabits} from './src/integrations/habits/legacy-import';
     export {isDue, isActive, isComplete, isDailyComplete, habitStats} from './src/integrations/habits/stats';
@@ -32,7 +33,7 @@ await build({
     builder.onResolve({filter: /^obsidian$/}, () => ({path: path.resolve('tests/habits/obsidian-fixture.mjs')}));
   }}],
 });
-const {TaskGeniusHabits, HabitStore, NativeHabitCards, Events, DEFAULT_SETTINGS, DEFAULT_FRONTMATTER_KEYS,
+const {TaskGeniusHabits, HabitStore, NativeHabitCards, nativeCardHeat, Events, DEFAULT_SETTINGS, DEFAULT_FRONTMATTER_KEYS,
   planLegacyHabits, importLegacyHabits, isDue, isActive, isComplete, isDailyComplete, habitStats, t, vaultFixture,
   ReminderSync, NoteHabitSync, computeNoteValue, applyCommentLog, parseCommentLog, generateSummary, ExportModal, resolveTaskPoints, taskCompletionTransactionId} = await import(pathToFileURL(path.join(directory, 'integration.mjs')));
 const settings = extra => ({...structuredClone(DEFAULT_SETTINGS), ...extra});
@@ -333,5 +334,22 @@ test('native habit cards show existing Markdown records and save catch-up withou
  assert.deepEqual(fixture.metadata.get('Habits/Exercise.md').frontmatter.records,{'2026-11-07':1,'2026-11-08':1});
  assert.equal(fixture.metadata.get('Habits/Exercise.md').frontmatter.startDate,'2026-11-01');
  cards.setSearchQuery('missing');assert.equal(root.querySelectorAll('.tg-native-habit-card').length,0);
+ cards.unload();dom.window.close();delete globalThis.document;delete globalThis.window;
+});
+
+test('native heatmap has four progress levels and never rewards breaking a maximum limit',()=>{
+ const base=habit({type:'repetition',frequency:'daily',intervalMode:'fixed',target:10});
+ for(const [value,level] of [[0,0],[4,1],[10,2],[20,3]])assert.equal(nativeCardHeat({...base,records:{'2026-11-08':value}},'2026-11-08').level,level);
+ assert.deepEqual(nativeCardHeat({...base,goalDirection:'max',records:{'2026-11-08':20}},'2026-11-08'),{level:1,overLimit:true});
+ assert.equal(nativeCardHeat({...base,goalDirection:'max',records:{'2026-11-08':4}},'2026-11-08').level,2);
+});
+
+test('native cards show minimum and maximum goals and put completed habits after pending habits',async()=>{
+ globalThis.testLanguage='en';const dom=new JSDOM('<body></body>');installObsidianDom(dom.window);globalThis.document=dom.window.document;globalThis.window=dom.window;
+ const f=vaultFixture(),config=settings();await f.app.vault.createFolder('Habits');
+ for(const[name,goalDirection,target,value]of [['A Counter','min',2,0],['B Done','min',2,2],['C Limit','max',1,2],['D Within limit','max',1,0]])await f.app.vault.create('Habits/'+name+'.md','---\n'+JSON.stringify({habit:true,type:'repetition',frequency:'daily',startDate:'2026-11-01',goalDirection,target,records:{'2026-11-08':value}})+'\n---\n');
+ const store=new HabitStore(f.app,()=>config,async()=>{}),root=document.body.createDiv(),cards=new NativeHabitCards(f.app,store,config,new Events(),root);cards.selectedDate=date('2026-11-08');cards.onload();
+ assert.deepEqual([...root.querySelectorAll('.tg-native-habit-heading strong')].map(el=>el.textContent),['A Counter','C Limit','B Done','D Within limit']);
+ assert.match(root.textContent,/At least: 0 \/ 2/);assert.match(root.textContent,/At most: 2 \/ 1/);assert.ok(root.querySelector('.is-over-limit'));assert.equal(root.querySelector('select'),null);
  cards.unload();dom.window.close();delete globalThis.document;delete globalThis.window;
 });

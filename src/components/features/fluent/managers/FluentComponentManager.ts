@@ -85,7 +85,6 @@ export class FluentComponentManager extends Component {
 	private projectsComponent: ProjectsComponent;
 	private habitComponent: Habit;
 	private pointsComponent: PointsDashboard;
-	private rewardsComponent: PointsDashboard;
 	private calendarComponent: CalendarComponent;
 	private kanbanComponent: KanbanComponent;
 	private ganttComponent: GanttComponent;
@@ -298,9 +297,6 @@ export class FluentComponentManager extends Component {
 		this.habitComponent.load();
 
 		this.pointsComponent = new PointsDashboard(this.app, this.plugin, this.contentArea);
-		this.rewardsComponent = new PointsDashboard(this.app, this.plugin, this.contentArea, false, "rewards");
-		this.parentView.addChild(this.rewardsComponent);
-		this.rewardsComponent.load();
 		this.parentView.addChild(this.pointsComponent);
 		this.pointsComponent.load();
 
@@ -387,7 +383,7 @@ export class FluentComponentManager extends Component {
 	 * Hide all components
 	 */
 	hideAllComponents(forceHideAll = false): void {
-		for (const component of [this.contentComponent, this.forecastComponent, this.tagsComponent, this.projectsComponent, this.habitComponent, this.pointsComponent, this.rewardsComponent, this.calendarComponent, this.kanbanComponent, this.ganttComponent]) component?.containerEl?.hide();
+		for (const component of [this.contentComponent, this.forecastComponent, this.tagsComponent, this.projectsComponent, this.habitComponent, this.pointsComponent, this.calendarComponent, this.kanbanComponent, this.ganttComponent]) component?.containerEl?.hide();
 		this.viewComponentManager?.hideAllComponents();
 		for (const component of this.twoColumnViewComponents.values()) component.containerEl.hide();
 		this.listContainer?.hide(); this.treeContainer?.hide();
@@ -521,8 +517,6 @@ export class FluentComponentManager extends Component {
 				// Standard view types
 				switch (viewId) {
 					case "rewards":
-						targetComponent = this.rewardsComponent;
-						break;
 					case "points":
 						targetComponent = this.pointsComponent;
 						break;

@@ -52,3 +52,12 @@ export class Modal extends Component {
   open(){this.onOpen?.();return this;}
   close(){this.onClose?.();this.containerEl.remove();}
 }
+
+export class Menu {
+ static last;
+ constructor(){this.items=[];Menu.last=this;}
+ addItem(callback){const item={titleEl:document.createElement('div'),setTitle(value){this.title=value;return this;},setIcon(){return this;},setChecked(){return this;},setDisabled(){return this;},setWarning(){return this;},onClick(callback){this.callback=callback;return this;},setSubmenu(){return new Menu();}};callback(item);this.items.push(item);return this;}
+ addSeparator(){return this;}
+ showAtMouseEvent(){return this;}
+ showAtPosition(){return this;}
+}

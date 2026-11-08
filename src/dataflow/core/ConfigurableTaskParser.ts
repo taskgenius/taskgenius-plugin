@@ -1840,6 +1840,11 @@ export class MarkdownTaskParser {
 			"comment",
 			"metadata", // Prevent recursive metadata inheritance
 		]);
+		// Project dates describe the project, never implicit deadlines of its tasks.
+		const projectKey = this.config.projectConfig?.metadataConfig?.metadataKey || "project";
+		if (String(this.fileMetadata?.[projectKey] ?? this.fileMetadata?.project ?? "").trim()) {
+			for (const field of ["due", "dueDate", "start", "startDate", "scheduled", "scheduledDate"]) nonInheritableFields.add(field);
+		}
 
 		// LEGACY: Inherit from file metadata (frontmatter) if available
 		if (this.fileMetadata) {

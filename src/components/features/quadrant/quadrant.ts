@@ -679,7 +679,7 @@ export class QuadrantComponent extends Component {
 	}
 
 	public setTasks(tasks: Task[]) {
-		this.allTasks = [...tasks];
+		this.allTasks = tasks.map(task => ({ ...task, metadata: { ...task.metadata, tags: [...(task.metadata.tags || [])] } }));
 		this.applyFilters();
 	}
 

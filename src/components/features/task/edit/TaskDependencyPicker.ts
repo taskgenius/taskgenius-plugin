@@ -30,6 +30,10 @@ export function renderTaskDependencies(app: App, plugin: TaskProgressBarPlugin, 
 	return { getValue: () => [...selected] };
 }
 
+export function isDependencyTask(task: Task): boolean {
+	return !(task as any).isFileTask && !task.id.startsWith("file-source:") && task.metadata?.source !== "file-source" && task.metadata?.sourceType !== "file" && !task.metadata?.projectPlan && (task.metadata?.source as any)?.type !== "ics";
+}
+
 export function dependencyWouldCycle(tasks: Task[], source: Task, target: Task): boolean {
 	const byId = new Map(tasks.flatMap(task => [[task.id, task] as const, ...(task.metadata.id ? [[task.metadata.id, task] as const] : [])]));
 	const seen = new Set<string>();
@@ -44,8 +48,8 @@ export class TaskDependencyPicker extends FuzzySuggestModal<Task> {
 	constructor(app: App, private plugin: TaskProgressBarPlugin, private source: Task, private tasks: Task[], private onSelected: (id: string) => void) {
 		super(app); this.setPlaceholder(t("Search for a task to depend on"));
 	}
-	getItems(): Task[] { return this.tasks.filter(task => task.id !== this.source.id && !task.metadata.projectPlan && !(this.source.metadata.dependsOn || []).includes(task.metadata.id || task.id)); }
-	getItemText(task: Task): string { return `${task.content} · ${task.filePath}`; }
+	getItems(): Task[] { return this.tasks.filter(task => task.id !== this.source.id && isDependencyTask(task) && !(this.source.metadata.dependsOn || []).includes(task.metadata.id || task.id)); }
+	getItemText(task: Task): string { return task.content; }
 	async onChooseItem(task: Task): Promise<void> {
 		if (dependencyWouldCycle(this.tasks, this.source, task)) { new Notice(t("These tasks would depend on each other.")); return; }
 		try {

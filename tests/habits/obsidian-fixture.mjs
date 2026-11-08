@@ -5,6 +5,8 @@ export class Events {
   trigger(name, ...args) { for (const callback of this.handlers.get(name) ?? []) callback(...args); }
 }
 export class Component {
+  onload() {}
+  onunload() {}
   children = []; cleanups = [];
   addChild(child) { this.children.push(child); child.onload?.(); return child; }
   removeChild(child) { child.unload(); this.children = this.children.filter(value => value !== child); }

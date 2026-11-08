@@ -1,3 +1,4 @@
+import { isProjectCalendarEntry } from "@/utils/task/project-calendar";
 /**
  * CalendarComponent - Enhanced calendar view using @taskgenius/calendar
  *
@@ -294,6 +295,7 @@ export class CalendarComponent extends Component {
 
 		const badgeEvents: CalendarEvent[] = [];
 		this.tasks.forEach((task) => {
+			if (isProjectCalendarEntry(this.app, task)) return;
 			const isIcsTask = (task as any).source?.type === "ics";
 			const icsTask = isIcsTask ? (task as IcsTask) : null;
 			const showAsBadge = icsTask?.icsEvent?.source?.showType === "badge";

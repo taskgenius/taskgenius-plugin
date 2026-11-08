@@ -364,7 +364,7 @@ export class FluentTaskView extends ItemView {
 			const restored =
 				this.workspaceStateManager.restoreFilterStateFromWorkspace();
 			if (restored?.activeViewId) {
-				this.currentViewId = restored.activeViewId === "review" ? "projects" : restored.activeViewId;
+				this.currentViewId = restored.activeViewId === "review" ? "projects" : restored.activeViewId === "rewards" ? "points" : restored.activeViewId;
 			}
 			this.workspaceStateManager.syncFilterState(restored, {
 				setLiveFilterState: (state) => {
@@ -1037,7 +1037,7 @@ export class FluentTaskView extends ItemView {
 						const restored =
 							this.workspaceStateManager.restoreFilterStateFromWorkspace();
 						if (restored?.activeViewId) {
-							this.currentViewId = restored.activeViewId === "review" ? "projects" : restored.activeViewId;
+							this.currentViewId = restored.activeViewId === "review" ? "projects" : restored.activeViewId === "rewards" ? "points" : restored.activeViewId;
 						}
 						this.workspaceStateManager.syncFilterState(restored, {
 							setLiveFilterState: (state) => {

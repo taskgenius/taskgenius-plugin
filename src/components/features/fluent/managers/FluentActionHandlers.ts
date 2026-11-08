@@ -1050,6 +1050,7 @@ export class FluentActionHandlers extends Component {
 	 */
 	handleNavigate(viewId: string, project?: string | null): void {
 		if (viewId === "review") viewId = "projects";
+		if (viewId === "rewards") viewId = "points";
 		if (viewId === "new-task") {
 			new QuickCaptureModal(this.app, this.plugin, project ? { project } : undefined).open();
 		} else {

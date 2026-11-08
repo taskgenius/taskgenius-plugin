@@ -50,15 +50,13 @@ export class TopNavigation extends Component {
 	private contextViewId = "inbox";
 	private searchQuery = "";
 	private activePresetId: string | null = null;
-	private refreshPresets?: () => void;
 	public updateContext(viewId: string): void {
 		this.contextViewId = viewId;
-		this.refreshPresets?.();
+
 		this.containerEl.show();
 		const taskContext = !["points", "rewards", "habit"].includes(viewId);
-		(this.containerEl.querySelector(".tg-saved-filter-select") as HTMLElement | null)?.toggle(taskContext);
 		(this.containerEl.querySelector(".tg-quick-filter-button") as HTMLElement | null)?.toggle(taskContext);
-		if (this.searchInput) this.searchInput.placeholder = t(viewId === "habit" ? "Search habits" : viewId === "rewards" ? "Search rewards" : viewId === "points" ? "Search bonuses and records" : "Search tasks, projects ...");
+		if (this.searchInput) this.searchInput.placeholder = t(viewId === "habit" ? "Search habits" : viewId === "rewards" ? "Search rewards" : viewId === "points" ? "Search bonuses, rewards and records" : "Search tasks, projects ...");
 	}
 	private availableModes: ViewMode[] = ["list", "kanban", "tree", "calendar"];
 	private viewTabsContainer: HTMLElement | null = null;
@@ -210,13 +208,6 @@ export class TopNavigation extends Component {
 				this.onSearch(value);
 			});
 		this.searchInput = searchContainer.querySelector("input")!;
-		const presetsSelect = leftSection.createEl("select", { cls: "tg-saved-filter-select", attr: { "aria-label": t("Saved filters") } });
-		const updatePresets = () => {
-			presetsSelect.empty(); presetsSelect.createEl("option", { value: "", text: t("All tasks") });
-			for (const preset of savedTaskFilters(this.plugin.settings.taskFilter?.presetTaskFilters)) presetsSelect.createEl("option", { value: preset.id, text: preset.name });
-			presetsSelect.value = this.activePresetId || "";
-		}; this.refreshPresets = updatePresets; updatePresets();
-		this.registerDomEvent(presetsSelect, "change", () => { this.activePresetId = presetsSelect.value || null; this.onFilterClick(this.activePresetId); });
 		const filterButton = searchContainer.createEl("button", {
 			cls: "fluent-nav-icon-button tg-quick-filter-button",
 			attr: { "aria-label": t("Quick filters") },
@@ -226,7 +217,7 @@ export class TopNavigation extends Component {
 		this.registerDomEvent(filterButton, "click", (event) => {
 			const menu = new Menu();
 			const presets = savedTaskFilters(this.plugin.settings.taskFilter?.presetTaskFilters);
-			const apply = (id: string | null) => { this.activePresetId = id; updatePresets(); filterButton.toggleClass("is-active", !!id); this.onFilterClick(id); };
+			const apply = (id: string | null) => { this.activePresetId = id; filterButton.toggleClass("is-active", !!id); this.onFilterClick(id); };
 			menu.addItem(item => item.setTitle(t("New saved filter")).setIcon("plus").onClick(() => new SavedTaskFilterModal(this.plugin.app, this.plugin, this.searchQuery, apply).open()));
 			if (!presets.length) {
 				menu.addItem(item => item.setTitle(t("No saved filters")).setDisabled(true));
@@ -608,8 +599,10 @@ export class TopNavigation extends Component {
 		}
 
 		this.selectedCycleId = selectedCycleId;
-		this.renderCycleSelector();
-		this.cycleSelectorContainer.show();
+		const choices = (this.plugin.settings.statusCycles || []).filter(cycle => cycle.enabled && !/^default\s*cycle$|^默认周期$/i.test(cycle.name.trim()));
+		if (!choices.length) { this.cycleSelectorContainer.hide(); return; }
+		if (!choices.some(cycle => cycle.id === selectedCycleId)) this.selectedCycleId = null;
+		this.renderCycleSelector(); this.cycleSelectorContainer.show();
 	}
 
 	/**
@@ -709,7 +702,7 @@ export class TopNavigation extends Component {
 
 		// Get enabled cycles, sorted by priority
 		const enabledCycles = (this.plugin.settings.statusCycles || [])
-			.filter((c) => c.enabled)
+			.filter((c) => c.enabled && !/^default\s*cycle$|^默认周期$/i.test(c.name.trim()))
 			.sort((a, b) => a.priority - b.priority);
 
 		if (enabledCycles.length === 0) {

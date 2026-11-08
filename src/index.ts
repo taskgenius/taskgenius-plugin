@@ -1951,9 +1951,10 @@ export default class TaskProgressBarPlugin extends Plugin {
 			}
 			this.settings.interfaceRevision = 9134;
 		}
+		this.settings.viewConfiguration = this.settings.viewConfiguration.filter(view => view.id !== "rewards");
 		for (const view of this.settings.viewConfiguration || []) {
 			if (view.id === "review") view.visible = false;
-			if (view.id === "points" && ["Points and rewards", "积分与奖励"].includes(view.name)) view.name = t("Points");
+			if (view.id === "points" && ["Points", "积分", "Points and rewards", "积分与奖励"].includes(view.name)) view.name = t("Points and rewards");
 			if (view.id === "gantt" && ["计划", "Gantt", "Gantt Chart", "Planning", "Project plans", "项目计划"].includes(view.name)) view.name = t("Project Gantt");
 		}
 

@@ -15,7 +15,7 @@ const directory=await mkdtemp(path.join(tmpdir(),'tg-ui-audit-'));
 after(()=>rm(directory,{recursive:true,force:true}));
 const owned=[
   'components/features/task/view/content.ts',
-  'components/features/fluent/components/FluentTopNavigation.ts', 'components/features/fluent/components/ProjectList.ts',
+  'components/features/fluent/components/FluentTopNavigation.ts', 'components/features/fluent/components/ProjectList.ts', 'components/features/fluent/components/FluentSidebar.ts',
   'components/features/fluent/managers/FluentDataManager.ts',
   'components/features/fluent/managers/FluentComponentManager.ts',
   'components/features/calendar/index.ts',
@@ -25,7 +25,7 @@ const owned=[
   'pages/FluentTaskView.ts', 'integrations/habits/ui/habit-modal.ts',
   'mcp/auth/AuthMiddleware.ts', 'services/view-settings-signature.ts', 'dataflow/events/Events.ts', 'utils/ui/view-mode-utils.ts',
   'utils/ui/tree-view-utils.ts',
-	'components/features/gantt/drag-pan.ts', 'components/features/gantt/task-renderer.ts', 'utils/task/priority-utils.ts', 'services/markdown-status-sync.ts', 'utils/task/filter-compatibility.ts', 'utils/task/saved-task-filters.ts', 'components/features/fluent/components/SavedTaskFilterModal.ts',
+	'components/features/gantt/drag-pan.ts', 'components/features/gantt/task-renderer.ts', 'utils/task/priority-utils.ts', 'services/markdown-status-sync.ts', 'utils/task/filter-compatibility.ts', 'utils/task/saved-task-filters.ts', 'utils/task/project-calendar.ts', 'components/features/quadrant/quadrant-column.ts', 'components/features/table/TableRenderer.ts', 'components/features/fluent/components/SavedTaskFilterModal.ts',
 	'components/features/rewards/PointsDashboard.ts', 'managers/points-service.ts', 'managers/daily-points.ts',
 ].map(file=>path.resolve('src',file));
 await build({stdin:{contents:`
@@ -33,6 +33,9 @@ await build({stdin:{contents:`
  export {TaskRendererComponent} from './src/components/features/gantt/task-renderer';
  export {MarkdownStatusSync} from './src/services/markdown-status-sync';
  export {registerGanttPan} from './src/components/features/gantt/drag-pan';
+ export {QuadrantColumnComponent} from './src/components/features/quadrant/quadrant-column';
+ export {FluentSidebar} from './src/components/features/fluent/components/FluentSidebar';
+ export {TableRenderer} from './src/components/features/table/TableRenderer';
  export {TopNavigation} from './src/components/features/fluent/components/FluentTopNavigation';
  export {SavedTaskFilterModal} from './src/components/features/fluent/components/SavedTaskFilterModal';
  export {FluentDataManager} from './src/components/features/fluent/managers/FluentDataManager';
@@ -57,7 +60,7 @@ await build({stdin:{contents:`
      if(args.path.endsWith(path.normalize('utils/task/task-filter-utils.ts')))return{contents:'export const filterTasks=tasks=>tasks;'};
      if(args.path.endsWith(path.normalize('commands/sortTaskCommands.ts')))return{contents:'export const sortTasks=tasks=>tasks;'};
      if(args.path.endsWith(path.normalize('dataflow/createDataflow.ts')))return{contents:'export const isDataflowEnabled=p=>!!p.dataflowOrchestrator;'};
-     if(args.path.endsWith(path.normalize('utils/grouping/groupByStorage.ts')))return{contents:'export const getGroupByConfig=()=>"none";export const setGroupByConfig=()=>{};export const getGroupExpandedState=()=>true;export const setGroupExpandedState=()=>{};'};
+     if(args.path.endsWith(path.normalize('utils/grouping/groupByStorage.ts')))return{contents:'export const getGroupByConfig=()=>"none";export const setGroupByConfig=()=>{};export const getGroupExpandedState=()=>globalThis.testGroupExpandedState??true;export const setGroupExpandedState=()=>{};'};
      const tree=ts.createSourceFile(args.path,fs.readFileSync(args.path,'utf8'),ts.ScriptTarget.Latest,true);
      const exports=[];let defaultClass=false;
      for(const node of tree.statements){
@@ -70,10 +73,10 @@ await build({stdin:{contents:`
    });
  }}],
 });
-const {registerGanttPan,MarkdownStatusSync,TaskRendererComponent,SavedTaskFilterModal,ContentComponent,TopNavigation,FluentDataManager,FluentComponentManager,CalendarComponent,ViewComponentManager,FluentTaskView,HabitModal,PointsDashboard,snapshotViewSettings,AuthMiddleware,ProjectList,vaultFixture,moment}=await import(pathToFileURL(path.join(directory,'ui.mjs')));
+const {TableRenderer,FluentSidebar,Menu,QuadrantColumnComponent,registerGanttPan,MarkdownStatusSync,TaskRendererComponent,SavedTaskFilterModal,ContentComponent,TopNavigation,FluentDataManager,FluentComponentManager,CalendarComponent,ViewComponentManager,FluentTaskView,HabitModal,PointsDashboard,snapshotViewSettings,AuthMiddleware,ProjectList,vaultFixture,moment}=await import(pathToFileURL(path.join(directory,'ui.mjs')));
 function environment(){
  const dom=new JSDOM('<body></body>',{url:'https://obsidian.invalid',pretendToBeVisual:true});installObsidianDom(dom.window);
- globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.HTMLElement=dom.window.HTMLElement;
+ globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.HTMLElement=dom.window.HTMLElement;globalThis.Window=dom.window.Window;globalThis.Document=dom.window.Document;
  const frames=new Map();let sequence=0;
  window.requestAnimationFrame=fn=>{frames.set(++sequence,fn);return sequence;};window.cancelAnimationFrame=id=>frames.delete(id);
  const tick=()=>{const pending=[...frames.values()];frames.clear();pending.forEach(fn=>fn());};
@@ -113,14 +116,14 @@ test('table views receive the filtered task list rather than rebuilding from all
  const all=[task('one'),task('two')];manager.switchView('table',all,[all[1]],null,'list');
  assert.deepEqual(received.map(item=>item.id),['two']);e.close();
 });
-test('points and rewards are separate pages sharing the original balance and records',async()=>{
+test('points and rewards share one page with the original bonus list and reward wishes',async()=>{
  const e=environment();e.plugin.settings.rewards={rewardItems:[],pointsLedger:[]};
  await e.app.vault.createFolder('99_System/01_Data');
  await e.app.vault.create('99_System/01_Data/积分系统数据.md','---\n'+JSON.stringify({manualPointRecords:[{id:'old',date:'2026-11-01',text:'Original reward history',points:30}],examplePropertyLeft:['Read a book + 50'],examplePropertyRight:['A trip - 5000']})+'\n---\n');
  const root=document.body.createDiv(),page=new PointsDashboard(e.app,e.plugin,root,true);page.onload();await new Promise(resolve=>setTimeout(resolve,0));
- assert.match(root.textContent,/Read a book \+ 50/);assert.doesNotMatch(root.textContent,/A trip - 5000/);assert.match(root.textContent,/30/);
+ assert.match(root.textContent,/Read a book \+ 50/);assert.match(root.textContent,/A trip - 5000/);assert.match(root.textContent,/30/);
  const rewardRoot=document.body.createDiv(),rewards=new PointsDashboard(e.app,e.plugin,rewardRoot,false,"rewards");rewards.onload();await new Promise(resolve=>setTimeout(resolve,0));
- assert.match(rewardRoot.textContent,/A trip - 5000/);assert.doesNotMatch(rewardRoot.textContent,/Read a book/);assert.match(rewardRoot.textContent,/30/);rewards.unload();
+ assert.match(rewardRoot.textContent,/A trip - 5000/);assert.match(rewardRoot.textContent,/Read a book/);assert.match(rewardRoot.textContent,/30/);rewards.unload();
  const history=[...root.querySelectorAll('[role="tab"]')].find(button=>button.textContent==='Points history');history.click();assert.match(root.textContent,/Original reward history/);
  const input=root.querySelector('.tg-points-tools input');input.value='no match';input.dispatchEvent(new window.Event('input'));assert.doesNotMatch(root.querySelector('.tg-points-body').textContent,/Original reward history/);
  page.unload();e.close();
@@ -253,13 +256,12 @@ test('custom year and agenda views use their base period for navigation and head
  calendar.currentViewMode='custom-year';assert.equal(calendar.getViewUnit(),'year');assert.equal(calendar.getCurrentDateDisplay(),'2026');calendar.currentViewMode='custom-agenda';assert.equal(calendar.getViewUnit(),'week');assert.ok(calendar.getCurrentDateDisplay().includes('2026'));e.close();
 });
 
-test('saved filters have ready-to-select status and month presets',()=>{
- const e=environment(),root=document.body.createDiv(),applied=[];
- const nav=new TopNavigation(root,e.plugin,()=>{},()=>{},id=>applied.push(id),()=>{},()=>{});
- const select=root.querySelector('.tg-saved-filter-select');
- assert.deepEqual([...select.options].map(option=>option.value),['','builtin-todo','builtin-completed','builtin-abandoned','builtin-month']);
- select.value='builtin-completed';select.dispatchEvent(new window.Event('change'));
- assert.deepEqual(applied,['builtin-completed']);nav.unload();e.close();
+test('header has a preset menu without a separate preset dropdown or cycle selector',()=>{
+ const e=environment(),root=document.body.createDiv();
+ const nav=new TopNavigation(root,e.plugin,()=>{},()=>{},()=>{},()=>{},()=>{});
+ assert.equal(root.querySelector('.tg-saved-filter-select'),null);assert.ok(root.querySelector('.tg-quick-filter-button'));
+ nav.showCycleSelector('default');assert.equal(root.querySelector('.fluent-nav-cycle-selector-wrapper').style.display,'none');
+ nav.unload();e.close();
 });
 test('the saved-filter editor provides status choices instead of a handwritten status field',()=>{
  const e=environment();e.plugin.settings.taskFilter={presetTaskFilters:[]};
@@ -270,11 +272,11 @@ test('the saved-filter editor provides status choices instead of a handwritten s
  assert.equal([...modal.contentEl.querySelectorAll('input')].filter(input=>input.type==='text').length,1);
  modal.close();e.close();
 });
-test('switching pages hides both points and rewards so neither can cover a task view',()=>{
+test('switching pages hides the combined points page so it cannot cover a task view',()=>{
  const e=environment(),root=document.body.createDiv(),manager=new FluentComponentManager(e.app,e.plugin,root,{addChild:child=>child},{});
- for(const key of ['contentComponent','pointsComponent','rewardsComponent','calendarComponent'])manager[key]={containerEl:root.createDiv()};
+ for(const key of ['contentComponent','pointsComponent','calendarComponent'])manager[key]={containerEl:root.createDiv()};
  manager.hideAllComponents(true);
- for(const key of ['contentComponent','pointsComponent','rewardsComponent','calendarComponent'])assert.equal(manager[key].containerEl.style.display,'none');
+ for(const key of ['contentComponent','pointsComponent','calendarComponent'])assert.equal(manager[key].containerEl.style.display,'none');
  e.close();
 });
 
@@ -321,4 +323,41 @@ test('Gantt background dragging pans the chart without stealing bar resize gestu
  assert.equal(root.scrollLeft,130);assert.equal(root.scrollTop,50);assert.equal(root.classList.contains('is-panning'),false);
  const bar=root.createDiv({cls:'gantt-task-item'});bar.dispatchEvent(pointer('pointerdown',100,80));document.dispatchEvent(pointer('pointermove',60,60));
  assert.equal(root.scrollLeft,130);cleanup();e.close();
+});
+
+test('matrix filtering to zero clears old cards and rapid filter switches discard stale batches',async()=>{
+ const e=environment(),root=document.body.createDiv();
+ const column=new QuadrantColumnComponent(e.app,e.plugin,root,{id:'urgent-important',title:'Important',icon:'star',className:'test-quadrant'},{});column.onload();
+ column.setTasks(Array.from({length:12},(_,i)=>task('old-'+i)));column.setTasks([]);
+ await new Promise(resolve=>setTimeout(resolve,25));assert.equal(root.querySelectorAll('[data-task-id]').length,0);assert.equal(root.querySelectorAll('.tg-quadrant-empty-state').length,1);
+ column.setTasks(Array.from({length:12},(_,i)=>task('stale-'+i)));column.setTasks([task('new')]);
+ await new Promise(resolve=>setTimeout(resolve,25));assert.deepEqual([...root.querySelectorAll('[data-task-id]')].map(el=>el.dataset.taskId),['new']);assert.equal(root.querySelector('.tg-quadrant-empty-state'),null);
+ column.unload();e.close();
+});
+
+test('every system view offers hide in its right-click menu',async()=>{
+ const e=environment();e.plugin.saveSettings=async()=>{};e.plugin.settings.viewConfiguration.push({id:'points',name:'Points'},{id:'habit',name:'Habits'},{id:'gantt',name:'Projects Gantt'});
+ const sidebar=new FluentSidebar(document.body.createDiv(),e.plugin,()=>{},()=>{});sidebar.render=()=>{};
+ for(const id of ['inbox','projects','points','habit','gantt']){
+  sidebar.showViewContextMenu(new window.MouseEvent('contextmenu'),id);
+  const hide=Menu.last.items.find(item=>item.title==='Hide in sidebar');assert.ok(hide,id);await hide.callback();
+  assert.equal(e.plugin.settings.viewConfiguration.find(view=>view.id===id).visible,false);
+ }
+ e.close();
+});
+
+test('search automatically reveals matching tasks inside previously collapsed groups',()=>{
+ const e=environment(),c=contentFixture(e);globalThis.testGroupExpandedState=false;c.setSearchQuery('co');
+ c.renderGroupContent=(group,content)=>content.setText(group.tasks.map(task=>task.content).join(' '));
+ c.renderGroupRecursive({key:'Tasks.md',title:'Tasks.md',tasks:[task('co task')],children:[]},c.taskListEl,new Map(),0);
+ assert.match(c.taskListEl.textContent,/co task/);assert.notEqual(c.taskListEl.querySelector('.group-section-content').style.display,'none');
+ delete globalThis.testGroupExpandedState;c.onunload();e.close();
+});
+
+test('table status width remains readable instead of being squeezed by the whole table',()=>{
+ const e=environment(),table=document.body.createEl('table'),header=table.createEl('thead'),body=table.createEl('tbody');
+ const columns=[{id:'status',title:'Status',width:64,visible:true,sortable:false,resizable:false},{id:'content',title:'Task',width:420,visible:true,sortable:false,resizable:false}];
+ const renderer=new TableRenderer(table,header,body,columns,{},e.app,e.plugin);renderer.onload();
+ assert.equal(header.querySelector('[data-column-id="status"]').style.width,'112px');assert.equal(table.style.minWidth,'532px');
+ renderer.updateColumnWidth('status',50);assert.equal(header.querySelector('[data-column-id="status"]').style.width,'112px');renderer.unload();e.close();
 });

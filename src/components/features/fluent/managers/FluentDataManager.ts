@@ -1,3 +1,4 @@
+import { isProjectCalendarEntry } from "@/utils/task/project-calendar";
 import { Component, debounce } from "obsidian";
 import TaskProgressBarPlugin from "@/index";
 import { Task } from "@/types/task";
@@ -140,6 +141,7 @@ export class FluentDataManager extends Component {
 		const viewId = this.getCurrentViewId();
 		const filterState = this.getCurrentFilterState();
 		if (viewId === "gantt") tasks = buildProjectPlan(this.plugin.app, tasks);
+		if (viewId === "calendar" || this.plugin.settings.viewConfiguration.find(view => view.id === viewId)?.specificConfig?.viewType === "calendar") tasks = tasks.filter(task => !isProjectCalendarEntry(this.plugin.app, task));
 		const query = filterState.filterInputValue || filterState.searchQuery || "";
 		const structuredQuery = /\b(?:AND|OR|NOT)\b|\b[\w-]+\s*:/i.test(query);
 

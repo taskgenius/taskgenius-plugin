@@ -1030,3 +1030,13 @@ button.fluent-new-task-btn:hover {
 
 .view-header .tg-fluent-top-nav { pointer-events: auto; }
 .tg-saved-filter-select { max-width: 180px; min-width: 92px; }
+
+.view-header:has(.tg-fluent-top-nav) { --icon-size: 16px; min-height: 38px; gap: 4px; }
+.view-header .fluent-top-navigation { min-height: 34px; padding: 0 4px; gap: 8px; background: transparent; }
+.view-header .fluent-nav-icon-button, .view-header .tg-quick-filter-button, .view-header .fluent-view-tab, .view-header .view-action, .view-header .fluent-nav-custom-button-wrapper .clickable-icon { height: 28px; min-height: 28px; width: 28px; padding: 5px; border: 0; border-radius: var(--radius-s); box-shadow: none; background: transparent; color: var(--icon-color); }
+.view-header .fluent-view-tab { width: auto; gap: 5px; padding: 5px 8px; }
+.view-header .fluent-view-tabs { padding: 0; background: transparent; }
+.view-header .fluent-nav-right { gap: 4px; }
+.view-header .fluent-search-container { align-items: center; }
+.view-header .fluent-nav-icon-button:hover, .view-header .fluent-view-tab:hover { background: var(--background-modifier-hover); color: var(--icon-color-hover); }
+.view-header .fluent-view-tab.is-active, .view-header .tg-quick-filter-button.is-active { background: var(--background-modifier-hover); color: var(--text-accent); }
