@@ -26,3 +26,10 @@ export function taskCompletionTransactionId(task: PointAwardTask, now = new Date
 	const day = completed ? typeof completed === "number" ? localPointDate(new Date(completed)) : pointDate(completed) : localPointDate(now);
 	return `task:${id}:${day}`;
 }
+
+
+/** Old awards store their completion day in the transaction id, even for catch-up. */
+export function pointLedgerDate(entry: { id?: string; source: string; createdAt: number }): string {
+	const completed = entry.source === "task" ? entry.id?.match(/:(\d{4}-\d{2}-\d{2})$/)?.[1] : undefined;
+	return completed || localPointDate(new Date(entry.createdAt));
+}

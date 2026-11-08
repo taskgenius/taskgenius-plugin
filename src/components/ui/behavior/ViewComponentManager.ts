@@ -142,6 +142,7 @@ class ViewComponentFactory {
 								}
 							},
 						},
+						viewId
 					);
 				}
 				return null;

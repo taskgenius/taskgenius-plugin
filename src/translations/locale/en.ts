@@ -3368,6 +3368,7 @@ const translations = {
 	"Earn points and redeem rewards in one place.": "Earn points and redeem rewards in one place.",
 	"Search bonuses, rewards and records": "Search bonuses, rewards and records",
 
+	"Completed checkbox tasks earn points by completion date. Existing daily task check-ins are deducted to prevent double counting.": "Completed checkbox tasks earn points by completion date. Existing daily task check-ins are deducted to prevent double counting.",
 };
 
 export default translations;

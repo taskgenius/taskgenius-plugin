@@ -132,6 +132,7 @@ export class HabitsCompact extends MarkdownRenderChild {
 			else dateInput.click();
 		});
 		this.button(nav, "chevron-right", t("Next day"), () => { this.selectedDate = addDays(this.selectedDate, 1); this.render(); });
+		if (toDateKey(this.selectedDate) !== toDateKey(new Date())) this.button(nav, "calendar-check", t("Today"), () => { this.selectedDate = new Date(); this.render(); });
 		this.button(header, "plus", t("Add habit"), () => {
 			new HabitModal(this.app, this.store, () => this.render(), null, settings.experimental.noteHabits).open();
 		});

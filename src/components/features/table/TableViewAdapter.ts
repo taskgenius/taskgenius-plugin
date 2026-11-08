@@ -16,7 +16,8 @@ export class TableViewAdapter extends Component {
 		private plugin: TaskProgressBarPlugin,
 		private parentEl: HTMLElement,
 		private config: TableSpecificConfig,
-		private callbacks: TableViewCallbacks
+		private callbacks: TableViewCallbacks,
+		private viewId = "table"
 	) {
 		super();
 
@@ -34,7 +35,8 @@ export class TableViewAdapter extends Component {
 				onTaskCompleted: this.callbacks.onTaskCompleted,
 				onTaskContextMenu: this.callbacks.onTaskContextMenu,
 				onTaskUpdated: this.callbacks.onTaskUpdated,
-			}
+			},
+			this.viewId
 		);
 	}
 

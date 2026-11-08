@@ -40,15 +40,20 @@ export class TaskGeniusHabits extends HabitsPlugin {
 	/** Read the previous plugin's non-secret configuration only on first use. */
 	async loadData(): Promise<Partial<HabitsPluginSettings> | null> {
 		if (this.host.settings.habitsIntegration) {
-			return JSON.parse(JSON.stringify(this.host.settings.habitsIntegration));
+			const saved = JSON.parse(JSON.stringify(this.host.settings.habitsIntegration));
+			// Fold the two former selectors into one without changing the visible layout.
+			if (saved.nativeLayout === "cards" || (!saved.nativeLayout && !saved.layoutUnified)) saved.dashboardLayout = "cards";
+			delete saved.nativeLayout;
+			saved.layoutUnified = true;
+			return saved;
 		}
 		try {
 			const path = `${this.app.vault.configDir}/plugins/habits/data.json`;
 			const previous = JSON.parse(await this.app.vault.adapter.read(path));
 			const { aiSummary, reminders, ...compatible } = previous;
 			// Keys and external writes require deliberate configuration in the host.
-			return compatible;
-		} catch { return null; }
+			return { ...compatible, dashboardLayout: "cards", layoutUnified: true };
+		} catch { return { dashboardLayout: "cards", layoutUnified: true }; }
 	}
 
 	async saveData(data: HabitsPluginSettings): Promise<void> {

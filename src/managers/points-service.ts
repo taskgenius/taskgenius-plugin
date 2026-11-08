@@ -1,3 +1,5 @@
+import { pointLedgerDate } from "./points-utils";
+import { dailyTaskPoints } from "./daily-task-points";
 import { App, getFrontMatterInfo, normalizePath, parseYaml, TFile } from "obsidian";
 import type TaskProgressBarPlugin from "@/index";
 import { calculateDailyHabitPoints, localPointDate, pointDate, pointListItems, pointNumber, roundPoints } from "./daily-points";
@@ -44,9 +46,13 @@ export class PointsService {
 		const summaries = calculateDailyHabitPoints(defined, data, today, keys);
 		const manual: ManualPointRecord[] = (Array.isArray(data.manualPointRecords) ? data.manualPointRecords : []).map((record: any, index: number) => ({ ...record, id: String(record.id ?? `legacy-${index}`), date: pointDate(record.date), text: String(record.text ?? ""), points: pointNumber(record.points), source: String(record.source || "manual"), createdAt: String(record.createdAt || "") }));
 		const ledger = this.plugin.settings.rewards.pointsLedger || [];
-		const balance = roundPoints(summaries.reduce((sum, item) => sum + item.points, 0) + manual.reduce((sum, item) => sum + item.points, 0) + ledger.reduce((sum, entry) => sum + entry.delta, 0));
-		const todayPoints = roundPoints(summaries.reduce((sum, item) => sum + item.todayPoints, 0) + manual.filter(item => item.date === today).reduce((sum, item) => sum + item.points, 0) + ledger.filter(entry => localPointDate(new Date(entry.createdAt)) === today).reduce((sum, entry) => sum + entry.delta, 0));
-		return { data, file, path: this.dataPath, summaries, manual, ledger, balance, todayPoints,
+		const tasks = this.plugin.dataflowOrchestrator ? await this.plugin.dataflowOrchestrator.getQueryAPI().getAllTasks() : [];
+		const automaticTasks = dailyTaskPoints(tasks, defined, data, ledger, keys, Number(this.plugin.settings.rewards.pointsPerTask ?? 0));
+		const extra = automaticTasks.days.reduce((sum, item) => sum + item.supplement, 0);
+		const todayExtra = automaticTasks.days.find(item => item.date === today)?.supplement || 0;
+		const balance = roundPoints(extra + summaries.reduce((sum, item) => sum + item.points, 0) + manual.reduce((sum, item) => sum + item.points, 0) + ledger.reduce((sum, entry) => sum + entry.delta, 0));
+		const todayPoints = roundPoints(todayExtra + summaries.reduce((sum, item) => sum + item.todayPoints, 0) + manual.filter(item => item.date === today).reduce((sum, item) => sum + item.points, 0) + ledger.filter(entry => pointLedgerDate(entry) === today).reduce((sum, entry) => sum + entry.delta, 0));
+		return { automaticTasks, data, file, path: this.dataPath, summaries, manual, ledger, balance, todayPoints,
 			bonuses: pointListItems(data.examplePropertyLeft), wishes: pointListItems(data.examplePropertyRight),
 			habitCount: defined.length, recordCount: defined.reduce((sum, item) => sum + Object.keys(item.frontmatter[keys.records] || {}).length, 0) };
 	}

@@ -51,18 +51,8 @@ export class Habit extends Component {
 			toolbar.createEl("h2", {text: ht("Habits")});
 			if (!this.externalSearch) new SearchComponent(toolbar).setPlaceholder(settingsText("Search habits")).setValue(this.query).onChange(value => this.setSearchQuery(value));
 			const root = this.containerEl.createDiv();
-			let currentLayout = "";
-			const renderLayout = () => {
-				const layout = integration.settings.nativeLayout || "cards"; if (currentLayout === layout) return; currentLayout = layout;
-				if (this.block) this.removeChild(this.block);
-				root.empty(); const content = root.createDiv();
-				this.block = layout === "cards"
-					? this.addChild(new NativeHabitCards(this.plugin.app, integration.store, integration.settings, integration.events, content))
-					: this.addChild(new HabitsBlock(this.plugin.app, integration.store, () => integration.settings, integration.events, "", content));
-				this.block.setSearchQuery(this.query);
-			};
-			this.registerEvent(integration.events.on("settings-changed", renderLayout));
-			renderLayout();
+			this.block = this.addChild(new HabitsBlock(this.plugin.app, integration.store, () => integration.settings, integration.events, "", root));
+			this.block.setSearchQuery(this.query);
 			if (this.plugin.settings.habit.habits?.length) {
 				const legacy = this.containerEl.createEl("details", {cls: "tg-habits-legacy"});
 				legacy.createEl("summary", {text: ht("Existing Task Genius habits")});

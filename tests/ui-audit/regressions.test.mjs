@@ -26,7 +26,8 @@ const owned=[
   'mcp/auth/AuthMiddleware.ts', 'services/view-settings-signature.ts', 'dataflow/events/Events.ts', 'utils/ui/view-mode-utils.ts',
   'utils/ui/tree-view-utils.ts',
 	'components/features/gantt/drag-pan.ts', 'components/features/gantt/task-renderer.ts', 'utils/task/priority-utils.ts', 'services/markdown-status-sync.ts', 'utils/task/filter-compatibility.ts', 'utils/task/saved-task-filters.ts', 'utils/task/project-calendar.ts', 'components/features/quadrant/quadrant-column.ts', 'components/features/table/TableRenderer.ts', 'components/features/fluent/components/SavedTaskFilterModal.ts',
-	'components/features/rewards/PointsDashboard.ts', 'managers/points-service.ts', 'managers/daily-points.ts',
+	'components/features/rewards/PointsDashboard.ts', 'managers/points-service.ts', 'managers/daily-points.ts', 'managers/daily-task-points.ts', 'managers/points-utils.ts',
+ 'components/features/kanban/kanban.ts', 'components/features/quadrant/quadrant.ts', 'components/features/table/TableView.ts',
 ].map(file=>path.resolve('src',file));
 await build({stdin:{contents:`
  export {ContentComponent} from './src/components/features/task/view/content';
@@ -35,6 +36,9 @@ await build({stdin:{contents:`
  export {registerGanttPan} from './src/components/features/gantt/drag-pan';
  export {QuadrantColumnComponent} from './src/components/features/quadrant/quadrant-column';
  export {FluentSidebar} from './src/components/features/fluent/components/FluentSidebar';
+ export {KanbanComponent} from './src/components/features/kanban/kanban';
+ export {QuadrantComponent,QUADRANT_DEFINITIONS} from './src/components/features/quadrant/quadrant';
+ export {TableView} from './src/components/features/table/TableView';
  export {TableRenderer} from './src/components/features/table/TableRenderer';
  export {TopNavigation} from './src/components/features/fluent/components/FluentTopNavigation';
  export {SavedTaskFilterModal} from './src/components/features/fluent/components/SavedTaskFilterModal';
@@ -73,7 +77,7 @@ await build({stdin:{contents:`
    });
  }}],
 });
-const {TableRenderer,FluentSidebar,Menu,QuadrantColumnComponent,registerGanttPan,MarkdownStatusSync,TaskRendererComponent,SavedTaskFilterModal,ContentComponent,TopNavigation,FluentDataManager,FluentComponentManager,CalendarComponent,ViewComponentManager,FluentTaskView,HabitModal,PointsDashboard,snapshotViewSettings,AuthMiddleware,ProjectList,vaultFixture,moment}=await import(pathToFileURL(path.join(directory,'ui.mjs')));
+const {KanbanComponent,QuadrantComponent,QUADRANT_DEFINITIONS,TableView,TableRenderer,FluentSidebar,Menu,QuadrantColumnComponent,registerGanttPan,MarkdownStatusSync,TaskRendererComponent,SavedTaskFilterModal,ContentComponent,TopNavigation,FluentDataManager,FluentComponentManager,CalendarComponent,ViewComponentManager,FluentTaskView,HabitModal,PointsDashboard,snapshotViewSettings,AuthMiddleware,ProjectList,vaultFixture,moment}=await import(pathToFileURL(path.join(directory,'ui.mjs')));
 function environment(){
  const dom=new JSDOM('<body></body>',{url:'https://obsidian.invalid',pretendToBeVisual:true});installObsidianDom(dom.window);
  globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.HTMLElement=dom.window.HTMLElement;globalThis.Window=dom.window.Window;globalThis.Document=dom.window.Document;
@@ -360,4 +364,63 @@ test('table status width remains readable instead of being squeezed by the whole
  const renderer=new TableRenderer(table,header,body,columns,{},e.app,e.plugin);renderer.onload();
  assert.equal(header.querySelector('[data-column-id="status"]').style.width,'112px');assert.equal(table.style.minWidth,'532px');
  renderer.updateColumnWidth('status',50);assert.equal(header.querySelector('[data-column-id="status"]').style.width,'112px');renderer.unload();e.close();
+});
+
+
+test('header controls share the host action strip and do not duplicate after rerender',()=>{
+ const e=environment(),header=document.body.createDiv({cls:'view-header'}),title=header.createDiv({cls:'view-header-title-container'}),actions=header.createDiv({cls:'view-actions'}),native=actions.createEl('button',{text:'Native'}),root=title.createDiv();
+ let clicks=0;native.addEventListener('click',()=>clicks++);
+ const nav=new TopNavigation(root,e.plugin,()=>{},()=>{},()=>{},()=>{},()=>{},[]);
+ assert.equal(actions.querySelectorAll('.fluent-nav-right').length,1);assert.equal(root.querySelector('.fluent-nav-right'),null);
+ let customClicks=0;nav.registerCustomButton({id:'test-tool',icon:'list',tooltip:'Tool',onClick:()=>customClicks++});
+ nav.render();assert.equal(actions.querySelectorAll('.fluent-nav-right').length,1);actions.querySelector('.fluent-nav-custom-button-wrapper button').click();assert.equal(customClicks,1);nav.notificationCount=7;nav.updateNotificationBadge();assert.equal(actions.querySelector('.fluent-notification-badge').textContent,'7');
+ native.click();assert.equal(clicks,1);nav.onunload();assert.equal(actions.querySelector('.fluent-nav-right'),null);assert.equal(native.parentElement,actions);e.close();
+});
+
+test('all sidebar views stay visible and drag freely into either region including an empty one',async()=>{
+ const e=environment();let saves=0;e.plugin.saveSettings=async()=>{saves++;};e.plugin.settings.changelog={lastVersion:'9.12.0'};
+ e.plugin.workspaceManager={isSidebarComponentHidden:id=>id==='projects-list',getActiveWorkspace:()=>({id:'test'}),isViewHidden:()=>false};
+ e.plugin.settings.viewConfiguration=[{id:'inbox',name:'Inbox',region:'bottom'},{id:'custom-top',name:'Top',region:'top'},...Array.from({length:12},(_,i)=>({id:'custom-'+i,name:'Custom '+i,region:'bottom'})),{id:'hidden',name:'Hidden',visible:false,region:'bottom'}];
+ const root=document.body.createDiv(),sidebar=new FluentSidebar(root,e.plugin,()=>{},()=>{});
+ sidebar.ensureSystemViews();assert.equal(e.plugin.settings.viewConfiguration.find(v=>v.id==='inbox').region,'bottom');assert.equal(e.plugin.settings.viewConfiguration.find(v=>v.id==='custom-top').region,'top');sidebar.render();
+ const top=root.querySelector('[data-region="top"] .fluent-navigation-list'),bottom=root.querySelector('[data-region="bottom"] .fluent-navigation-list');
+ assert.equal(bottom.children.length,13);assert.equal(root.querySelector('[aria-label="More views"]'),null);
+ const inbox=bottom.querySelector('[data-view-id="inbox"]');top.append(inbox);await sidebar.handleReorder({from:bottom,to:top,oldIndex:0,newIndex:top.children.length-1});assert.equal(e.plugin.settings.viewConfiguration.find(v=>v.id==='inbox').region,'top');
+ const item=top.querySelector('[data-view-id="today"]');bottom.append(item);await sidebar.handleReorder({from:top,to:bottom,oldIndex:0,newIndex:bottom.children.length-1});assert.equal(e.plugin.settings.viewConfiguration.find(v=>v.id==='today').region,'bottom');
+ e.plugin.settings.viewConfiguration.forEach(v=>v.region='bottom');sidebar.render();assert.equal(root.querySelector('[data-region="top"] .fluent-navigation-list').children.length,0);assert.ok(saves>=2);sidebar.destroySortables();e.close();
+});
+
+test('table resizing saves widths once at release to the correct custom view and restores on reopen',()=>{
+ const e=environment();let saves=0;e.plugin.saveSettings=async()=>{saves++;};const config={viewType:'table',visibleColumns:['status','content'],columnWidths:{}};
+ e.plugin.settings.viewConfiguration.push({id:'custom-table',specificConfig:structuredClone(config)},{id:'table',specificConfig:structuredClone(config)});
+ const view=new TableView(e.app,e.plugin,document.body.createDiv(),config,{},'custom-table');view.tableEl=document.body.createEl('table');view.headerEl=view.tableEl.createEl('thead');view.bodyEl=view.tableEl.createEl('tbody');view.initializeChildComponents();
+ view.renderer.startResize(new window.MouseEvent('mousedown',{clientX:100}),'content',420);view.renderer.handleMouseMove(new window.MouseEvent('mousemove',{clientX:260}));assert.equal(saves,0);view.renderer.handleMouseUp();view.renderer.handleMouseUp();assert.equal(saves,1);
+ const saved=e.plugin.settings.viewConfiguration.find(v=>v.id==='custom-table').specificConfig;assert.equal(saved.columnWidths.content,580);assert.deepEqual(e.plugin.settings.viewConfiguration.find(v=>v.id==='table').specificConfig.columnWidths,{});
+ const reopened=new TableView(e.app,e.plugin,document.body.createDiv(),structuredClone(saved),{},'custom-table');assert.equal(reopened.columns.find(c=>c.id==='content').width,580);view.renderer.unload();e.close();
+});
+
+test('matrix dragging persists explicit placement in every quadrant without changing deadlines or the source object',async()=>{
+ const e=environment(),source={...task('a'),metadata:{tags:['#keep','#urgent','#important'],dueDate:Date.now(),priority:5}},matrix=Object.create(QuadrantComponent.prototype);let saved,refreshes=0;
+ Object.assign(matrix,{plugin:e.plugin,tasks:[source],allTasks:[source],configOverride:{},refresh(){refreshes++;},showUpdateFeedback(){},showErrorFeedback(){throw new Error('write failed');}});
+ e.plugin.writeAPI={updateTask:async args=>{saved=args;return {success:true};}};
+ for(const quadrant of QUADRANT_DEFINITIONS){await matrix.updateTaskQuadrant('a',quadrant);const reindexed={...source,metadata:structuredClone(saved.updates.metadata)};assert.equal(matrix.determineTaskQuadrant(reindexed),quadrant.id);assert.equal(reindexed.metadata.dueDate,source.metadata.dueDate);assert.ok(reindexed.metadata.tags.includes('#keep'));}
+ assert.deepEqual(source.metadata.tags,['#keep','#urgent','#important']);assert.equal(refreshes,4);e.close();
+});
+
+test('matrix and kanban failed writes keep source properties unchanged and restore their rendered data',async()=>{
+ const e=environment(),source={...task('a'),metadata:{tags:['#keep'],priority:3}},matrix=Object.create(QuadrantComponent.prototype),board=Object.create(KanbanComponent.prototype);let matrixRefresh=0,boardRefresh=0;
+ e.plugin.writeAPI={updateTask:async()=>({success:false,error:'disk failure'})};
+ Object.assign(matrix,{plugin:e.plugin,tasks:[source],allTasks:[source],configOverride:{},refresh(){matrixRefresh++;},showErrorFeedback(){}});
+ Object.assign(board,{plugin:e.plugin,tasks:[source],allTasks:[source],applyFiltersAndRender(){boardRefresh++;}});
+ await matrix.updateTaskQuadrant('a',QUADRANT_DEFINITIONS[0]);await board.handlePropertyUpdate('a','priority',3,'5');await board.handleStatusUpdate('a','x');
+ assert.equal(source.metadata.priority,3);assert.equal(source.status,' ');assert.deepEqual(source.metadata.tags,['#keep']);assert.equal(matrixRefresh,1);assert.equal(boardRefresh,2);e.close();
+});
+
+test('kanban drag uses the column value rather than its translated title and completes with a date',async()=>{
+ const e=environment(),board=Object.create(KanbanComponent.prototype),source={...task('a'),metadata:{tags:[],priority:3}},root=document.body.createDiv();let saved;
+ Object.assign(board,{plugin:e.plugin,currentViewId:'kanban',tasks:[source],allTasks:[source],configOverride:null,applyFiltersAndRender(){this.tasks=[...this.allTasks];}});e.plugin.settings.viewConfiguration.push({id:'kanban',specificConfig:{groupBy:'priority'}});e.plugin.settings.taskStatuses={completed:'x'};
+ e.plugin.writeAPI={updateTask:async args=>{saved=args;return {success:true};}};
+ const from=root.createDiv({cls:'tg-kanban-column',attr:{'data-column-value':'3'}}),to=root.createDiv({cls:'tg-kanban-column',attr:{'data-column-value':'5'}});from.createSpan({cls:'tg-kanban-column-title',text:'中等'});to.createSpan({cls:'tg-kanban-column-title',text:'最高'});const a=from.createDiv(),b=to.createDiv(),card=b.createDiv({attr:{'data-task-id':'a'}});
+ await board.handleSortEnd({from:a,to:b,item:card,oldIndex:0,newIndex:0});assert.equal(saved.updates.metadata.priority,5);assert.equal(board.allTasks[0].metadata.priority,5);assert.equal(source.metadata.priority,3);
+ await board.handleStatusUpdate('a','x');assert.equal(saved.updates.completed,true);assert.ok(Number.isFinite(saved.updates.metadata.completedDate));await board.handleStatusUpdate('a',' ');assert.equal(saved.updates.metadata.completedDate,undefined);e.close();
 });

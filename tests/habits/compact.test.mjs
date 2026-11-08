@@ -130,7 +130,7 @@ test('date label opens the picker and a selected date changes the logged day', a
   const f = fixture({}, async (...args) => writes.push(args));
   const input = f.root.all().find(el => el.className === 'habits-compact-date-input');
   const nav = f.root.all().find(el => el.className === 'habits-compact-nav');
-  assert.deepEqual(nav.children.map(el => el.attrs['aria-label']), ['Previous day', 'Choose a date', 'Next day']);
+  assert.deepEqual(nav.children.map(el => el.attrs['aria-label']), ['Previous day', 'Choose a date', 'Next day', 'Today']);
   assert.ok(f.root.children.includes(input), 'date picker must not occupy navigation space');
   let opened = false;
   input.showPicker = () => { opened = true; };
@@ -140,6 +140,9 @@ test('date label opens the picker and a selected date changes the logged day', a
   input.value = '2026-09-05'; input.handlers.change();
   f.button('Increase by 1').handlers.click(); await new Promise(setImmediate);
   assert.equal(writes[0][1], '2026-09-05');
+  f.button('Today').handlers.click();
+  const now=new Date();const today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  assert.equal(f.root.all().find(el=>el.className==='habits-compact-date-input').value,today);
 });
 
 test('successful writes bridge stale metadata, then accept external changes', async () => {

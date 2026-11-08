@@ -2,16 +2,17 @@ import { App, MarkdownRenderChild, type Events } from "obsidian";
 import type { HabitStore } from "../habit-store";
 import type { HabitsPluginSettings } from "../settings";
 import { HabitsDashboard } from "./dashboard";
+import { NativeHabitCards } from "./native-cards";
 import { HabitsCompact } from "./habits-compact";
 
 /** Hosts the chosen layout of the existing `habits` block. */
 export class HabitsBlock extends MarkdownRenderChild {
 	private view: MarkdownRenderChild | null = null;
-	private compact: boolean | null = null;
+	private layout = "";
 	private searchQuery = "";
 	setSearchQuery(value: string): void {
 		this.searchQuery = value.trim().toLocaleLowerCase();
-		(this.view as HabitsDashboard | HabitsCompact | null)?.setSearchQuery?.(this.searchQuery);
+		(this.view as HabitsDashboard | HabitsCompact | NativeHabitCards | null)?.setSearchQuery?.(this.searchQuery);
 	}
 
 	constructor(
@@ -31,17 +32,18 @@ export class HabitsBlock extends MarkdownRenderChild {
 	}
 
 	private updateLayout(): void {
-		const compact = this.getSettings().dashboardLayout === "compact";
-		if (compact === this.compact) return;
-		this.compact = compact;
+		const layout = this.getSettings().dashboardLayout;
+		if (layout === this.layout) return;
+		this.layout = layout;
 		if (this.view) this.removeChild(this.view);
 		this.containerEl.empty();
 		const root = this.containerEl.createDiv();
-		const View = compact ? HabitsCompact : HabitsDashboard;
-		this.view = this.addChild(new View(
-			this.app, this.store, this.getSettings,
-			this.pluginEvents, this.sourcePath, root,
-		));
-		if (this.searchQuery) (this.view as HabitsDashboard | HabitsCompact).setSearchQuery?.(this.searchQuery);
+		if (layout === "cards") {
+			this.view = this.addChild(new NativeHabitCards(this.app, this.store, this.getSettings(), this.pluginEvents, root));
+		} else {
+			const View = layout === "compact" ? HabitsCompact : HabitsDashboard;
+			this.view = this.addChild(new View(this.app, this.store, this.getSettings, this.pluginEvents, this.sourcePath, root));
+		}
+		if (this.searchQuery) (this.view as HabitsDashboard | HabitsCompact | NativeHabitCards).setSearchQuery?.(this.searchQuery);
 	}
 }

@@ -1,5 +1,6 @@
 import {
 	App,
+	Notice,
 	Component,
 	Menu,
 	Platform,
@@ -849,6 +850,7 @@ export class KanbanComponent extends Component {
 				},
 			);
 			this.addChild(column);
+			column.getElement().dataset.columnValue = JSON.stringify(config.value);
 			this.columns.push(column);
 		});
 	}
@@ -1079,10 +1081,7 @@ export class KanbanComponent extends Component {
 		this.sortableInstances = [];
 
 		// Detect if we're on a mobile device
-		const isMobile =
-			!Platform.isDesktop ||
-			"ontouchstart" in window ||
-			navigator.maxTouchPoints > 0;
+		const isMobile = Platform.isMobile;
 
 		this.columns.forEach((col) => {
 			const columnContent = col.getContentElement();
@@ -1097,6 +1096,11 @@ export class KanbanComponent extends Component {
 
 			const instance = Sortable.create(columnContent, {
 				group: groupConfig,
+				draggable: ".tg-kanban-card",
+				filter: "button, input, select, textarea, a",
+				preventOnFilter: false,
+				emptyInsertThreshold: 20,
+				delayOnTouchOnly: true,
 				animation: 150,
 				ghostClass: "tg-kanban-card-ghost",
 				dragClass: "tg-kanban-card-dragging",
@@ -1177,12 +1181,12 @@ export class KanbanComponent extends Component {
 						kanbanConfig?.customColumns;
 
 					// Handle property-based grouping
-					const targetValue = this.getColumnValueFromTitle(
+					const targetValue = (targetColumnEl as HTMLElement)?.dataset.columnValue !== undefined ? JSON.parse((targetColumnEl as HTMLElement).dataset.columnValue!) : this.getColumnValueFromTitle(
 						targetColumnTitle,
 						groupBy,
 						effectiveCustomColumns,
 					);
-					const sourceValue = this.getColumnValueFromTitle(
+					const sourceValue = (sourceColumnEl as HTMLElement)?.dataset.columnValue !== undefined ? JSON.parse((sourceColumnEl as HTMLElement).dataset.columnValue!) : this.getColumnValueFromTitle(
 						sourceColumnTitle,
 						groupBy,
 						effectiveCustomColumns,
@@ -1337,31 +1341,19 @@ export class KanbanComponent extends Component {
 		taskId: string,
 		newStatusMark: string,
 	): Promise<void> {
-		console.log(
-			`[Kanban] handleStatusUpdate called: taskId=${taskId}, mark=${newStatusMark}`,
-		);
-		console.log(
-			"[Kanban] onTaskStatusUpdate callback exists:",
-			!!this.params.onTaskStatusUpdate,
-		);
-
-		if (this.params.onTaskStatusUpdate) {
-			try {
-				console.log("[Kanban] Calling onTaskStatusUpdate callback...");
-				await this.params.onTaskStatusUpdate(taskId, newStatusMark);
-				console.log(
-					"[Kanban] onTaskStatusUpdate callback completed successfully",
-				);
-			} catch (error) {
-				console.error("[Kanban] Failed to update task status:", error);
-				console.error("[Kanban] Error details:", error.stack);
-			}
-		} else {
-			console.error(
-				"[Kanban] CRITICAL: onTaskStatusUpdate callback is not defined!",
-			);
-			console.error("[Kanban] this.params:", this.params);
-		}
+		const task = this.allTasks.find(task => task.id === taskId);
+		if (!task) return;
+		try {
+			if (!this.plugin.writeAPI) throw new Error("Task writer is unavailable");
+			const completed = (this.plugin.settings.taskStatuses?.completed || "x").split("|").includes(newStatusMark);
+			const updatedTask = { ...task, status: newStatusMark, completed, metadata: { ...task.metadata, completedDate: completed ? task.metadata.completedDate || Date.now() : undefined } };
+			const result = await this.plugin.writeAPI.updateTask({ taskId, updates: updatedTask });
+			if (!result.success) throw new Error(result.error || "Task update failed");
+			this.allTasks = this.allTasks.map(task => task.id === taskId ? result.task || updatedTask : task);
+		} catch (error) {
+			console.error("Failed to update task status:", error);
+			new Notice(t("Failed to update task"));
+		} finally { this.applyFiltersAndRender(); }
 	}
 
 	private async handlePropertyUpdate(
@@ -1385,10 +1377,7 @@ export class KanbanComponent extends Component {
 			return;
 		}
 
-		taskToUpdate.metadata = taskToUpdate.metadata || {};
-
-		// Create updated task object
-		const updatedTask = { ...taskToUpdate };
+		const updatedTask = { ...taskToUpdate, metadata: { ...taskToUpdate.metadata } };
 
 		// Update the specific property based on groupBy type
 		switch (groupBy) {
@@ -1506,21 +1495,19 @@ export class KanbanComponent extends Component {
 					taskId,
 					updates: updatedTask,
 				});
-				if (!result.success) {
-					console.error(
-						`Failed to update task ${taskId} property ${groupBy}:`,
-						result.error,
-					);
-				}
+				if (!result.success) throw new Error(result.error || "Task update failed");
+				this.allTasks = this.allTasks.map(task => task.id === taskId ? updatedTask : task);
+				this.tasks = this.tasks.map(task => task.id === taskId ? updatedTask : task);
 			} else {
-				console.error("WriteAPI not available");
+				throw new Error("Task writer is unavailable");
 			}
 		} catch (error) {
 			console.error(
 				`Failed to update task ${taskId} property ${groupBy}:`,
 				error,
 			);
-		}
+			new Notice(t("Failed to update task"));
+		} finally { this.applyFiltersAndRender(); }
 	}
 
 	private getTasksForProperty(groupBy: string, value: any): Task[] {

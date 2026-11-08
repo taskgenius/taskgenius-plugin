@@ -1,3 +1,4 @@
+import { pointLedgerDate } from "@/managers/points-utils";
 import { App, Component, Modal, Notice, SearchComponent, Setting } from "obsidian";
 import type TaskProgressBarPlugin from "@/index";
 import type { RewardItem } from "@/common/setting-definition";
@@ -48,7 +49,9 @@ export class PointsDashboard extends Component {
 		this.registerDomEvent(filter, "change", () => { this.historyFilter = filter.value; this.renderBody(); });
 		this.bodyEl = this.containerEl.createDiv({ cls: "tg-points-body" });
 		this.renderTabs();
-		this.registerEvent(this.app.workspace.on("task-genius:points-updated", () => this.scheduleRefresh()));
+		for (const event of ["task-genius:points-updated", "task-genius:cache-ready", "task-genius:task-cache-updated"]) {
+			this.registerEvent(this.app.workspace.on(event as "task-genius:points-updated", () => this.scheduleRefresh()));
+		}
 		for (const event of ["modify", "create", "delete", "rename"] as const) this.registerEvent(this.app.vault.on(event as "modify", file => {
 			const folder = this.plugin.habitsIntegration?.settings.habitsFolder || this.plugin.settings.habitsIntegration?.habitsFolder || "Habits";
 			if (file.path === pointsService(this.plugin).dataPath || file.path.startsWith(`${folder}/`)) this.scheduleRefresh();
@@ -75,7 +78,6 @@ export class PointsDashboard extends Component {
 			for (const [label, value, primary] of [
 				[t("Available points"), numberText(snapshot.balance), true],
 				[t("Today's points"), numberText(snapshot.todayPoints), false],
-				[t("Habits / check-ins"), `${snapshot.habitCount} / ${snapshot.recordCount}`, false],
 			] as const) {
 
 				const card = this.summaryEl.createDiv({ cls: `tg-points-card${primary ? " is-primary" : ""}` });
@@ -160,8 +162,9 @@ export class PointsDashboard extends Component {
 		const snapshot = this.snapshot!;
 		const panel = this.panel(t("Points history"));
 		const records = [
+			...snapshot.automaticTasks.days.filter(item => item.supplement > 0).map(item => ({ id: `automatic-tasks:${item.date}`, date: item.date, label: `${t("Completed tasks")}: ${item.count}`, amount: item.supplement, manual: false })),
 			...snapshot.manual.map(item => ({ id: item.id, date: item.date, label: item.text, amount: item.points, manual: true })),
-			...snapshot.ledger.map(item => ({ id: item.id, date: localPointDate(new Date(item.createdAt)), label: item.label, amount: item.delta, manual: false })),
+			...snapshot.ledger.map(item => ({ id: item.id, date: pointLedgerDate(item), label: item.label, amount: item.delta, manual: false })),
 		].filter(item => this.matches(`${item.date} ${item.label}`) && (this.historyFilter !== "today" || item.date === localPointDate()) && (this.historyFilter !== "positive" || item.amount > 0) && (this.historyFilter !== "negative" || item.amount < 0)).sort((a, b) => b.date.localeCompare(a.date));
 		for (const record of records) {
 			const row = panel.createDiv({ cls: "tg-points-entry" });
@@ -189,8 +192,8 @@ export class PointsDashboard extends Component {
 		new Setting(panel).setName(t("Default habit points")).setDesc(t("Habit-specific points override the default. Negative values deduct points above the habit allowance."))
 			.addToggle(toggle => toggle.setValue(snapshot.data.defaultPointRule?.enabled !== false).onChange(value => void pointsService(this.plugin).saveDefaultRate(Number(snapshot.data.defaultPointRule?.baseRate ?? 0.1), value)))
 			.addButton(button => button.setButtonText(numberText(Number(snapshot.data.defaultPointRule?.baseRate ?? 0.1))).onClick(() => new PointAmountModal(this.app, t("Default habit points"), t("Default rule"), Number(snapshot.data.defaultPointRule?.baseRate ?? 0.1), async (_label, amount) => pointsService(this.plugin).saveDefaultRate(amount, true), true).open()));
-		new Setting(panel).setName(t("Default task points")).setDesc(t("Use 0 to award task points only when a task has its own point value."))
-			.addButton(button => button.setButtonText(String(this.plugin.settings.rewards.pointsPerTask ?? 0)).onClick(() => new PointAmountModal(this.app, t("Default task points"), t("Task"), Number(this.plugin.settings.rewards.pointsPerTask ?? 0), async (_label, amount) => {
+		new Setting(panel).setName(t("Default task points")).setDesc(t("Completed checkbox tasks earn points by completion date. Existing daily task check-ins are deducted to prevent double counting."))
+			.addButton(button => button.setButtonText(String(snapshot.automaticTasks.rate)).onClick(() => new PointAmountModal(this.app, t("Default task points"), t("Task"), snapshot.automaticTasks.rate, async (_label, amount) => {
 			if (amount < 0) throw new Error(t("Enter a positive point cost."));
 			this.plugin.settings.rewards.pointsPerTask = amount; await this.plugin.saveSettings(); await this.refresh();
 		}, true).open()));

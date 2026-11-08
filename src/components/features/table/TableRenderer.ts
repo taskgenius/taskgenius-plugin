@@ -55,6 +55,8 @@ export class TableRenderer extends Component {
 	) => void;
 
 	// Callback for row expansion
+	public onColumnResize?: (columnId: string, width: number) => void;
+
 	public onRowExpand?: (rowId: string) => void;
 
 	// Callback for cell value changes
@@ -1462,7 +1464,9 @@ export class TableRenderer extends Component {
 	private handleMouseUp() {
 		if (!this.isResizing) return;
 
+		const column = this.columns.find(column => column.id === this.resizeColumn);
 		this.isResizing = false;
+		if (column) this.onColumnResize?.(column.id, column.width);
 		this.resizeColumn = "";
 		document.body.style.cursor = "";
 		this.tableEl.removeClass("resizing");

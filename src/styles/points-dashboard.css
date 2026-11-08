@@ -11,6 +11,7 @@
 .tg-points-heading { font-size:1.8em; font-weight:700; letter-spacing:-.025em; }
 .tg-points-subtitle,.tg-points-date,.tg-points-label { color:var(--text-muted); }
 .tg-points-summary,.tg-points-columns { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; max-width:1220px; margin:0 auto 18px; }
+.tg-points-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .tg-points-card,.tg-points-panel { border:1px solid var(--background-modifier-border); border-radius:16px; background:color-mix(in srgb,var(--background-secondary) 88%,transparent); box-shadow:0 10px 34px color-mix(in srgb,#000 10%,transparent); }
 .tg-points-card { min-height:118px; padding:22px; }
 .tg-points-card.is-primary { background:linear-gradient(130deg,color-mix(in srgb,var(--interactive-accent) 18%,var(--background-secondary)),var(--background-secondary)); }

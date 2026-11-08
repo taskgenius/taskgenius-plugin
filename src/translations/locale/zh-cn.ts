@@ -3185,6 +3185,7 @@ const translations = {
 	"Earn points and redeem rewards in one place.": "统一记录积分与加分，并兑换奖励。",
 	"Search bonuses, rewards and records": "搜索加分项、奖励和流水",
 
+	"Completed checkbox tasks earn points by completion date. Existing daily task check-ins are deducted to prevent double counting.": "按完成日期统计复选框任务积分，自动抵扣已有的完成任务打卡积分，避免重复计分。",
 };
 
 export default translations;

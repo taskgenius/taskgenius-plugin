@@ -73,3 +73,11 @@ test("a failed ledger write restores a finite reward's inventory", async () => {
 	expect(plugin.settings.rewards.rewardItems[0].inventory).toBe(1);
 	expect((await service.snapshot()).manual).toHaveLength(1);
 });
+
+
+test("task index refresh adds daily task points without changing habit records or ledger files", async () => {
+ const {service,plugin,entries}=harness();const before=JSON.stringify([...entries.values()].map(entry=>entry.data));
+ plugin.dataflowOrchestrator={getQueryAPI:()=>({getAllTasks:async()=>[{id:"t",line:1,filePath:"Tasks.md",completed:true,metadata:{completedDate:new Date("2026-11-02T12:00:00").getTime()},originalMarkdown:"- [x] Task"}]})};
+ const first=await service.snapshot();expect(first.balance).toBe(11.5);expect(first.automaticTasks.days[0].supplement).toBe(1);
+ expect((await service.snapshot()).balance).toBe(11.5);expect(JSON.stringify([...entries.values()].map(entry=>entry.data))).toBe(before);
+});

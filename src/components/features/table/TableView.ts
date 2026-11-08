@@ -76,7 +76,8 @@ export class TableView extends Component {
 		private plugin: TaskProgressBarPlugin,
 		private parentEl: HTMLElement,
 		private config: TableSpecificConfig,
-		private callbacks: TableViewCallbacks = {}
+		private callbacks: TableViewCallbacks = {},
+		private viewId = "table"
 	) {
 		super();
 		this.config.columnWidths ||= {};
@@ -295,6 +296,10 @@ export class TableView extends Component {
 			this.app,
 			this.plugin
 		);
+		this.renderer.onColumnResize = (id, width) => {
+			this.config.columnWidths[id] = width;
+			this.saveColumnConfiguration();
+		};
 		this.addChild(this.renderer);
 
 		// Set up date change callback
@@ -1149,7 +1154,7 @@ export class TableView extends Component {
 		if (this.plugin && this.plugin.settings) {
 			// Find the table view configuration
 			const tableViewConfig = this.plugin.settings.viewConfiguration.find(
-				(view) => view.id === "table"
+				(view) => view.id === this.viewId
 			);
 
 			if (tableViewConfig && tableViewConfig.specificConfig) {
@@ -1160,7 +1165,7 @@ export class TableView extends Component {
 						...this.config.visibleColumns,
 					];
 
-					// Save settings
+					tableConfig.columnWidths = { ...this.config.columnWidths };
 					this.plugin.saveSettings();
 				}
 			}

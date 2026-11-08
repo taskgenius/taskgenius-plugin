@@ -89,29 +89,6 @@ export class FluentSidebar extends Component {
 		const systemViewIds = Object.keys(this.SYSTEM_VIEWS);
 		let changed = false;
 
-		// One-time migration: reset top region to only system views for version <= 9.12.3
-		const lastVersion = this.plugin.settings.changelog?.lastVersion;
-		const needsMigration =
-			!lastVersion || this.compareVersions(lastVersion, "9.12.3") <= 0;
-
-		if (needsMigration) {
-			// Move all non-system views from top to bottom
-			config.forEach((v) => {
-				if (!systemViewIds.includes(v.id) && v.region === "top") {
-					v.region = "bottom";
-					changed = true;
-				}
-			});
-		}
-
-		// Ensure existing system views have region: "top"
-		config.forEach((v) => {
-			if (systemViewIds.includes(v.id) && v.region !== "top") {
-				v.region = "top";
-				changed = true;
-			}
-		});
-
 		// Add system views at the beginning if they don't exist
 		const systemViewsToAdd: ViewConfig[] = [];
 		Object.entries(this.SYSTEM_VIEWS).forEach(([id, def]) => {
@@ -142,19 +119,6 @@ export class FluentSidebar extends Component {
 		if (changed) {
 			this.plugin.saveSettings();
 		}
-	}
-
-	private compareVersions(v1: string, v2: string): number {
-		const parts1 = v1.split(".").map((n) => parseInt(n, 10) || 0);
-		const parts2 = v2.split(".").map((n) => parseInt(n, 10) || 0);
-		const len = Math.max(parts1.length, parts2.length);
-		for (let i = 0; i < len; i++) {
-			const a = parts1[i] || 0;
-			const b = parts2[i] || 0;
-			if (a < b) return -1;
-			if (a > b) return 1;
-		}
-		return 0;
 	}
 
 	private getViewItems(region: "top" | "bottom"): FluentTaskNavigationItem[] {
@@ -236,7 +200,7 @@ export class FluentSidebar extends Component {
 
 		// Top navigation section (system views like Inbox, Today, etc.)
 		const topItems = this.getViewItems("top");
-		if (topItems.length > 0) {
+		{
 			const topSection = content.createDiv({
 				cls: "fluent-sidebar-section primary",
 				attr: { "data-region": "top" },
@@ -326,11 +290,6 @@ export class FluentSidebar extends Component {
 
 		if (!isOtherViewsHidden) {
 			const allBottomItems = this.getViewItems("bottom");
-			const visibleCount =
-				this.plugin?.settings?.fluentView?.fluentConfig
-					?.maxOtherViewsBeforeOverflow ?? 5;
-			const displayedItems = allBottomItems.slice(0, visibleCount);
-			const overflowItems = allBottomItems.slice(visibleCount);
 
 			const bottomSection = content.createDiv({
 				cls: "fluent-sidebar-section other-views",
@@ -343,18 +302,7 @@ export class FluentSidebar extends Component {
 			});
 			otherHeader.createSpan({ text: t("Other Views") });
 
-			if (overflowItems.length > 0) {
-				const moreBtn = otherHeader.createDiv({
-					cls: "fluent-section-action",
-					attr: { "aria-label": t("More views") },
-				});
-				setIcon(moreBtn, "more-horizontal");
-				this.registerDomEvent(moreBtn, "click", (e) =>
-					this.showOtherViewsMenu(e as MouseEvent, overflowItems),
-				);
-			}
-
-			this.renderSortableSection(bottomSection, displayedItems, "bottom");
+			this.renderSortableSection(bottomSection, allBottomItems, "bottom");
 		}
 	}
 
@@ -388,26 +336,7 @@ export class FluentSidebar extends Component {
 			)
 		) {
 			const bottomItems = this.getViewItems("bottom");
-			const visibleCount =
-				this.plugin?.settings?.fluentView?.fluentConfig
-					?.maxOtherViewsBeforeOverflow ?? 5;
-			const displayedBottom = bottomItems.slice(0, visibleCount);
-			const overflowBottom = bottomItems.slice(visibleCount);
-
-			displayedBottom.forEach((item) => {
-				this.renderRailButton(item);
-			});
-
-			if (overflowBottom.length > 0) {
-				const moreBtn = this.railEl.createDiv({
-					cls: "fluent-rail-btn",
-					attr: { "aria-label": t("More views") },
-				});
-				setIcon(moreBtn, "more-horizontal");
-				this.registerDomEvent(moreBtn, "click", (e) =>
-					this.showOtherViewsMenu(e as MouseEvent, overflowBottom),
-				);
-			}
+			bottomItems.forEach((item) => this.renderRailButton(item));
 		}
 
 		// Projects menu button
@@ -491,6 +420,8 @@ export class FluentSidebar extends Component {
 		// Initialize Sortable with cross-region drag support
 		const sortable = Sortable.create(listDiv, {
 			group: "fluent-sidebar-views",
+			draggable: ".fluent-navigation-item",
+			emptyInsertThreshold: 16,
 			animation: 150,
 			ghostClass: "sortable-ghost",
 			chosenClass: "sortable-chosen",
@@ -544,40 +475,10 @@ export class FluentSidebar extends Component {
 			})
 			.filter((v) => v !== undefined) as ViewConfig[];
 
-		const systemViewIds = Object.keys(this.SYSTEM_VIEWS);
-		const newBottomConfigs = bottomIds
-			.map((id) => {
-				const cfg = findConfig(id);
-				if (cfg) {
-					// System views must stay in top region
-					cfg.region = systemViewIds.includes(id) ? "top" : "bottom";
-				}
-				return cfg;
-			})
-			.filter((v) => v !== undefined) as ViewConfig[];
-
-		// Separate system views (always top) from bottom configs
-		const systemViewsInBottom = newBottomConfigs.filter((v) =>
-			systemViewIds.includes(v.id),
-		);
-		const nonSystemBottomConfigs = newBottomConfigs.filter(
-			(v) => !systemViewIds.includes(v.id),
-		);
-
-		// Update settings: Top (including system views) -> Bottom -> Hidden
-		this.plugin.settings.viewConfiguration = [
-			...newTopConfigs,
-			...systemViewsInBottom, // System views dragged to bottom go back to top
-			...nonSystemBottomConfigs,
-			...hiddenItems,
-		];
-
+		const newBottomConfigs = bottomIds.map(findConfig).filter((v): v is ViewConfig => !!v);
+		newBottomConfigs.forEach(v => { v.region = "bottom"; });
+		this.plugin.settings.viewConfiguration = [...newTopConfigs, ...newBottomConfigs, ...hiddenItems];
 		await this.plugin.saveSettings();
-
-		// Re-render to restore system views to top section if they were dragged to bottom
-		if (systemViewsInBottom.length > 0) {
-			this.render();
-		}
 
 		// Trigger event to notify other components (e.g., ViewSettingsTab)
 		this.plugin.app.workspace.trigger("task-genius:view-config-changed", {

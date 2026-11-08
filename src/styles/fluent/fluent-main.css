@@ -1040,3 +1040,24 @@ button.fluent-new-task-btn:hover {
 .view-header .fluent-search-container { align-items: center; }
 .view-header .fluent-nav-icon-button:hover, .view-header .fluent-view-tab:hover { background: var(--background-modifier-hover); color: var(--icon-color-hover); }
 .view-header .fluent-view-tab.is-active, .view-header .tg-quick-filter-button.is-active { background: var(--background-modifier-hover); color: var(--text-accent); }
+
+/* Both sidebar regions remain reachable, including empty drop targets. */
+.fluent-sidebar-content { min-height: 0; overflow-x: hidden; overscroll-behavior: contain; }
+.fluent-sidebar-content > .fluent-sidebar-section { flex-shrink: 0; }
+.fluent-sidebar-content .fluent-navigation-list { min-height: 28px; }
+.fluent-sidebar-rail { overflow-y: auto; min-height: 0; }
+
+/* One flat header surface, including Obsidian's own navigation/actions. */
+.view-header:has(.tg-fluent-top-nav) { flex-wrap: nowrap; padding: 0 8px; align-items: center; }
+.view-header:has(.tg-fluent-top-nav) :is(.view-header-nav-buttons, .view-actions, .panel-toggle-container, .panel-toggle-btn) {
+ background: transparent; border: 0; box-shadow: none; margin: 0; padding: 0; align-items: center; gap: 4px;
+}
+.view-header:has(.tg-fluent-top-nav) :is(.view-header-nav-buttons, .view-actions) { display: flex; flex-shrink: 0; height: 34px; }
+.view-header:has(.tg-fluent-top-nav) :is(.view-header-nav-buttons, .view-actions)::before,
+.view-header:has(.tg-fluent-top-nav) :is(.view-header-nav-buttons, .view-actions)::after { display: none; }
+.view-header:has(.tg-fluent-top-nav) .fluent-top-navigation { flex-wrap: nowrap; border: 0; box-shadow: none; }
+.view-header:has(.tg-fluent-top-nav) :is(.fluent-nav-right, .fluent-nav-custom-buttons) { display: flex; align-items: center; gap: 4px; }
+.view-header:has(.tg-fluent-top-nav) .fluent-nav-left { flex-basis: 100px; min-width: 80px; }
+
+.fluent-sidebar-rail > .fluent-rail-btn { flex-shrink: 0; }
+.view-header:has(.tg-fluent-top-nav) :is(.view-header-left, .view-header-title-container, .view-header-nav-buttons .clickable-icon) { border: 0; box-shadow: none; }

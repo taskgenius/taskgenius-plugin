@@ -306,6 +306,9 @@ test('all embedded settings tabs render in English and Chinese; folder input sav
     assert.equal(tabs[0].textContent,language==='en'?'General':'常规');
     const input=root.querySelector('input'); input.value='Tracking/自定义'; input.dispatchEvent(new dom.window.Event('input')); await globalThis.lastSettingSave;
     assert.equal(host.settings.habitsIntegration.habitsFolder,'Tracking/自定义'); assert.ok(saves>0);
+    const layoutSelectors=[...root.querySelectorAll('select')].filter(select=>[...select.options].some(option=>option.value==='cards'));
+    assert.equal(layoutSelectors.length,1);assert.deepEqual([...layoutSelectors[0].options].map(option=>option.value),['cards','compact','grid','carousel','vertical']);
+    layoutSelectors[0].value='compact';layoutSelectors[0].dispatchEvent(new dom.window.Event('change'));await globalThis.lastSettingSave;assert.equal(host.settings.habitsIntegration.dashboardLayout,'compact');assert.equal(host.settings.habitsIntegration.nativeLayout,undefined);
     tabs[1].click(); assert.ok(root.querySelectorAll('input[type=checkbox]').length>=3);
     tabs[2].click(); assert.ok(root.querySelectorAll('.setting-item').length>=30);
     plugin.unload(); dom.window.close();
@@ -352,4 +355,24 @@ test('native cards show minimum and maximum goals and put completed habits after
  assert.deepEqual([...root.querySelectorAll('.tg-native-habit-heading strong')].map(el=>el.textContent),['A Counter','C Limit','B Done','D Within limit']);
  assert.match(root.textContent,/At least: 0 \/ 2/);assert.match(root.textContent,/At most: 2 \/ 1/);assert.ok(root.querySelector('.is-over-limit'));assert.equal(root.querySelector('select'),null);
  cards.unload();dom.window.close();delete globalThis.document;delete globalThis.window;
+});
+
+
+test('native cards change the selected day, show goals, fade completed cards and return to today',async()=>{
+ globalThis.testLanguage='en';const dom=new JSDOM('<body></body>');installObsidianDom(dom.window);globalThis.document=dom.window.document;globalThis.window=dom.window;
+ const f=vaultFixture(),config=settings();await f.app.vault.createFolder('Habits');
+ await f.app.vault.create('Habits/Exercise.md','---\n'+JSON.stringify({habit:true,type:'repetition',frequency:'daily',target:2,startDate:'2026-11-01',records:{'2026-11-07':1,'2026-11-08':2}})+'\n---\n');
+ const root=document.body.createDiv(),cards=new NativeHabitCards(f.app,new HabitStore(f.app,()=>config,async()=>{}),config,new Events(),root);cards.selectedDate=date('2026-11-08');cards.onload();
+ assert.ok(root.querySelector('.tg-native-habit-cards > .tg-native-habit-card.is-done'));assert.match(root.querySelector('.tg-native-habit-goal').textContent,/2 \/ 2/);
+ root.querySelector('[aria-label="Previous day"]').click();assert.equal(root.querySelector('input[type=date]').value,'2026-11-07');assert.equal(root.querySelector('.tg-native-habit-card.is-done'),null);assert.match(root.querySelector('.tg-native-habit-goal').textContent,/1 \/ 2/);
+ root.querySelector('.tg-native-habit-date-label').click();assert.equal(root.querySelector('.tg-native-habit-date-label').textContent,'Today');
+ cards.unload();dom.window.close();delete globalThis.document;delete globalThis.window;
+});
+
+test('the two old layout settings merge into one selector without losing the selected page layout',async()=>{
+ for(const [nativeLayout,dashboardLayout,expected] of [['cards','compact','cards'],['dashboard','compact','compact'],[undefined,'grid','cards']]){
+  const f=vaultFixture(),host={app:f.app,manifest:{id:'test',name:'Task Genius'},settings:{habitsIntegration:{...settings(),nativeLayout,dashboardLayout}},saveSettings:async()=>{}};
+  const integration=new TaskGeniusHabits(host);const result=await integration.loadData();assert.equal(result.dashboardLayout,expected);assert.equal(result.nativeLayout,undefined);assert.equal(result.layoutUnified,true);
+  host.settings.habitsIntegration={...result,dashboardLayout:'grid'};assert.equal((await integration.loadData()).dashboardLayout,'grid');
+ }
 });

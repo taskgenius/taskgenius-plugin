@@ -15,3 +15,21 @@
 .tg-habits-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 0; }
 .tg-habits-toolbar h2 { flex: 1; margin: 0; }
 .tg-habits-legacy { margin-top: 24px; border-top: 1px solid var(--background-modifier-border); padding-top: 12px; }
+
+.tg-habits-surface .tg-native-habit-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.tg-habits-surface .tg-native-habit-card { min-width: 0; margin: 0; }
+.tg-habits-surface .tg-native-habit-card.is-done { opacity: .48; }
+.tg-habits-surface .tg-native-habit-card.is-done:hover { opacity: .8; }
+.tg-habits-surface .tg-native-habit-nav { justify-content: center; flex-wrap: wrap; }
+.tg-habits-surface .tg-native-habit-date-label { min-width: 72px; }
+
+@media (max-width: 650px) { .tg-habits-surface .tg-native-habit-cards { grid-template-columns: 1fr; } }
+
+.tg-habits-surface .tg-native-habit-body { flex-wrap: wrap; gap: 12px; }
+.tg-habits-surface .tg-native-habit-grid { grid-template-columns: repeat(10, minmax(8px, 1fr)); min-width: 160px; }
+.tg-habits-surface .tg-native-habit-cell { width: 100%; max-width: 20px; }
+
+.tg-habits-surface .habits-compact-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.tg-habits-surface .habits-compact-group { grid-column: 1 / -1; }
+.tg-habits-surface .habits-compact-row { min-width: 0; flex-wrap: wrap; }
+@media (max-width: 650px) { .tg-habits-surface .habits-compact-list { grid-template-columns: 1fr; } }

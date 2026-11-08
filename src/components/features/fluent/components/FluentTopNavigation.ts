@@ -65,6 +65,7 @@ export class TopNavigation extends Component {
 		string,
 		{ buttonEl: HTMLElement; config: CustomNavButton }
 	> = new Map();
+	private headerControls: HTMLElement | null = null;
 	private cycleSelectorContainer: HTMLElement | null = null;
 	private selectedCycleId: string | null = null;
 	private onCycleChange: ((cycleId: string | null) => void) | null = null;
@@ -182,7 +183,11 @@ export class TopNavigation extends Component {
 		}
 	}
 
+	onunload(): void { this.headerControls?.remove(); }
+
 	private render() {
+		this.headerControls?.remove();
+		this.headerControls = null;
 		this.containerEl.empty();
 		this.containerEl.addClass("fluent-top-navigation");
 
@@ -258,6 +263,7 @@ export class TopNavigation extends Component {
 		this.customButtonsContainer = rightSection.createDiv({
 			cls: "fluent-nav-custom-buttons",
 		});
+		for (const button of this.customButtons.values()) this.customButtonsContainer.append(button.buttonEl);
 
 		// Cycle selector container (hidden by default)
 		this.cycleSelectorContainer = rightSection.createDiv({
@@ -287,6 +293,12 @@ export class TopNavigation extends Component {
 		const settingsBtn = rightSection.createDiv({
 			cls: "fluent-nav-icon-button",
 		});
+		// Share the host action strip rather than creating two separated icon groups.
+		const actions = this.containerEl.closest(".view-header")?.querySelector(".view-actions");
+		if (actions) {
+			actions.prepend(rightSection);
+			this.headerControls = rightSection;
+		}
 		setIcon(settingsBtn, "settings");
 		this.registerDomEvent(settingsBtn, "click", () =>
 			this.onSettingsClick(),
@@ -396,7 +408,7 @@ export class TopNavigation extends Component {
 	}
 
 	private updateNotificationBadge() {
-		const badge = this.containerEl.querySelector(
+		const badge = (this.headerControls || this.containerEl).querySelector(
 			".fluent-notification-badge",
 		);
 		if (badge instanceof HTMLElement) {

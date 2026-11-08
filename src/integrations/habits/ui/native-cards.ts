@@ -3,7 +3,7 @@ import type { HabitStore } from "../habit-store";
 import type { HabitsPluginSettings } from "../settings";
 import type { HabitDefinition } from "../types";
 import { isDailyComplete, isActive, flexiblePeriodTotal, isFlexible, isPausedOn, limitOf } from "../stats";
-import { addDays, toDateKey, fromDateKey, habitAccent, stepOf, sortHabits, formatValue, roundValue } from "../utils";
+import { addDays, toDateKey, fromDateKey, habitAccent, stepOf, sortHabits, formatValue, roundValue, friendlyDateLabel } from "../utils";
 import { HabitModal } from "./habit-modal";
 import { t } from "../i18n";
 import { nativeCardHeat } from "./native-card-state";
@@ -14,6 +14,7 @@ import { ConfirmModal } from "./confirm-modal";
 
 /** Task Genius cards, backed by the same Markdown notes as the dashboard. */
 export class NativeHabitCards extends MarkdownRenderChild {
+	private disposed = false;
 	private selectedDate = new Date();
 	private query = "";
 	private events?: Component;
@@ -24,6 +25,7 @@ export class NativeHabitCards extends MarkdownRenderChild {
 	constructor(private app: App, private store: HabitStore, private settings: HabitsPluginSettings, private bus: Events, root: HTMLElement) { super(root); }
 	setSearchQuery(query: string): void { const next = query.trim().toLocaleLowerCase(); if (next === this.query) return; this.query = next; this.render(); }
 	onload(): void {
+		this.disposed = false;
 		this.containerEl.addClass("tg-native-habits");
 		this.registerEvent(this.app.metadataCache.on("changed", file => { this.saved.delete(file.path); this.render(); }));
 		for (const event of ["create", "delete", "rename"] as const) this.registerEvent(this.app.vault.on(event as "create", () => this.render()));
@@ -35,10 +37,13 @@ export class NativeHabitCards extends MarkdownRenderChild {
 		setIcon(button, icon); this.events?.registerDomEvent(button, "click", action); return button;
 	}
 	private render(): void {
+		if (this.disposed) return;
 		if (this.events) this.removeChild(this.events);
 		this.events = this.addChild(new Component()); this.containerEl.empty();
 		const nav = this.containerEl.createDiv({ cls: "tg-native-habit-nav" });
 		this.button(nav, "chevron-left", t("Previous day"), () => { this.selectedDate = addDays(this.selectedDate, -1); this.render(); });
+		const label = nav.createEl("button", { text: friendlyDateLabel(this.selectedDate, new Date()), cls: "tg-native-habit-date-label", attr: { title: toDateKey(this.selectedDate), "aria-label": t("Today") } });
+		this.events.registerDomEvent(label, "click", () => { this.selectedDate = new Date(); this.render(); });
 		const date = nav.createEl("input", { attr: { type: "date", "aria-label": t("Date") } }); date.value = toDateKey(this.selectedDate);
 		this.events.registerDomEvent(date, "change", () => { const next = fromDateKey(date.value); if (next) { this.selectedDate = next; this.render(); } });
 		this.button(nav, "chevron-right", t("Next day"), () => { this.selectedDate = addDays(this.selectedDate, 1); this.render(); });
@@ -56,9 +61,11 @@ export class NativeHabitCards extends MarkdownRenderChild {
 		const closed = scheduled.flatMap(habit => { const status = dayStatus(habit, key, this.store); return status ? [{ habit, status }] : []; });
 		const visible = scheduled.filter(habit => !closed.some(item => item.habit.path === habit.path));
 		const ordered = [...visible.filter(habit => !isDailyComplete(habit, key) && !isPausedOn(habit, key)), ...visible.filter(habit => isDailyComplete(habit, key) && !isPausedOn(habit, key)), ...visible.filter(habit => isPausedOn(habit, key))];
+		const cards = this.containerEl.createDiv({ cls: "tg-native-habit-cards" });
 		for (const habit of ordered) {
 			const original = habit;
-			const card = this.containerEl.createDiv({ cls: "tg-native-habit-card" }); card.style.setProperty("--habit-accent", habitAccent(habit, this.settings.groups));
+			const card = cards.createDiv({ cls: "tg-native-habit-card" });
+			card.toggleClass("is-done", isDailyComplete(habit, key)); card.style.setProperty("--habit-accent", habitAccent(habit, this.settings.groups));
 			const header = card.createDiv({ cls: "tg-native-habit-heading" });
 			setIcon(header.createSpan(), "circle-check"); header.createEl("strong", { text: habit.name });
 			this.button(header, "more-horizontal", t("More actions"), () => {
@@ -109,7 +116,7 @@ export class NativeHabitCards extends MarkdownRenderChild {
 		}
 		renderClosedHabits(this.containerEl, this.events, this.store, closed, key, this.closedOpen, open => { this.closedOpen = open; this.render(); }, () => this.render());
 	}
-	onunload(): void { this.cancelSnooze(); }
+	onunload(): void { this.disposed = true; this.cancelSnooze(); }
 	private async commit(habit: HabitDefinition, key: string, value: number): Promise<void> {
 		if (this.pending.has(habit.path)) return; this.pending.add(habit.path); this.render();
 		try { await this.store.setRecord(habit, key, value); const saved = this.saved.get(habit.path) || new Map(); saved.set(key, value); this.saved.set(habit.path, saved); }
