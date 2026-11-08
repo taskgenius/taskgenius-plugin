@@ -451,10 +451,10 @@ export class SettingsSearchComponent extends Component {
 	private getCategoryDisplayName(category: string): string {
 		const categoryNames: Record<string, string> = {
 			core: t("Core Settings"),
-			display: t("Display & Progress"),
+			display: t("Views & Display"),
 			management: t("Task Management"),
 			workflow: t("Workflow & Automation"),
-			gamification: t("Gamification"),
+			gamification: t("Habits and points"),
 			integration: t("Integration"),
 			advanced: t("Advanced"),
 			info: t("Information"),

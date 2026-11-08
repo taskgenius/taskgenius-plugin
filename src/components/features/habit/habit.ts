@@ -12,6 +12,7 @@ import {
 	Notice,
 	ButtonComponent,
 	ExtraButtonComponent,
+	SearchComponent,
 } from "obsidian";
 import {
 	HabitProps,
@@ -33,6 +34,9 @@ import { HabitEditDialog } from "@/components/features/habit/components/HabitEdi
 
 export class Habit extends Component {
 	containerEl: HTMLElement;
+	private block?: HabitsBlock;
+	private query = "";
+	setSearchQuery(query: string): void { this.query = query; this.block?.setSearchQuery(query); }
 	private disposed = false;
 	constructor(readonly plugin: TaskProgressBarPlugin, parentEl: HTMLElement) {
 		super();
@@ -44,11 +48,13 @@ export class Habit extends Component {
 			if (this.disposed) return;
 			const toolbar = this.containerEl.createDiv({cls: "tg-habits-toolbar"});
 			toolbar.createEl("h2", {text: ht("Habits")});
+			new SearchComponent(toolbar).setPlaceholder(settingsText("Search habits")).setValue(this.query).onChange(value => this.setSearchQuery(value));
 			new ButtonComponent(toolbar).setButtonText(ht("Create habit")).setCta().onClick(() => {
 				new HabitModal(this.plugin.app, integration.store, () => {}, null, integration.settings.experimental.noteHabits).open();
 			});
 			const root = this.containerEl.createDiv();
-			this.addChild(new HabitsBlock(this.plugin.app, integration.store, () => integration.settings, integration.events, "", root));
+			this.block = this.addChild(new HabitsBlock(this.plugin.app, integration.store, () => integration.settings, integration.events, "", root));
+			this.block.setSearchQuery(this.query);
 			if (this.plugin.settings.habit.habits?.length) {
 				const legacy = this.containerEl.createEl("details", {cls: "tg-habits-legacy"});
 				legacy.createEl("summary", {text: ht("Existing Task Genius habits")});

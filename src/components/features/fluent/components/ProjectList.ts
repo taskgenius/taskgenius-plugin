@@ -12,6 +12,7 @@ import {
 	ProjectCreateModal,
 	ProjectTaskModal,
 	ProjectEditModal,
+	ProjectArchiveModal,
 } from "@/managers/project-file-manager";
 
 export interface Project {
@@ -538,6 +539,10 @@ export class ProjectList extends Component {
 		this.registerDomEvent(addProjectBtn, "click", () => {
 			this.handleAddProject(addProjectBtn);
 		});
+		const archiveButton = this.containerEl.createDiv({ cls: "fluent-project-item" });
+		setIcon(archiveButton.createSpan(), "archive");
+		archiveButton.createSpan({ cls: "fluent-project-name", text: t("Archived projects") });
+		this.registerDomEvent(archiveButton, "click", () => new ProjectArchiveModal(this.plugin.app, this.createProjectFileManager(), () => this.loadProjects()).open());
 	}
 
 	private renderTreeNodes(
@@ -800,22 +805,10 @@ export class ProjectList extends Component {
 			);
 
 			if (existingIndex === -1) {
-				// Add new custom project
-				this.projects.push({
-					id: customProject.id,
-					name: customProject.name,
-					filterKey: customProject.name,
-					displayName:
-						customProject.displayName || customProject.name,
-					color: customProject.color,
-					taskCount: 0, // Will be updated by task counting
-					createdAt: customProject.createdAt,
-					updatedAt: customProject.updatedAt,
-				});
+				// A saved display preference is not a project record.
+				return;
 			} else {
 				// Update existing project with custom color
-				this.projects[existingIndex].id = customProject.id;
-				this.projects[existingIndex].filterKey = customProject.name;
 				this.projects[existingIndex].color = customProject.color;
 				this.projects[existingIndex].displayName =
 					customProject.displayName || customProject.name;
@@ -830,6 +823,29 @@ export class ProjectList extends Component {
 	private createProjectFileManager(): ProjectFileManager {
 		const prefixes = Object.values(this.plugin.settings.projectTagPrefix || {}).map(String);
 		return new ProjectFileManager(this.plugin.app, prefixes.length ? prefixes : ["project"]);
+	}
+
+	private async consolidateProject(name: string): Promise<void> {
+		try {
+			const manager = this.createProjectFileManager(), project = await manager.create(name);
+			if (!project) return;
+			const matching = this.taskSnapshot.filter(task => getEffectiveProject(task) === name);
+			const canvas = matching.filter(task => task.metadata?.sourceType === "canvas");
+			let moved = await manager.moveTasks(matching.filter(task => !canvas.includes(task)), name);
+			for (const task of canvas) {
+				const result = await this.plugin.writeAPI?.updateTask({ taskId: task.id, updates: { metadata: { ...task.metadata, project: name } } });
+				if (result?.success) moved++;
+			}
+			await this.plugin.app.vault.process(project.file, text => {
+				let fenced = false;
+				return text.split("\n").map(line => {
+					if (/^\s*(```|~~~)/.test(line)) fenced = !fenced;
+					return !fenced && /^\s*[-*+]\s+\[[^\]]*\]/.test(line) ? manager.stripProjectMarkers(line, name) : line;
+				}).join("\n");
+			});
+			new Notice(`${t("Project note created; tasks moved")}: ${moved}`);
+			await this.loadProjects(); await this.plugin.triggerViewUpdate();
+		} catch (error) { console.error("Project consolidation failed", error); new Notice(t("Failed to move project tasks")); }
 	}
 
 	public showSortMenu(buttonEl: HTMLElement) {
@@ -900,6 +916,7 @@ export class ProjectList extends Component {
 		const projectFiles = this.createProjectFileManager();
 		const projectFile = projectFiles.find(project.name);
 		if (projectFile) {
+			menu.addItem(item => item.setTitle(t("Move project tasks into note")).setIcon("folder-input").onClick(() => void this.consolidateProject(project.name)));
 			menu.addItem((item) => item
 				.setTitle(t("Open project note"))
 				.setIcon("file-text")

@@ -16,7 +16,7 @@ await build({
     export {HabitStore} from './src/integrations/habits/habit-store';
     export {DEFAULT_SETTINGS, DEFAULT_FRONTMATTER_KEYS} from './src/integrations/habits/settings';
     export {planLegacyHabits, importLegacyHabits} from './src/integrations/habits/legacy-import';
-    export {isDue, isActive, isComplete, habitStats} from './src/integrations/habits/stats';
+    export {isDue, isActive, isComplete, isDailyComplete, habitStats} from './src/integrations/habits/stats';
     export {resolveTaskPoints, taskCompletionTransactionId} from './src/managers/points-utils';
     export {t} from './src/integrations/habits/i18n';
     export {ReminderSync} from './src/integrations/habits/reminders';
@@ -32,12 +32,31 @@ await build({
   }}],
 });
 const {TaskGeniusHabits, HabitStore, DEFAULT_SETTINGS, DEFAULT_FRONTMATTER_KEYS,
-  planLegacyHabits, importLegacyHabits, isDue, isActive, isComplete, habitStats, t, vaultFixture,
+  planLegacyHabits, importLegacyHabits, isDue, isActive, isComplete, isDailyComplete, habitStats, t, vaultFixture,
   ReminderSync, NoteHabitSync, computeNoteValue, applyCommentLog, parseCommentLog, generateSummary, ExportModal, resolveTaskPoints, taskCompletionTransactionId} = await import(pathToFileURL(path.join(directory, 'integration.mjs')));
 const settings = extra => ({...structuredClone(DEFAULT_SETTINGS), ...extra});
 const date = value => {const [year, month, day] = value.split('-').map(Number); return new Date(year, month - 1, day);};
 const habit = extra => ({type:'binary', goalDirection:'min', frequency:'interval', intervalMode:'completion', intervalDays:2, startDate:'2026-11-01', records:{}, pauses:[], reschedules:[], failed:[], skipped:[], target:1, ...extra});
 
+test('three active days in a four-day cycle require three independent check-ins', () => {
+  const h = habit({intervalMode:'cycle', intervalDays:4, cycleActiveDays:3, records:{'2026-11-01':1}});
+  for (const [key, expected] of [['2026-11-01',true],['2026-11-02',true],['2026-11-03',true],['2026-11-04',false],['2026-11-05',true]]) assert.equal(isDue(h,date(key)),expected,key);
+  assert.equal(isComplete(h,'2026-11-01'),true);
+  assert.equal(isComplete(h,'2026-11-02'),false);
+});
+test('restarting a cycle changes future days without changing earlier schedules', () => {
+  const h=habit({intervalMode:'cycle',intervalDays:4,cycleActiveDays:3,cycleRestarts:['2026-11-07']});
+  assert.equal(isDue(h,date('2026-11-04')),false);
+  assert.equal(isDue(h,date('2026-11-07')),true);
+  assert.equal(isDue(h,date('2026-11-10')),false);
+  assert.equal(isDue(h,date('2026-11-11')),true);
+});
+test('one creation completes the daily card while the weekly quota remains three', () => {
+  const h=habit({frequency:'flexibleWeekly',type:'repetition',target:3,dailyTarget:1,records:{'2026-11-02':1}});
+  assert.equal(isDailyComplete(h,'2026-11-02'),true);
+  assert.equal(isComplete(h,'2026-11-02'),false);
+  assert.equal(isDailyComplete(h,'2026-11-03'),false);
+});
 test('rolling intervals remain due after a miss, then restart from the actual completion', () => {
   const h = habit({records:{'2026-11-01':1, '2026-11-04':1}});
   for (const [key, expected] of [['2026-10-31',false],['2026-11-01',true],['2026-11-02',false],['2026-11-03',true],['2026-11-04',true],['2026-11-05',false],['2026-11-06',true]]) assert.equal(isDue(h, date(key)), expected, key);
@@ -144,6 +163,15 @@ test('habit store follows folder changes immediately and writes fractional value
   await store.setRecord(h,'2026-11-02',0.1+0.2);
   assert.equal(fixture.metadata.get(h.path).frontmatter.records['2026-11-02'],0.3);
   assert.equal(fixture.metadata.get('One/Water.md').frontmatter.records['2026-11-02'],undefined);
+});
+test('saving a chosen cycle restart preserves the original start date and every historical record', async () => {
+  const fixture=vaultFixture(),config=settings();
+  await fixture.app.vault.createFolder('Habits');
+  await fixture.app.vault.create('Habits/Exercise.md','---\n'+JSON.stringify({habit:true,type:'binary',frequency:'interval',intervalMode:'cycle',intervalDays:4,cycleActiveDays:3,startDate:'2026-11-01',records:{'2026-11-01':1,'2026-11-02':1},bravoPoints:2})+'\n---\nOriginal notes');
+  const store=new HabitStore(fixture.app,()=>config,async()=>{}),h=store.getHabits()[0];
+  await store.updateHabit(h,{...h,name:h.name,restartCycleDate:'2026-11-07'});
+  const fm=fixture.metadata.get(h.path).frontmatter;
+  assert.equal(fm.startDate,'2026-11-01');assert.deepEqual(fm.records,{'2026-11-01':1,'2026-11-02':1});assert.deepEqual(fm.cycleRestarts,['2026-11-07']);assert.equal(fm.bravoPoints,2);
 });
 test('host imports compatible Habits settings without copying API keys or enabling external writes', async () => {
   const fixture = vaultFixture();

@@ -3,7 +3,7 @@ import type { HabitStore } from "../habit-store";
 import type { HabitsPluginSettings } from "../settings";
 import type { HabitDefinition } from "../types";
 import { t } from "../i18n";
-import { flexiblePeriodTotal, isActive, isComplete, isFlexible, isPausedOn, limitOf } from "../stats";
+import { flexiblePeriodTotal, isActive, isDailyComplete as isComplete, isFlexible, isPausedOn, limitOf } from "../stats";
 import { addDays, formatValue, friendlyDateLabel, fromDateKey, groupHabits, habitAccent, parseNoteDate, registerLongPress, roundValue, sectionLabel, sortHabits, stepOf, toDateKey } from "../utils";
 import { createNoteHabitEntry, notePathForDate } from "../note-habit";
 import { HabitModal } from "./habit-modal";
@@ -14,6 +14,8 @@ import { addDayStatusItems, dayStatus, renderClosedHabits, scheduleSnoozeRefresh
 
 /** Compact layout of the `habits` dashboard, with date navigation. */
 export class HabitsCompact extends MarkdownRenderChild {
+	private searchQuery = "";
+	setSearchQuery(value: string): void { this.searchQuery = value.trim().toLocaleLowerCase(); this.render(); }
 	private selectedDate = new Date();
 	private stats = false;
 	private active = false;
@@ -94,7 +96,7 @@ export class HabitsCompact extends MarkdownRenderChild {
 		const root = this.containerEl;
 		root.empty();
 		const settings = this.getSettings();
-		const habits = sortHabits(this.store.getHabits().filter(h => !h.stopped), settings.sortMode, settings.manualOrder, settings.groups, settings.groupOrder);
+		const habits = sortHabits(this.store.getHabits().filter(h => !h.stopped && (!this.searchQuery || `${h.name} ${h.group} ${(h.tags || []).join(" ")}`.toLocaleLowerCase().includes(this.searchQuery))), settings.sortMode, settings.manualOrder, settings.groups, settings.groupOrder);
 		// Bridge the delay between a successful disk write and metadata-cache refresh.
 		for (const habit of habits) {
 			for (const [key, value] of this.savedValues.get(habit.path) ?? []) {

@@ -8,6 +8,11 @@ import { HabitsCompact } from "./habits-compact";
 export class HabitsBlock extends MarkdownRenderChild {
 	private view: MarkdownRenderChild | null = null;
 	private compact: boolean | null = null;
+	private searchQuery = "";
+	setSearchQuery(value: string): void {
+		this.searchQuery = value.trim().toLocaleLowerCase();
+		(this.view as HabitsDashboard | HabitsCompact | null)?.setSearchQuery?.(this.searchQuery);
+	}
 
 	constructor(
 		private app: App,
@@ -37,5 +42,6 @@ export class HabitsBlock extends MarkdownRenderChild {
 			this.app, this.store, this.getSettings,
 			this.pluginEvents, this.sourcePath, root,
 		));
+		if (this.searchQuery) (this.view as HabitsDashboard | HabitsCompact).setSearchQuery?.(this.searchQuery);
 	}
 }

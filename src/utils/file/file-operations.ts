@@ -1,6 +1,7 @@
 import { App, getFrontMatterInfo, TFile } from "obsidian";
 import { QuickCaptureOptions } from "@/editor-extensions/core/quick-capture-panel";
 import { moment } from "obsidian";
+import { ProjectFileManager } from "@/managers/project-file-manager";
 
 /**
  * Get template file with automatic .md extension detection
@@ -100,8 +101,14 @@ export function processDateTemplates(filePath: string): string {
 export async function saveCapture(
 	app: App,
 	content: string,
-	options: QuickCaptureOptions
+	options: QuickCaptureOptions & { project?: string; projectTagPrefixes?: string[] }
 ): Promise<void> {
+	if (options.project?.trim() && /^\s*[-*+]\s+\[[^\]]*\]/.test(content)) {
+		const manager = new ProjectFileManager(app, options.projectTagPrefixes || ["project"]);
+		const project = await manager.create(options.project);
+		if (!project || !await manager.appendTaskBlock(project.name, content.split(/\r?\n/))) throw new Error("Could not save task to project note");
+		return;
+	}
 	const {
 		targetFile,
 		appendToFile,

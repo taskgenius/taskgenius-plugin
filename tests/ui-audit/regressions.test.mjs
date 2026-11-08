@@ -25,6 +25,8 @@ const owned=[
   'pages/FluentTaskView.ts', 'integrations/habits/ui/habit-modal.ts',
   'mcp/auth/AuthMiddleware.ts', 'services/view-settings-signature.ts', 'dataflow/events/Events.ts', 'utils/ui/view-mode-utils.ts',
   'utils/ui/tree-view-utils.ts',
+	'utils/task/filter-compatibility.ts',
+	'components/features/rewards/PointsDashboard.ts', 'managers/points-service.ts', 'managers/daily-points.ts',
 ].map(file=>path.resolve('src',file));
 await build({stdin:{contents:`
  export {ContentComponent} from './src/components/features/task/view/content';
@@ -35,6 +37,7 @@ await build({stdin:{contents:`
  export {ViewComponentManager} from './src/components/ui/behavior/ViewComponentManager';
  export {FluentTaskView} from './src/pages/FluentTaskView';
  export {HabitModal} from './src/integrations/habits/ui/habit-modal';
+ export {PointsDashboard} from './src/components/features/rewards/PointsDashboard';
  export {snapshotViewSettings} from './src/services/view-settings-signature';
  export {AuthMiddleware} from './src/mcp/auth/AuthMiddleware';
  export {ProjectList} from './src/components/features/fluent/components/ProjectList';
@@ -63,7 +66,7 @@ await build({stdin:{contents:`
    });
  }}],
 });
-const {ContentComponent,TopNavigation,FluentDataManager,FluentComponentManager,CalendarComponent,ViewComponentManager,FluentTaskView,HabitModal,snapshotViewSettings,AuthMiddleware,ProjectList,vaultFixture,moment}=await import(pathToFileURL(path.join(directory,'ui.mjs')));
+const {ContentComponent,TopNavigation,FluentDataManager,FluentComponentManager,CalendarComponent,ViewComponentManager,FluentTaskView,HabitModal,PointsDashboard,snapshotViewSettings,AuthMiddleware,ProjectList,vaultFixture,moment}=await import(pathToFileURL(path.join(directory,'ui.mjs')));
 function environment(){
  const dom=new JSDOM('<body></body>',{url:'https://obsidian.invalid',pretendToBeVisual:true});installObsidianDom(dom.window);
  globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.HTMLElement=dom.window.HTMLElement;
@@ -76,6 +79,46 @@ function environment(){
  return{...f,dom,tick,frames,plugin,close:()=>dom.window.close()};
 }
 const task=(id)=>({id,content:id,filePath:'Tasks.md',status:' ',completed:false,metadata:{}});
+test('old project preferences cannot resurrect deleted projects or replace canonical identifiers',()=>{
+ const e=environment();e.plugin.settings.projectConfig={customProjects:[{id:'old-real-id',name:'Real',displayName:'Real',color:'#123'},{id:'ghost-id',name:'Deleted'}]};
+ const list=Object.create(ProjectList.prototype);list.plugin=e.plugin;list.projects=[{id:'Real',name:'Real',filterKey:'Real'}];list.loadCustomProjects();
+ assert.deepEqual(list.projects.map(project=>project.name),['Real']);assert.equal(list.projects[0].id,'Real');e.close();
+});
+test('search stays available in specialized task views and retains its text across view changes',()=>{
+ const e=environment(),root=document.body.createDiv(),queries=[];
+ const nav=new TopNavigation(root,e.plugin,value=>queries.push(value),()=>{},()=>{},()=>{},()=>{},[]);
+ const input=root.querySelector('input'); input.value='project:Writing'; input.dispatchEvent(new window.Event('input'));
+ nav.updateContext('gantt');nav.updateAvailableModes([]);
+ assert.notEqual(root.style.display,'none');assert.equal(input.value,'project:Writing');assert.deepEqual(queries,['project:Writing']);
+ nav.updateContext('points');assert.equal(root.style.display,'none');nav.updateContext('tags');assert.notEqual(root.style.display,'none');e.close();
+});
+test('structured searches and saved filters apply the same include and exclude rules',()=>{
+ const e=environment();e.plugin.settings.taskStatuses={completed:'x',inProgress:'/',planned:'?',abandoned:'-',notStarted:' '};
+ const state={liveFilterState:null,currentFilterState:null,viewStateFilters:{},selectedProject:undefined,searchQuery:'project:Writing AND priority:>=3',filterInputValue:'',activeTaskPreset:null};
+ const manager=new FluentDataManager(e.plugin,()=> 'inbox',()=>state,()=>false);
+ const rows=[{...task('write'),metadata:{project:'Writing',priority:4}},{...task('low'),metadata:{project:'Writing',priority:1}},{...task('other'),metadata:{project:'Other',priority:5}}];
+ assert.deepEqual(manager.applyFilters(rows).map(item=>item.id),['write']);state.searchQuery='';
+ state.activeTaskPreset={includeCompleted:true,includeInProgress:true,includeAbandoned:true,includeNotStarted:true,includePlanned:true,includeParentTasks:false,includeChildTasks:false,includeSiblingTasks:false,advancedFilterQuery:'project:Writing',filterMode:'EXCLUDE'};
+ assert.deepEqual(manager.applyFilters(rows).map(item=>item.id),['other']);e.close();
+});
+test('table views receive the filtered task list rather than rebuilding from all tasks',()=>{
+ const e=environment(),root=document.body.createDiv();let received=null;
+ const manager=new FluentComponentManager(e.app,e.plugin,root,{addChild:child=>child},{});
+ const table={containerEl:root.createDiv(),updateTasks:tasks=>received=tasks};
+ manager.hideAllComponents=()=>{};manager.viewComponentManager={isSpecialView:()=>true,showComponent:()=>table};
+ const all=[task('one'),task('two')];manager.switchView('table',all,[all[1]],null,'list');
+ assert.deepEqual(received.map(item=>item.id),['two']);e.close();
+});
+test('the native points page renders the original bonus list, reward wishes and manual history',async()=>{
+ const e=environment();e.plugin.settings.rewards={rewardItems:[],pointsLedger:[]};
+ await e.app.vault.createFolder('99_System/01_Data');
+ await e.app.vault.create('99_System/01_Data/积分系统数据.md','---\n'+JSON.stringify({manualPointRecords:[{id:'old',date:'2026-11-01',text:'Original reward history',points:30}],examplePropertyLeft:['Read a book + 50'],examplePropertyRight:['A trip - 5000']})+'\n---\n');
+ const root=document.body.createDiv(),page=new PointsDashboard(e.app,e.plugin,root,true);page.onload();await new Promise(resolve=>setTimeout(resolve,0));
+ assert.match(root.textContent,/Read a book \+ 50/);assert.match(root.textContent,/A trip - 5000/);assert.match(root.textContent,/30/);
+ const history=[...root.querySelectorAll('[role="tab"]')].find(button=>button.textContent==='Points history');history.click();assert.match(root.textContent,/Original reward history/);
+ const input=root.querySelector('.tg-points-tools input');input.value='no match';input.dispatchEvent(new window.Event('input'));assert.doesNotMatch(root.querySelector('.tg-points-body').textContent,/Original reward history/);
+ page.unload();e.close();
+});
 function contentFixture(e){
  const root=document.body.createDiv();const content=new ContentComponent(root,e.app,e.plugin);content.onload();content.isContainerVisible=()=>true;return content;
 }
@@ -121,7 +164,7 @@ test('calendar next/previous/today update the existing header for all built-in p
 });
 test('projects overview leaves the sidebar project shortcuts enabled and selection coherent',()=>{
  const e=environment();const view=Object.create(FluentTaskView.prototype);let enabled,selected;
- Object.assign(view,{isInitializing:false,isLoading:false,loadError:null,currentViewId:'projects',viewState:{viewMode:'list'},tasks:[task('a')],filteredTasks:[task('a')],topNavigation:{updateAvailableModes(){},setViewMode(){}},layoutManager:{updateTaskMark(){},setSidebarActiveItem(){},setActiveProject:value=>selected=value,sidebar:{setProjectListEnabled:value=>enabled=value}},selectionManager:{updateTaskCache(){}},componentManager:{getAvailableModesForView:()=>[],switchView(){}},ensureViewModeForView:()=> 'list'});
+ Object.assign(view,{isInitializing:false,isLoading:false,loadError:null,currentViewId:'projects',viewState:{viewMode:'list'},tasks:[task('a')],filteredTasks:[task('a')],topNavigation:{updateAvailableModes(){},updateContext(){},setViewMode(){}},layoutManager:{updateTaskMark(){},setSidebarActiveItem(){},setActiveProject:value=>selected=value,sidebar:{setProjectListEnabled:value=>enabled=value}},selectionManager:{updateTaskCache(){}},componentManager:{getAvailableModesForView:()=>[],switchView(){}},ensureViewModeForView:()=> 'list'});
  view.updateView();assert.equal(enabled,true);assert.equal(selected,null);
  view.viewState.selectedProject='毕业设计';view.updateView();assert.equal(selected,'毕业设计');e.close();
 });

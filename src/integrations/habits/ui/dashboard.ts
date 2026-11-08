@@ -32,7 +32,7 @@ import { renderStatsView } from "./stats-view";
 import {
 	flexiblePeriodTotal,
 	isActive,
-	isComplete as isCompleteOn,
+	isDailyComplete as isCompleteOn,
 	isFlexible,
 	isPausedOn,
 	limitOf,
@@ -82,6 +82,8 @@ export class HabitsDashboard
 	/** Set by Obsidian's page-preview plugin when a comment link is hovered. */
 	hoverPopover: HoverPopover | null = null;
 	private habits: HabitDefinition[] = [];
+	private searchQuery = "";
+	setSearchQuery(value: string): void { this.searchQuery = value.trim().toLocaleLowerCase(); this.reload(); }
 	private selectedDate: Date = new Date();
 	private index = 0;
 	private lastPerView = 1;
@@ -227,7 +229,7 @@ export class HabitsDashboard
 	private reload(): void {
 		const settings = this.getSettings();
 		this.habits = sortHabits(
-			this.store.getHabits().filter((habit) => !habit.stopped),
+			this.store.getHabits().filter((habit) => !habit.stopped && (!this.searchQuery || `${habit.name} ${habit.group} ${(habit.tags || []).join(" ")}`.toLocaleLowerCase().includes(this.searchQuery))),
 			settings.sortMode,
 			settings.manualOrder,
 			settings.groups,

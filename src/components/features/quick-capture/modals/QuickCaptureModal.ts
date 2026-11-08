@@ -629,6 +629,8 @@ export class QuickCaptureModal extends Modal {
 			// Create options with current settings
 			const captureOptions = {
 				...this.plugin.settings.quickCapture,
+				project: this.taskMetadata.project,
+				projectTagPrefixes: Object.values(this.plugin.settings.projectTagPrefix || {}).map(String),
 				targetFile: this.tempTargetFilePath,
 			};
 

@@ -29,3 +29,21 @@
 .tg-points-empty { padding:24px 0; color:var(--text-muted); }
 @media(max-width:850px) { .tg-points-columns { grid-template-columns:1fr; } .tg-points-summary { grid-template-columns:1fr 1fr; } }
 @media(max-width:520px) { .tg-points-summary { grid-template-columns:1fr; } .tg-points-header { align-items:flex-start; flex-direction:column; } .tg-points-panel { padding:16px; } }
+.tg-points-page { width:100%; max-width:1120px; margin:0 auto; overflow-y:auto; min-height:0; }
+.tg-points-page h2 { margin:0 0 8px; font-size:24px; }
+.tg-points-tabs { display:flex; gap:6px; padding:5px; margin:20px 0 14px; border-radius:12px; background:var(--background-secondary); flex-wrap:wrap; }
+.tg-points-tabs button { border:0; background:transparent; box-shadow:none; color:var(--text-muted); padding:9px 15px; border-radius:9px; }
+.tg-points-tabs button.is-active { background:var(--background-primary); color:var(--text-normal); box-shadow:0 1px 4px var(--background-modifier-box-shadow); }
+.tg-points-tools { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+.tg-points-tools .search-input-container { flex:1; }
+.tg-points-body { display:grid; gap:16px; }
+.tg-points-body.is-actions { grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:start; }
+.tg-points-body.is-history { grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); align-items:start; }
+.tg-points-body .tg-points-panel { min-width:0; }
+.tg-points-body .tg-reward-card { margin:10px 0; gap:16px; align-items:center; }
+.tg-points-body .tg-reward-card > div:first-child { flex:1; overflow-wrap:anywhere; }
+.tg-points-body .setting-item { gap:16px; }
+.tg-points-body .tg-habits-surface { min-height:250px; }
+.tg-quick-filter-button.is-active { color:var(--interactive-accent); background:var(--background-modifier-hover); }
+@media (max-width:600px) { .tg-points-page { padding:12px; } .tg-points-tabs button { flex:1; padding:8px; } .tg-points-summary { grid-template-columns:1fr; } .tg-points-header { align-items:flex-start; } }
+@media (max-width:850px) { .tg-points-body.is-actions,.tg-points-body.is-history { grid-template-columns:minmax(0,1fr); } }

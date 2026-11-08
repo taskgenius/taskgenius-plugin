@@ -1913,6 +1913,9 @@ export default class TaskProgressBarPlugin extends Plugin {
 	async loadSettings() {
 		const savedData = await this.loadData();
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, savedData);
+		this.settings.rewards = { ...DEFAULT_SETTINGS.rewards, ...savedData?.rewards,
+			rewardItems: savedData?.rewards?.rewardItems || DEFAULT_SETTINGS.rewards.rewardItems.map(item => ({ ...item })),
+			pointsLedger: savedData?.rewards?.pointsLedger || [] };
 		this.settings.changelog = Object.assign(
 			{
 				enabled: true,
@@ -1933,6 +1936,10 @@ export default class TaskProgressBarPlugin extends Plugin {
 
 		// Migrate settings to new formats
 		migrateSettings(this.settings);
+		for (const view of this.settings.viewConfiguration || []) {
+			if (view.id === "review") view.visible = false;
+			if (view.id === "gantt" && ["计划", "Gantt", "Gantt Chart", "Planning"].includes(view.name)) view.name = t("Project plans");
+		}
 
 		// Repair and validate status cycles
 		if (this.settings.statusCycles) {

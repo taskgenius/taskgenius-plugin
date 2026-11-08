@@ -510,6 +510,8 @@ export interface RewardSettings {
 	showRewardType: "modal" | "notice"; // Type of reward display - modal (default) or notice
 	pointsPerTask?: number;
 	pointsLedger?: PointsLedgerEntry[];
+	/** Markdown file that owns the existing check-in rules and manual ledger. */
+	pointsDataFile?: string;
 }
 
 export interface HabitSettings {
@@ -1610,7 +1612,7 @@ export const DEFAULT_SETTINGS: TaskProgressBarSettings = {
 	// Reward Settings Defaults (NEW)
 	rewards: {
 		enableRewards: false,
-		pointsPerTask: 10,
+		pointsPerTask: 0,
 		pointsLedger: [],
 		rewardItems: [
 			{

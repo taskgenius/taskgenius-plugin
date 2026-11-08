@@ -50,7 +50,7 @@ export function isFlexible(habit: HabitDefinition): boolean {
  * log an occurrence whenever it actually happens.
  */
 export function isActive(habit: HabitDefinition, date: Date): boolean {
-	if (habit.frequency === "interval" && (habit.intervalWindowDays || 1) > 1) return !!intervalWindow(habit, date)?.active;
+	if (habit.frequency === "interval" && habit.intervalMode !== "cycle" && (habit.intervalWindowDays || 1) > 1) return !!intervalWindow(habit, date)?.active;
 	return isDue(habit, date) || isFlexible(habit);
 }
 
@@ -243,8 +243,13 @@ export function intervalAnchor(habit: HabitDefinition): Date | null {
 	return null;
 }
 
+function scheduleAnchor(habit: HabitDefinition, date: Date): Date | null {
+	const latest = (habit.cycleRestarts || []).filter(day => day <= toDateKey(date)).sort().pop();
+	return latest ? fromDateKey(latest) : intervalAnchor(habit);
+}
+
 function intervalWindow(habit: HabitDefinition, date: Date) {
-	const anchor = intervalAnchor(habit);
+	const anchor = scheduleAnchor(habit, date);
 	if (!anchor) return null;
 	const interval = Math.max(2, habit.intervalDays || 2);
 	const window = Math.max(1, Math.min(interval, habit.intervalWindowDays || 1));
@@ -319,6 +324,13 @@ export function isDue(habit: HabitDefinition, date: Date): boolean {
 		);
 	}
 	if (habit.frequency === "interval") {
+		if (habit.intervalMode === "cycle") {
+			const anchor = scheduleAnchor(habit, date);
+			if (!anchor) return true;
+			const elapsed = Math.round((startOfDay(date).getTime() - anchor.getTime()) / MS_PER_DAY);
+			const length = Math.max(2, habit.intervalDays || 2);
+			return elapsed >= 0 && elapsed % length < Math.max(1, Math.min(length, habit.cycleActiveDays || 1));
+		}
 		if ((habit.intervalWindowDays || 1) > 1) return !!intervalWindow(habit, date)?.due;
 		if (habit.intervalMode === "completion" && habit.goalDirection !== "max") {
 			// Only earlier successful records can move this day's due date.
@@ -330,14 +342,15 @@ export function isDue(habit: HabitDefinition, date: Date): boolean {
 					&& (habit.type === "binary" || value >= habit.target);
 			};
 			if (completed(key)) return true;
-			const previous = Object.keys(habit.records).filter(day => day < key && completed(day)).sort().pop();
-			const anchor = previous ? fromDateKey(previous) : intervalAnchor(habit);
+			const restartAnchor = scheduleAnchor(habit, date);
+			const previous = Object.keys(habit.records).filter(day => day < key && (!restartAnchor || day >= toDateKey(restartAnchor)) && completed(day)).sort().pop();
+			const anchor = previous ? fromDateKey(previous) : restartAnchor;
 			if (!anchor) return true;
 			const days = Math.round((startOfDay(date).getTime() - anchor.getTime()) / MS_PER_DAY);
 			// An overdue habit remains actionable until it is completed.
 			return days >= (previous ? Math.max(2, habit.intervalDays) : 0);
 		}
-		const anchor = intervalAnchor(habit);
+		const anchor = scheduleAnchor(habit, date);
 		if (!anchor) {
 			return true;
 		}
@@ -412,7 +425,7 @@ export function isComplete(habit: HabitDefinition, dateKey: string): boolean {
 		const date = fromDateKey(dateKey);
 		return date ? meetsFlexibleTarget(habit, flexiblePeriodTotal(habit, date)) : false;
 	}
-	if (habit.frequency === "interval" && (habit.intervalWindowDays || 1) > 1) {
+	if (habit.frequency === "interval" && habit.intervalMode !== "cycle" && (habit.intervalWindowDays || 1) > 1) {
 		const date = fromDateKey(dateKey);
 		const window = date ? intervalWindow(habit, date) : null;
 		if (!window?.due) return false;
@@ -438,6 +451,15 @@ export function isComplete(habit: HabitDefinition, dateKey: string): boolean {
 		return value >= 1;
 	}
 	return habit.target > 0 ? value >= habit.target : value > 0;
+}
+
+/** Daily card completion is independent of the weekly/monthly quota statistics. */
+export function isDailyComplete(habit: HabitDefinition, dateKey: string): boolean {
+	if (isFlexible(habit) && habit.goalDirection !== "max" && (habit.dailyTarget || 0) > 0) {
+		if (isFailedOn(habit, dateKey) || isSkippedOn(habit, dateKey)) return false;
+		return (habit.records[dateKey] || 0) >= habit.dailyTarget! || isComplete(habit, dateKey);
+	}
+	return isComplete(habit, dateKey);
 }
 
 /**

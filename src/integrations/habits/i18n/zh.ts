@@ -659,4 +659,12 @@ export const zh: Record<string, string> = {
 	"Imported {created} habits; skipped {skipped} existing imports.": "已导入 {created} 个习惯，跳过 {skipped} 个已导入习惯。",
 	"Habit import failed. Existing files have been preserved.": "习惯导入失败。现有文件已保留，可重试以继续导入。",
 	"Unable to load habits. Check the console for details.": "无法加载习惯，详细信息请查看控制台。",
+	"Work and rest cycle": "工作与休息循环",
+	"Active days at the start of each cycle": "每个循环开始时的签到天数",
+	"For a four-day cycle with three active days, check in separately on days 1, 2, and 3; day 4 is a rest day.": "例如每 4 天一个循环、前 3 天签到：第 1、2、3 天分别打卡，第 4 天休息。",
+	"Daily completion target": "每日完成目标",
+	"Finish today's card after this amount; the weekly or monthly quota is tracked separately. Use 0 to track only the period quota.": "当天达到这个数量就算完成；每周或每月总目标单独累计。设为 0 则只判断周期总目标。",
+	"Restart cycle on": "从指定日期重新开始循环",
+	"Choose a new cycle start date. Existing records and earlier schedules are preserved.": "选择新循环的开始日期，已有记录和此前的排期都会保留。",
+	"{active} active days / {days}-day cycle": "每 {days} 天循环，前 {active} 天签到",
 };

@@ -11,7 +11,7 @@ import {
 	FilterGroup,
 	RootFilterState,
 } from "@/components/features/task/filter/ViewTaskFilter";
-import { hasProject } from "./task-operations";
+import { hasProject, getEffectiveProject } from "./task-operations";
 
 // 从ViewTaskFilter.ts导入相关接口
 
@@ -502,6 +502,13 @@ export function filterTasks(
 	options: FilterOptions = {},
 ): Task[] {
 	let filtered = [...allTasks];
+	if (plugin.app?.vault?.getMarkdownFiles && plugin.app.metadataCache?.getFileCache) {
+		const archivedProjects = new Set(plugin.app.vault.getMarkdownFiles().flatMap(file => {
+			const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+			return fm && (fm.archived === true || fm.status === "archived") && typeof fm.project === "string" ? [fm.project.toLocaleLowerCase()] : [];
+		}));
+		filtered = filtered.filter(task => !archivedProjects.has((getEffectiveProject(task) || "").toLocaleLowerCase()));
+	}
 	const viewConfig = getViewSettingOrDefault(plugin, viewId);
 	const filterRules = viewConfig.filterRules || {};
 	const globalFilterRules = plugin.settings.globalFilterRules || {};

@@ -12,6 +12,7 @@ import TaskProgressBarPlugin from "@/index";
 import { Task } from "@/types/task";
 import { t } from "@/translations/helper";
 import { Events, on } from "@/dataflow/events/Events";
+import { SavedTaskFilterModal } from "./SavedTaskFilterModal";
 
 export type ViewMode = "list" | "kanban" | "tree" | "calendar";
 
@@ -45,6 +46,14 @@ export class TopNavigation extends Component {
 	private searchInput: HTMLInputElement;
 	private currentViewMode: ViewMode = "list";
 	private notificationCount = 0;
+	private contextViewId = "inbox";
+	private searchQuery = "";
+	private activePresetId: string | null = null;
+	public updateContext(viewId: string): void {
+		this.contextViewId = viewId;
+		if (["points", "habit"].includes(viewId)) this.containerEl.hide();
+		else this.containerEl.show();
+	}
 	private availableModes: ViewMode[] = ["list", "kanban", "tree", "calendar"];
 	private viewTabsContainer: HTMLElement | null = null;
 	private customButtonsContainer: HTMLElement | null = null;
@@ -173,14 +182,7 @@ export class TopNavigation extends Component {
 		this.containerEl.empty();
 		this.containerEl.addClass("fluent-top-navigation");
 
-		// Hide entire navigation if no view modes are available
-		if (this.availableModes.length === 0) {
-			this.containerEl.hide();
-			this.containerEl.toggleClass("other-view", true);
-			return;
-		}
-
-		this.containerEl.toggleClass("other-view", false);
+		this.containerEl.toggleClass("other-view", this.availableModes.length === 0);
 
 		// Show navigation when modes are available
 		this.containerEl.show();
@@ -196,7 +198,9 @@ export class TopNavigation extends Component {
 
 		new SearchComponent(searchContainer)
 			.setPlaceholder(t("Search tasks, projects ..."))
+			.setValue(this.searchQuery)
 			.onChange((value) => {
+				this.searchQuery = value;
 				this.onSearch(value);
 			});
 		const filterButton = searchContainer.createEl("button", {
@@ -204,16 +208,25 @@ export class TopNavigation extends Component {
 			attr: { "aria-label": t("Quick filters") },
 		});
 		setIcon(filterButton, "list-filter");
+		filterButton.toggleClass("is-active", !!this.activePresetId);
 		this.registerDomEvent(filterButton, "click", (event) => {
 			const menu = new Menu();
 			const presets = this.plugin.settings.taskFilter?.presetTaskFilters || [];
+			const apply = (id: string | null) => { this.activePresetId = id; filterButton.toggleClass("is-active", !!id); this.onFilterClick(id); };
+			menu.addItem(item => item.setTitle(t("New saved filter")).setIcon("plus").onClick(() => new SavedTaskFilterModal(this.plugin.app, this.plugin, this.searchQuery, apply).open()));
 			if (!presets.length) {
 				menu.addItem(item => item.setTitle(t("No saved filters")).setDisabled(true));
 			} else {
-				menu.addItem(item => item.setTitle(t("Clear quick filter")).setIcon("x").onClick(() => this.onFilterClick(null)));
+				menu.addItem(item => item.setTitle(t("Clear quick filter")).setIcon("x").onClick(() => apply(null)));
 				menu.addSeparator();
 				for (const preset of presets) {
-					menu.addItem(item => item.setTitle(preset.name).setIcon("filter").onClick(() => this.onFilterClick(preset.id)));
+					menu.addItem(item => item.setTitle(preset.name).setIcon("filter").setChecked(preset.id === this.activePresetId).onClick(() => apply(preset.id)));
+				}
+				const active = presets.find(preset => preset.id === this.activePresetId);
+				if (active) {
+					menu.addSeparator();
+					menu.addItem(item => item.setTitle(t("Edit saved filter")).setIcon("pencil").onClick(() => new SavedTaskFilterModal(this.plugin.app, this.plugin, this.searchQuery, apply, active).open()));
+					menu.addItem(item => item.setTitle(t("Delete saved filter")).setIcon("trash").onClick(async () => { this.plugin.settings.taskFilter.presetTaskFilters = presets.filter(preset => preset.id !== active.id); await this.plugin.saveSettings(); apply(null); }));
 				}
 			}
 			menu.showAtMouseEvent(event);
@@ -229,6 +242,7 @@ export class TopNavigation extends Component {
 			cls: "fluent-view-tabs",
 		});
 		this.renderViewTabs();
+		if (this.availableModes.length === 0) centerSection.hide();
 
 		// Right section - Notifications and Settings
 		const rightSection = this.containerEl.createDiv({
@@ -437,7 +451,9 @@ export class TopNavigation extends Component {
 
 		// Hide entire navigation if no modes available
 		if (modes.length === 0) {
-			this.containerEl.hide();
+			if (["points", "habit"].includes(this.contextViewId)) this.containerEl.hide();
+			else this.containerEl.show();
+			(this.containerEl.querySelector(".fluent-nav-center") as HTMLElement | null)?.hide();
 			this.containerEl.toggleClass("other-view", true);
 			return;
 		}

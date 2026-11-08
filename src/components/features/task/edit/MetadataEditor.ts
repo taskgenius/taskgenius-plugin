@@ -410,17 +410,12 @@ export class TaskMetadataEditor extends Component {
 		fieldLabel.setText(t("Project"));
 
 		const effectiveProject = getEffectiveProject(this.task);
-		const isReadonly = isProjectReadonly(this.task);
+		const isReadonly = false;
 
 		const projectInput = new TextComponent(fieldContainer)
 			.setPlaceholder(t("Project name"))
 			.setValue(effectiveProject || "")
-			.setDisabled(isReadonly)
-			.onChange((value) => {
-				if (!isReadonly) {
-					this.notifyMetadataChange("project", value);
-				}
-			});
+			.setDisabled(isReadonly);
 
 		// Add visual indicator for tgProject - only show if no user-set project exists
 		if (
@@ -438,7 +433,7 @@ export class TaskMetadataEditor extends Component {
 		}
 
 		this.registerDomEvent(projectInput.inputEl, "blur", () => {
-			if (!isReadonly) {
+			if (projectInput.inputEl.value.trim() !== (effectiveProject || "").trim()) {
 				this.notifyMetadataChange(
 					"project",
 					projectInput.inputEl.value

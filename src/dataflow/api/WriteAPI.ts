@@ -348,12 +348,12 @@ export class WriteAPI {
 			}
 
 			const requestedProject = args.updates.metadata?.project?.trim();
-			const projectMove = !!requestedProject && requestedProject !== originalTask.metadata?.project;
 			const prefixes = Object.values(this.plugin.settings.projectTagPrefix || {}).map(String);
-			const projectFiles = projectMove
+			const projectFiles = requestedProject
 				? new ProjectFileManager(this.app, prefixes.length ? prefixes : ["project"])
 				: null;
-			if (projectMove && projectFiles && requestedProject) {
+			const projectMove = !!requestedProject && projectFiles?.find(requestedProject)?.file.path !== originalTask.filePath;
+			if (projectFiles && requestedProject) {
 				const destination = await projectFiles.create(requestedProject);
 				if (!destination) return { success: false, error: "Could not create project note" };
 				// New membership belongs to the destination note's frontmatter.
@@ -361,7 +361,8 @@ export class WriteAPI {
 					...args,
 					updates: {
 						...args.updates,
-						metadata: { ...args.updates.metadata, project: undefined } as any,
+						metadata: { ...args.updates.metadata, project: undefined,
+							tags: (args.updates.metadata?.tags || originalTask.metadata?.tags || []).filter(tag => !["project", ...prefixes].some(prefix => tag.replace(/^#/, "").startsWith(`${prefix}/`))) } as any,
 					},
 				};
 			}
@@ -643,6 +644,7 @@ export class WriteAPI {
 								esc(dvProjectKey),
 								esc(dvContextKey),
 								"priority",
+								"points",
 								"repeat",
 								"start",
 								"scheduled",
@@ -741,8 +743,9 @@ export class WriteAPI {
 									? !!args.updates.completed
 									: !!originalTask.completed;
 							const newMetadata = this.generateMetadata({
-								tags: mergedMd.tags,
-								project: mergedMd.project,
+								tags: typeof this.metadataCache.getFileCache(file)?.frontmatter?.project === "string"
+									? (mergedMd.tags || []).filter((tag: string) => !["project", ...prefixes].some(prefix => tag.replace(/^#/, "").startsWith(`${prefix}/`))) : mergedMd.tags,
+								project: typeof this.metadataCache.getFileCache(file)?.frontmatter?.project === "string" ? undefined : mergedMd.project,
 								context: mergedMd.context,
 								priority: mergedMd.priority,
 								startDate: mergedMd.startDate,
@@ -1339,6 +1342,14 @@ export class WriteAPI {
 		args: CreateTaskArgs,
 	): Promise<{ success: boolean; task?: Task; error?: string }> {
 		try {
+			if (args.project?.trim()) {
+				const prefixes = Object.values(this.plugin.settings.projectTagPrefix || {}).map(String);
+				const manager = new ProjectFileManager(this.app, prefixes.length ? prefixes : ["project"]);
+				const project = await manager.create(args.project);
+				if (!project) return { success: false, error: "Could not create project note" };
+				args = { ...args, filePath: project.file.path, parent: undefined, project: undefined,
+					tags: args.tags?.filter(tag => !["project", ...prefixes].some(prefix => tag.replace(/^#/, "").startsWith(`${prefix}/`))) };
+			}
 			let filePath = args.filePath;
 
 			if (!filePath) {
@@ -1871,6 +1882,7 @@ export class WriteAPI {
 	}): Promise<{ success: boolean; error?: string }> {
 		try {
 			// Get or create daily note
+			if (args.project?.trim()) return this.createTask({ ...args });
 			let dailyNoteFile: TFile | null;
 			const hasDailyNotesPlugin = appHasDailyNotesPluginLoaded();
 
@@ -2039,6 +2051,14 @@ export class WriteAPI {
 		completedDate?: string;
 	}): Promise<{ filePath: string; success: boolean }> {
 		try {
+			if (args.project.trim()) {
+				const prefixes = Object.values(this.plugin.settings.projectTagPrefix || {}).map(String);
+				const manager = new ProjectFileManager(this.app, prefixes.length ? prefixes : ["project"]);
+				const project = await manager.create(args.project);
+				if (!project) return { filePath: "", success: false };
+				const result = await this.createTask({ ...args, filePath: project.file.path });
+				return { filePath: project.file.path, success: result.success };
+			}
 			const qc = this.plugin.settings.quickCapture;
 			if (!qc) {
 				throw new Error("Quick Capture settings not found");

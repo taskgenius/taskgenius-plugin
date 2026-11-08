@@ -1,5 +1,8 @@
 import { App, TFile, TFolder } from "obsidian";
 import { ProjectFileManager } from "../project-file-manager";
+import { buildProjectPlan } from "../project-plan";
+import { saveCapture } from "@/utils/file/file-operations";
+import { filterTasks } from "@/utils/task/task-filter-utils";
 
 function createVaultHarness() {
 	const app = new App() as any;
@@ -34,6 +37,37 @@ function createVaultHarness() {
 }
 
 describe("project Markdown files", () => {
+	test("archived project tasks are excluded by the common task filter", () => {
+		const { app, addFile } = createVaultHarness();
+		addFile("Tasks/Projects/Active.md", "", { project: "Active" });
+		addFile("Tasks/Projects/Done.md", "", { project: "Done", archived: true });
+		const tasks = ["Active", "Done"].map(name => ({ id: name, content: name, completed: false, status: " ", metadata: { project: name, tags: [], children: [] } } as any));
+		const plugin = { app, settings: { viewConfiguration: [{ id: "projects", name: "Projects", type: "default", filterRules: {}, filterBlanks: false, hideCompletedAndAbandonedTasks: false }], taskStatuses: { completed: "x", abandoned: "-" } } } as any;
+		expect(filterTasks(tasks, "projects", plugin, {}).map(task => task.id)).toEqual(["Active"]);
+	});
+	test("existing project notes outside Projects can be edited and archived, and project plans contain only projects", async () => {
+		const { app, addFile } = createVaultHarness();
+		addFile("Tasks/Projects/Research.md", "# Research", { project: "Research", startDate: "2026-11-01", dueDate: "2026-11-10" });
+		addFile("Tasks/Archive/Done.md", "# Done", { project: "Done", archived: true });
+		const manager = new ProjectFileManager(app);
+		expect(manager.find("Research")?.file.path).toBe("Tasks/Projects/Research.md");
+		const plans = buildProjectPlan(app, [{ id: "ordinary", content: "Unassigned task", metadata: {} } as any]);
+		expect(plans.map(project => project.content)).toEqual(["Research"]);
+		expect(plans[0].metadata.projectPlan).toBe(true);
+		await manager.update("Research", { name: "New Research", description: "Updated" });
+		expect(manager.find("New Research")?.description).toBe("Updated");
+		await manager.setArchived("New Research", true);
+		expect(buildProjectPlan(app, [])).toEqual([]);
+	});
+
+	test("quick capture saves a project task in its note and strips inline ownership markers", async () => {
+		const { app, files, addFile } = createVaultHarness();
+		addFile("Inbox.md", "Original inbox");
+		await saveCapture(app, "- [ ] Draft #project/Old", { targetFile: "Inbox.md", project: "Writing", appendToFile: "append" } as any);
+		expect(files.get("Inbox.md")?.text).toBe("Original inbox");
+		expect(files.get("Projects/Writing.md")?.text).toContain("- [ ] Draft");
+		expect(files.get("Projects/Writing.md")?.text).not.toContain("#project/");
+	});
 	test("creates project notes with canonical properties and archives them", async () => {
 		const { app, files } = createVaultHarness();
 		const manager = new ProjectFileManager(app);
@@ -54,6 +88,15 @@ describe("project Markdown files", () => {
 		expect(files.get("Notes.md")?.text).toContain("Keep this task");
 		expect(files.get("Notes.md")?.text).not.toContain("Parent task");
 		expect(files.get("Projects/Writing.md")?.text).toContain("- [ ] Parent task\n    - [ ] Child task");
+	});
+
+	test("moving a task retains its indented notes, blank lines, and subtasks", async () => {
+		const { app, files, addFile } = createVaultHarness();
+		const source = addFile("Notes.md", "- [ ] Parent #project/Old\n    Details mentioning #project/reference\n\n    - [ ] Child\n- [ ] Keep\n");
+		const manager = new ProjectFileManager(app);
+		await manager.moveTask({ id: "root", filePath: source.path, line: 0, originalMarkdown: "- [ ] Parent #project/Old" } as any, "Writing");
+		expect(files.get("Projects/Writing.md")?.text).toContain("- [ ] Parent\n    Details mentioning #project/reference\n\n    - [ ] Child");
+		expect(files.get("Notes.md")?.text).toBe("- [ ] Keep\n");
 	});
 
 	test("removes legacy project properties and tags from the moved task block", async () => {

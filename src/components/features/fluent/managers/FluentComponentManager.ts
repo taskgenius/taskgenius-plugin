@@ -5,7 +5,6 @@ import { ContentComponent } from "@/components/features/task/view/content";
 import { ForecastComponent } from "@/components/features/task/view/forecast";
 import { TagsComponent } from "@/components/features/task/view/tags";
 import { ProjectsComponent } from "@/components/features/task/view/projects";
-import { ReviewComponent } from "@/components/features/task/view/review";
 import { Habit } from "@/components/features/habit/habit";
 import { CalendarComponent } from "@/components/features/calendar";
 import { KanbanComponent } from "@/components/features/kanban/kanban";
@@ -77,12 +76,13 @@ const ERROR_CSS_CLASSES = {
  * - Render loading, error, and empty states
  */
 export class FluentComponentManager extends Component {
+	private searchQuery = "";
+	setSearchQuery(query: string): void { this.searchQuery = query; }
 	// View components
 	private contentComponent: ContentComponent;
 	private forecastComponent: ForecastComponent;
 	private tagsComponent: TagsComponent;
 	private projectsComponent: ProjectsComponent;
-	private reviewComponent: ReviewComponent;
 	private habitComponent: Habit;
 	private pointsComponent: PointsDashboard;
 	private calendarComponent: CalendarComponent;
@@ -290,33 +290,6 @@ export class FluentComponentManager extends Component {
 		this.parentView.addChild(this.projectsComponent);
 		this.projectsComponent.load();
 
-		// Initialize ReviewComponent
-		this.reviewComponent = new ReviewComponent(
-			this.contentArea,
-			this.app,
-			this.plugin,
-			{
-				onTaskSelected: (task) => {
-					if (task) this.viewHandlers.onTaskSelected(task);
-				},
-				onTaskCompleted: (task) => {
-					if (task) this.viewHandlers.onTaskCompleted(task);
-				},
-				onTaskUpdate: async (originalTask, updatedTask) => {
-					if (originalTask && updatedTask) {
-						await this.viewHandlers.onTaskUpdate(
-							originalTask,
-							updatedTask
-						);
-					}
-				},
-				onTaskContextMenu: (event, task) => {
-					if (task) this.viewHandlers.onTaskContextMenu(event, task);
-				},
-			}
-		);
-		this.parentView.addChild(this.reviewComponent);
-		this.reviewComponent.load();
 
 		// Initialize HabitComponent
 		this.habitComponent = new Habit(this.plugin, this.contentArea);
@@ -429,7 +402,6 @@ export class FluentComponentManager extends Component {
 			this.forecastComponent?.containerEl.hide();
 			this.tagsComponent?.containerEl.hide();
 			this.projectsComponent?.containerEl.hide();
-			this.reviewComponent?.containerEl.hide();
 			this.habitComponent?.containerEl.hide();
 			this.calendarComponent?.containerEl.hide();
 			this.kanbanComponent?.containerEl.hide();
@@ -605,7 +577,8 @@ export class FluentComponentManager extends Component {
 						}
 						break;
 					case "review":
-						targetComponent = this.reviewComponent;
+						targetComponent = this.projectsComponent;
+						modeForComponent = "projects";
 						break;
 					case "calendar":
 						targetComponent = this.calendarComponent;
@@ -665,6 +638,7 @@ export class FluentComponentManager extends Component {
 			}
 
 			// Set tasks on the component
+			if (!["points", "habit"].includes(viewId)) (targetComponent as ManagedViewComponent & { setSearchQuery?: (query: string) => void }).setSearchQuery?.(this.searchQuery);
 			if (typeof targetComponent.setTasks === "function") {
 				// Special handling for components that need filtered + all tasks
 				// Tags view: uses filtered tasks for tag index (left sidebar), all tasks for tree view lookup
@@ -718,14 +692,7 @@ export class FluentComponentManager extends Component {
 					filterOptions.advancedFilter = currentFilterState;
 				}
 
-				targetComponent.updateTasks(
-					filterTasks(
-						tasks,
-						viewId as any,
-						this.plugin,
-						filterOptions
-					)
-				);
+				targetComponent.updateTasks(filteredTasks);
 			}
 
 			// Refresh review settings if needed
@@ -907,7 +874,7 @@ export class FluentComponentManager extends Component {
 			forecast: this.forecastComponent,
 			tags: this.tagsComponent,
 			projects: this.contentComponent,
-			review: this.reviewComponent,
+			review: this.projectsComponent,
 			habit: this.habitComponent,
 			gantt: this.ganttComponent,
 			kanban: this.kanbanComponent,
@@ -1137,7 +1104,7 @@ export class FluentComponentManager extends Component {
 			projects: t("Projects"),
 			tags: t("Tags"),
 			forecast: t("Forecast"),
-			review: t("Review"),
+			review: t("Projects"),
 			habit: t("Habit"),
 			calendar: t("Calendar"),
 			kanban: t("Kanban"),

@@ -9,6 +9,7 @@ import { sortTasks } from "@/commands/sortTaskCommands";
 import { TaskTimerManager } from "@/managers/timer-manager";
 import { PresetTaskFilter } from "@/common/setting-definition";
 import { evaluateFilterNode, parseAdvancedFilterQuery } from "@/utils/task/filter-compatibility";
+import { buildProjectPlan } from "@/managers/project-plan";
 
 /**
  * FluentDataManager - Stateless data loading, filtering, and sorting executor
@@ -138,13 +139,15 @@ export class FluentDataManager extends Component {
 	applyFilters(tasks: Task[]): Task[] {
 		const viewId = this.getCurrentViewId();
 		const filterState = this.getCurrentFilterState();
+		if (viewId === "gantt") tasks = buildProjectPlan(this.plugin.app, tasks);
+		const query = filterState.filterInputValue || filterState.searchQuery || "";
+		const structuredQuery = /\b(?:AND|OR|NOT)\b|\b[\w-]+\s*:/i.test(query);
 
 		console.log(`[FluentData] applyFilters called for viewId: ${viewId}, total tasks: ${tasks.length}`);
 
 		// Build filter options
 		const filterOptions: any = {
-			textQuery:
-				filterState.filterInputValue || filterState.searchQuery || "",
+			textQuery: structuredQuery ? "" : query,
 		};
 
 		// Always enable v2Filters for Working-on so the special filter runs
@@ -202,8 +205,17 @@ export class FluentDataManager extends Component {
 			);
 		}
 
+		if (structuredQuery) {
+			try {
+				const tree = parseAdvancedFilterQuery(query);
+				filteredTasks = filteredTasks.filter(task => evaluateFilterNode(tree, task));
+			} catch { filteredTasks = []; }
+		}
 		const preset = filterState.activeTaskPreset;
 		if (preset) {
+			let presetTree: ReturnType<typeof parseAdvancedFilterQuery> | null = null;
+			try { if (preset.advancedFilterQuery?.trim()) presetTree = parseAdvancedFilterQuery(preset.advancedFilterQuery); }
+			catch { return []; }
 			const marks = this.plugin.settings.taskStatuses;
 			const split = (value?: string) => String(value || "").split("|").map(mark => mark.toLowerCase());
 			const inProgress = split(marks?.inProgress);
@@ -229,7 +241,7 @@ export class FluentDataManager extends Component {
 					: inProgress.includes(mark) ? "in-progress"
 					: planned.includes(mark) ? "planned"
 					: "not-started";
-				return evaluateFilterNode(parseAdvancedFilterQuery(query), { ...task, statusName });
+				return evaluateFilterNode(presetTree, { ...task, statusName });
 			};
 			const directMatches = new Set<string>();
 			for (const task of filteredTasks) {
@@ -250,6 +262,7 @@ export class FluentDataManager extends Component {
 				if (preset.includeChildTasks) {
 					const addChildren = (parent: Task) => {
 						for (const childId of parent.metadata?.children || []) {
+							if (included.has(childId)) continue;
 							included.add(childId);
 							const child = allById.get(childId);
 							if (child) addChildren(child);

@@ -1185,6 +1185,7 @@ export class FluentTaskView extends ItemView {
 				this.currentViewId,
 				this.viewState.selectedProject
 			) ?? [];
+		this.topNavigation?.updateContext(this.currentViewId);
 		this.topNavigation?.updateAvailableModes(availableModes);
 
 		// Update task count
@@ -1235,6 +1236,7 @@ export class FluentTaskView extends ItemView {
 		}
 
 		// Switch to appropriate component
+		this.componentManager.setSearchQuery?.(this.viewState.searchQuery || "");
 		this.componentManager.switchView(
 			this.currentViewId,
 			this.tasks,

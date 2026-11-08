@@ -2,17 +2,18 @@ import { App, Modal, Notice, Setting, TFile, TFolder, Menu } from "obsidian";
 import { Task } from "@/types/task";
 import { t } from "@/translations/helper";
 
-export interface ProjectFileInfo { name: string; file: TFile; archived: boolean; description: string; dueDate?: string; }
+export interface ProjectFileInfo { name: string; file: TFile; archived: boolean; description: string; dueDate?: string; startDate?: string; }
 
 /** Markdown project notes are the canonical home for project tasks and settings. */
 export class ProjectFileManager {
 	static readonly folder = "Projects";
 	constructor(private app: App, private tagPrefixes: string[] = ["project"]) {}
+	get folder(): string { return this.app.vault.getAbstractFileByPath("Tasks/Projects") instanceof TFolder ? "Tasks/Projects" : ProjectFileManager.folder; }
 
 	list(): ProjectFileInfo[] {
-		return this.app.vault.getMarkdownFiles().filter(file => file.path.startsWith(`${ProjectFileManager.folder}/`)).flatMap(file => {
+		return this.app.vault.getMarkdownFiles().filter(file => !/(^|\/)(templates?|模板)(\/|$)/i.test(file.path)).flatMap(file => {
 			const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
-			if (typeof fm?.project !== "string" || !fm.project.trim()) return [];
+			if (typeof fm?.project !== "string" || !fm.project.trim() || /\{\{|<%/.test(fm.project)) return [];
 			return [{ name: fm.project.trim(), file, archived: fm.archived === true || fm.status === "archived", description: String(fm.description || ""), dueDate: typeof fm.dueDate === "string" ? fm.dueDate : undefined }];
 		});
 	}
@@ -24,7 +25,7 @@ export class ProjectFileManager {
 		// MetadataCache may not have indexed a just-created note yet. Resolve its
 		// deterministic path directly so the first task can be moved immediately.
 		const slug = clean.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "-");
-		const file = this.app.vault.getAbstractFileByPath(`${ProjectFileManager.folder}/${slug}.md`);
+		const file = this.app.vault.getAbstractFileByPath(`${this.folder}/${slug}.md`);
 		if (!(file instanceof TFile)) return undefined;
 		const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
 		return {
@@ -41,28 +42,39 @@ export class ProjectFileManager {
 		if (!clean) return null;
 		const existing = this.find(clean);
 		if (existing) return existing;
-		await this.ensureFolder(ProjectFileManager.folder);
+		await this.ensureFolder(this.folder);
 		const slug = clean.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "-");
-		const path = `${ProjectFileManager.folder}/${slug}.md`;
+		const path = `${this.folder}/${slug}.md`;
 		if (this.app.vault.getAbstractFileByPath(path)) { new Notice(t("A project file already exists at that path.")); return null; }
-		const body = `---\nproject: ${JSON.stringify(clean)}\nstatus: active\narchived: false\ndescription: ${JSON.stringify(description)}\n---\n\n# ${clean}\n\n## Project plan\n\n## Tasks\n\n`;
+		const body = `---\nproject: ${JSON.stringify(clean)}\nstatus: active\narchived: false\ndescription: ${JSON.stringify(description)}\n---\n\n# ${clean}\n\n## ${t("Project plans")}\n\n## ${t("Tasks")}\n\n`;
 		const file = await this.app.vault.create(path, body);
 		return { name: clean, file, archived: false, description };
 	}
 
 	async setArchived(name: string, archived: boolean): Promise<boolean> {
 		const project = this.find(name); if (!project) return false;
+		if (!archived && /(^|\/)(archive|archives|归档)(\/|$)/i.test(project.file.path)) {
+			await this.ensureFolder(this.folder);
+			const destination = `${this.folder}/${project.file.name || project.file.path.split("/").pop()}`;
+			const collision = this.app.vault.getAbstractFileByPath(destination);
+			if (collision && collision !== project.file) throw new Error(t("A project file already exists at that path."));
+			await this.app.fileManager.renameFile(project.file, destination);
+		}
 		await this.app.fileManager.processFrontMatter(project.file, fm => {
 			fm.project = project.name; fm.archived = archived; fm.status = archived ? "archived" : "active";
 		});
 		return true;
 	}
 
-	async update(name: string, values: { description?: string; dueDate?: string }): Promise<boolean> {
+	async update(name: string, values: { name?: string; description?: string; dueDate?: string; startDate?: string }): Promise<boolean> {
 		const project = this.find(name); if (!project) return false;
+		const nextName = values.name?.trim() || project.name;
+		const conflict = this.find(nextName);
+		if (conflict && conflict.file.path !== project.file.path) throw new Error(t("A project with that name already exists."));
 		await this.app.fileManager.processFrontMatter(project.file, fm => {
-			fm.project = project.name;
+			fm.project = nextName;
 			if (values.description !== undefined) fm.description = values.description;
+			if (values.startDate !== undefined) { if (values.startDate) fm.startDate = values.startDate; else delete fm.startDate; }
 			if (values.dueDate !== undefined) { if (values.dueDate) fm.dueDate = values.dueDate; else delete fm.dueDate; }
 		});
 		return true;
@@ -108,18 +120,31 @@ export class ProjectFileManager {
 			for (const task of group.slice().sort((a, b) => b.line - a.line)) {
 				const expected = String(task.originalMarkdown || "").trim();
 				let start = Math.max(0, task.line);
-				if (!lines[start]?.includes(expected)) start = lines.findIndex(line => line.trim() === expected);
+				if (lines[start]?.trim() !== expected) {
+					const matches = lines.map((line, index) => line.trim() === expected ? index : -1).filter(index => index >= 0);
+					start = matches.length === 1 ? matches[0] : -1;
+				}
 				if (start < 0 || !expected) throw new Error(t("The task changed before it could be moved."));
 				if (ranges.some(range => start >= range.start && start < range.end)) continue;
 				const baseIndent = (lines[start].match(/^\s*/) || [""])[0].replace(/\t/g, "    ").length;
 				let end = start + 1;
-				while (end < lines.length && /^\s*(?:[-*+]\s+\[[^\]]*\]|\d+\.\s+\[[^\]]*\])/.test(lines[end])) {
+				while (end < lines.length) {
+					if (!lines[end].trim()) {
+						let next = end + 1;
+						while (next < lines.length && !lines[next].trim()) next++;
+						if (next >= lines.length || (lines[next].match(/^\s*/) || [""])[0].replace(/\t/g, "    ").length <= baseIndent) break;
+						end++; continue;
+					}
 					const childIndent = (lines[end].match(/^\s*/) || [""])[0].replace(/\t/g, "    ").length;
 					if (childIndent <= baseIndent) break;
 					end++;
 				}
 				ranges.push({ start, end });
-				const block = lines.slice(start, end).map(line => this.stripProjectMarkers(line, name, baseIndent));
+				const block = lines.slice(start, end).map(line => {
+					if (/^\s*[-*+]\s+\[[^\]]*\]/.test(line)) return this.stripProjectMarkers(line, name, baseIndent);
+					const indent = (line.match(/^\s*/) || [""])[0].replace(/\t/g, "    ").length;
+					return " ".repeat(Math.max(0, indent - baseIndent)) + line.trimStart();
+				});
 				movedBlocks.unshift(block.join(newline));
 				lines.splice(start, end - start);
 			}
@@ -162,8 +187,8 @@ export class ProjectFileManager {
 
 	async appendTaskBlock(name: string, lines: string[]): Promise<boolean> {
 		const project = this.find(name);
-		const cleaned = lines.map(line => this.stripProjectMarkers(line, name)).filter(Boolean);
-		if (!project || !cleaned.length) return false;
+		const cleaned = lines.map(line => /^\s*[-*+]\s+\[[^\]]*\]/.test(line) ? this.stripProjectMarkers(line, name) : line);
+		if (!project || !cleaned.some(line => line.trim())) return false;
 		const block = cleaned.join("\n");
 		const before = await this.app.vault.read(project.file);
 		await this.app.vault.modify(project.file, `${before.replace(/\s*$/, "")}\n${block}\n`);
@@ -194,7 +219,13 @@ export class ProjectCreateModal extends Modal {
 		this.setTitle(t("New project")); let name = "", description = "";
 		new Setting(this.contentEl).setName(t("Project name")).addText(text => text.onChange(value => name = value));
 		new Setting(this.contentEl).setName(t("Description")).addText(text => text.onChange(value => description = value));
-		new Setting(this.contentEl).addButton(button => button.setButtonText(t("Create project")).setCta().onClick(() => void this.manager.create(name, description).then(project => { if (project) { this.onSave(); this.close(); } })));
+		new Setting(this.contentEl).addButton(button => button.setButtonText(t("Create project")).setCta().onClick(async () => {
+			if (!name.trim()) { new Notice(t("Enter a project name.")); return; }
+			button.setDisabled(true);
+			try { if (await this.manager.create(name, description)) { this.onSave(); this.close(); } }
+			catch (error) { new Notice(String(error)); }
+			finally { button.setDisabled(false); }
+		}));
 	}
 }
 
@@ -203,7 +234,13 @@ export class ProjectTaskModal extends Modal {
 	onOpen() {
 		this.setTitle(t("Add task to project")); let content = "";
 		new Setting(this.contentEl).setName(t("Task")).addText(text => text.onChange(value => content = value));
-		new Setting(this.contentEl).addButton(button => button.setButtonText(t("Add task")).setCta().onClick(() => void this.manager.addTask(this.project, content).then(ok => { if (ok) { this.onSave(); this.close(); } })));
+		new Setting(this.contentEl).addButton(button => button.setButtonText(t("Add task")).setCta().onClick(async () => {
+			if (!content.trim()) return;
+			button.setDisabled(true);
+			try { if (await this.manager.addTask(this.project, content)) { this.onSave(); this.close(); } }
+			catch (error) { new Notice(String(error)); }
+			finally { button.setDisabled(false); }
+		}));
 	}
 }
 
@@ -212,9 +249,30 @@ export class ProjectEditModal extends Modal {
 	onOpen() {
 		this.setTitle(t("Edit project details"));
 		let description = this.project.description;
+		let name = this.project.name;
+		new Setting(this.contentEl).setName(t("Project name")).addText(text => text.setValue(name).onChange(value => name = value));
 		let dueDate = this.project.dueDate || "";
+		let startDate = String(this.app.metadataCache.getFileCache(this.project.file)?.frontmatter?.startDate || "");
+		new Setting(this.contentEl).setName(t("Start date")).addText(text => { text.inputEl.type = "date"; text.setValue(startDate).onChange(value => startDate = value); });
 		new Setting(this.contentEl).setName(t("Description")).addText(text => text.setValue(description).onChange(value => description = value));
 		new Setting(this.contentEl).setName(t("Due date")).addText(text => text.setPlaceholder("YYYY-MM-DD").setValue(dueDate).onChange(value => dueDate = value));
-		new Setting(this.contentEl).addButton(button => button.setButtonText(t("Save")).setCta().onClick(() => void this.manager.update(this.project.name, { description, dueDate }).then(ok => { if (ok) { this.onSave(); this.close(); } })));
+		new Setting(this.contentEl).addButton(button => button.setButtonText(t("Save")).setCta().onClick(async () => {
+			button.setDisabled(true);
+			try { if (await this.manager.update(this.project.name, { name, description, dueDate, startDate })) { this.onSave(); this.close(); } }
+			catch (error) { new Notice(String(error)); }
+			finally { button.setDisabled(false); }
+		}));
+	}
+}
+
+export class ProjectArchiveModal extends Modal {
+	constructor(app: App, private manager: ProjectFileManager, private onChange: () => void) { super(app); }
+	onOpen() {
+		this.setTitle(t("Archived projects")); this.contentEl.empty();
+		const archived = this.manager.list().filter(project => project.archived);
+		if (!archived.length) this.contentEl.createDiv({ text: t("No archived projects") });
+		for (const project of archived) new Setting(this.contentEl).setName(project.name).setDesc(project.file.path)
+			.addButton(button => button.setButtonText(t("Open")).onClick(() => void this.app.workspace.openLinkText(project.file.path, "", false)))
+			.addButton(button => button.setButtonText(t("Restore project")).onClick(async () => { await this.manager.setArchived(project.name, false); this.onChange(); this.onOpen(); }));
 	}
 }

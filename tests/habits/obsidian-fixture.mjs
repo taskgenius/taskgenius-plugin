@@ -74,6 +74,7 @@ export const moment = Object.assign(() => ({format: () => '2026-11-08'}), {local
 export const debounce = callback => callback;
 export const normalizePath = value => value.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\.\//, '').replace(/\/$/, '');
 export const parseYaml = JSON.parse;
+export const getFrontMatterInfo = text => { const match=text.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/); return {exists:!!match,frontmatter:match?.[1]??'',contentStart:match?.[0].length??0}; };
 export const stringifyYaml = value => JSON.stringify(value, null, 2) + '\n';
 export const setIcon = () => {};
 export const setTooltip = () => {};

@@ -46,12 +46,14 @@ import { IframeModal } from "@/components/ui/modals/IframeModal";
 import { renderTaskTimerSettingTab } from "./components/features/settings/tabs/TaskTimerSettingsTab";
 import { renderBasesSettingsTab } from "./components/features/settings/tabs/BasesSettingsTab";
 import { renderWorkspaceSettingsTab } from "@/components/features/settings/tabs/WorkspaceSettingTab";
+import type { PointsDashboard } from "./components/features/rewards/PointsDashboard";
 
 export class TaskProgressBarSettingTab extends PluginSettingTab {
 	plugin: TaskProgressBarPlugin;
 	private debouncedApplySettings: () => void;
 	private debouncedApplyNotifications: () => void;
 	private searchComponent: SettingsSearchComponent | null = null;
+	private pointsSettingsDashboard?: PointsDashboard;
 
 	// Tabs management
 	private currentTab: string = "general";
@@ -171,7 +173,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 		// Gamification
 		{
 			id: "reward",
-			name: t("Rewards"),
+			name: t("Points and rewards"),
 			icon: "gift",
 			category: "gamification",
 		},
@@ -316,7 +318,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 				tabs: [] as typeof this.tabs,
 			},
 			gamification: {
-				name: t("Gamification"),
+				name: t("Habits and points"),
 				tabs: [] as typeof this.tabs,
 			},
 			integration: {
@@ -613,6 +615,8 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 	}
 
 	display(): void {
+		this.pointsSettingsDashboard?.unload();
+		this.pointsSettingsDashboard = undefined;
 		const { containerEl } = this;
 
 		containerEl.empty();
@@ -903,7 +907,12 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 
 	// START: New Reward Settings Section
 	private displayRewardSettings(containerEl: HTMLElement): void {
-		renderRewardSettingsTab(this, containerEl);
+		this.pointsSettingsDashboard = renderRewardSettingsTab(this, containerEl);
+	}
+
+	hide(): void {
+		this.pointsSettingsDashboard?.unload();
+		this.pointsSettingsDashboard = undefined;
 	}
 
 	private displayHabitSettings(containerEl: HTMLElement): void {

@@ -1,100 +1,272 @@
-import { App, Component, Modal, Notice, Setting } from "obsidian";
-import TaskProgressBarPlugin from "@/index";
-import { RewardItem } from "@/common/setting-definition";
+import { App, Component, Modal, Notice, SearchComponent, Setting } from "obsidian";
+import type TaskProgressBarPlugin from "@/index";
+import type { RewardItem } from "@/common/setting-definition";
+import { HabitsBlock } from "@/integrations/habits/ui/habits-block";
+import { localPointDate, roundPoints } from "@/managers/daily-points";
+import { pointsService, PointsSnapshot } from "@/managers/points-service";
 import { t } from "@/translations/helper";
 
+type PointsTab = "daily" | "actions" | "history" | "rules";
+const numberText = (value: number) => String(roundPoints(value));
+
+/** One native page backed by the original Markdown ledger and habit notes. */
 export class PointsDashboard extends Component {
-	public containerEl: HTMLElement;
-	private balanceEl: HTMLElement;
-	constructor(private app: App, private plugin: TaskProgressBarPlugin, parent: HTMLElement) { super(); this.containerEl = parent.createDiv({ cls: "tg-points-page" }); }
+	readonly containerEl: HTMLElement;
+	private summaryEl!: HTMLElement;
+	private bodyEl!: HTMLElement;
+	private tabsEl!: HTMLElement;
+	private activeTab: PointsTab;
+	private query = "";
+	setSearchQuery(query: string): void { this.query = query.trim().toLocaleLowerCase(); this.renderBody(); }
+	private historyFilter = "all";
+	private snapshot?: PointsSnapshot;
+	private scope?: Component;
+	private habits?: HabitsBlock;
+	private request = 0;
+	private disposed = false;
+	private refreshTimer?: number;
 
-	onload() {
-		this.render();
-		this.registerEvent(this.app.workspace.on("task-genius:points-updated", () => this.render()));
+	constructor(private app: App, private plugin: TaskProgressBarPlugin, parent: HTMLElement, settingsMode = false) {
+		super();
+		this.activeTab = settingsMode ? "actions" : "daily";
+		this.containerEl = parent.createDiv({ cls: "tg-points-page" });
 	}
-	private render() {
-		this.containerEl.empty();
-		const rewards = this.plugin.settings.rewards;
-		const ledger = rewards.pointsLedger || [];
-		const balance = ledger.reduce((sum, entry) => sum + entry.delta, 0);
+	onload(): void {
+		this.disposed = false;
 		const header = this.containerEl.createDiv({ cls: "tg-points-header" });
-		header.createDiv({ cls: "tg-points-heading", text: t("Points and rewards") });
-		header.createDiv({ cls: "tg-points-subtitle", text: t("Earn points from tasks, add points manually, and redeem rewards.") });
-		const add = header.createEl("button", { cls: "mod-cta", text: t("Add points") });
-		this.registerDomEvent(add, "click", () => this.addPoints());
-		const cards = this.containerEl.createDiv({ cls: "tg-points-summary" });
-		const balanceCard = cards.createDiv({ cls: "tg-points-card is-primary" });
-		balanceCard.createDiv({ cls: "tg-points-label", text: t("Available points") });
-		this.balanceEl = balanceCard.createDiv({ cls: "tg-points-balance", text: String(balance) });
-		cards.createDiv({ cls: "tg-points-card" }).createDiv({ cls: "tg-points-label", text: `${ledger.length} ${t("ledger entries")}` });
-		const rules = cards.createDiv({ cls: "tg-points-card" });
-		rules.createDiv({ cls: "tg-points-label", text: t("Default task points") });
-		const ruleButton = rules.createEl("button", { text: `${this.plugin.settings.rewards.pointsPerTask ?? 10} ${t("points per task")}` });
-		this.registerDomEvent(ruleButton, "click", () => this.editPointRule());
-		const columns = this.containerEl.createDiv({ cls: "tg-points-columns" });
-		const history = columns.createDiv({ cls: "tg-points-panel" });
-		history.createEl("h3", { text: t("Points history") });
-		if (!ledger.length) history.createDiv({ cls: "tg-points-empty", text: t("Complete tasks to start earning points.") });
-		ledger.slice().reverse().slice(0, 100).forEach(entry => {
-			const row = history.createDiv({ cls: "tg-points-entry" });
-			const detail = row.createDiv(); detail.createDiv({ text: entry.label }); detail.createDiv({ cls: "tg-points-date", text: new Date(entry.createdAt).toLocaleString() });
-			row.createDiv({ cls: entry.delta < 0 ? "tg-points-delta is-negative" : "tg-points-delta", text: `${entry.delta > 0 ? "+" : ""}${entry.delta}` });
-		});
-		const shop = columns.createDiv({ cls: "tg-points-panel" });
-		const shopHeader = shop.createDiv({ cls: "tg-points-shop-header" }); shopHeader.createEl("h3", { text: t("Reward shop") });
-		const create = shopHeader.createEl("button", { text: t("Add reward") }); this.registerDomEvent(create, "click", () => this.addReward());
-		if (!rewards.rewardItems.length) shop.createDiv({ cls: "tg-points-empty", text: t("Add rewards to redeem them with points.") });
-		rewards.rewardItems.forEach((reward, index) => {
-			const row = shop.createDiv({ cls: "tg-reward-card" });
-			const info = row.createDiv(); info.createDiv({ cls: "tg-reward-name", text: reward.name }); info.createDiv({ cls: "tg-points-date", text: reward.pointCost ? `${reward.pointCost} ${t("points")}` : t("Set a point cost to enable redemption") });
-			const actions = row.createDiv({ cls: "tg-reward-actions" });
-			const redeem = actions.createEl("button", { text: t("Redeem") }); redeem.disabled = !reward.pointCost || balance < reward.pointCost;
-			this.registerDomEvent(redeem, "click", () => void this.redeem(reward));
-			const edit = actions.createEl("button", { text: t("Edit") }); this.registerDomEvent(edit, "click", () => this.editReward(reward));
-			const remove = actions.createEl("button", { text: t("Delete") }); this.registerDomEvent(remove, "click", () => { rewards.rewardItems.splice(index, 1); void this.plugin.saveSettings().then(() => this.render()); });
-		});
+		const heading = header.createDiv();
+		heading.createEl("h2", { text: t("Points and rewards") });
+		heading.createDiv({ cls: "tg-points-subtitle", text: t("Check in, earn points, and choose your rewards.") });
+		this.button(header, t("Add points"), () => this.editRecord(), true);
+		this.summaryEl = this.containerEl.createDiv({ cls: "tg-points-summary" });
+		this.tabsEl = this.containerEl.createDiv({ cls: "tg-points-tabs", attr: { role: "tablist" } });
+		const tools = this.containerEl.createDiv({ cls: "tg-points-tools" });
+		new SearchComponent(tools).setPlaceholder(t("Search habits, rewards, and records"))
+			.onChange(value => { this.query = value.toLocaleLowerCase().trim(); this.renderBody(); });
+		const filter = tools.createEl("select", { attr: { "aria-label": t("Filter") } });
+		for (const [value, label] of [["all", "All"], ["today", "Today"], ["positive", "Points earned"], ["negative", "Points spent"]]) filter.createEl("option", { value, text: t(label) });
+		this.registerDomEvent(filter, "change", () => { this.historyFilter = filter.value; this.renderBody(); });
+		this.bodyEl = this.containerEl.createDiv({ cls: "tg-points-body" });
+		this.renderTabs();
+		this.registerEvent(this.app.workspace.on("task-genius:points-updated", () => this.scheduleRefresh()));
+		for (const event of ["modify", "create", "delete", "rename"] as const) this.registerEvent(this.app.vault.on(event as "modify", file => {
+			const folder = this.plugin.habitsIntegration?.settings.habitsFolder || this.plugin.settings.habitsIntegration?.habitsFolder || "Habits";
+			if (file.path === pointsService(this.plugin).dataPath || file.path.startsWith(`${folder}/`)) this.scheduleRefresh();
+		}));
+		void this.refresh();
 	}
-
-	private async addPoints() { await this.adjustPoints(t("Manual points")); }
-	private editPointRule() {
-		new PointsEntryModal(this.app, async value => { this.plugin.settings.rewards.pointsPerTask = value; await this.plugin.saveSettings(); this.render(); }, this.plugin.settings.rewards.pointsPerTask ?? 10, t("Default task points"), false).open();
+	onunload(): void {
+		this.disposed = true;
+		this.request++;
+		window.clearTimeout(this.refreshTimer);
+		this.containerEl.empty();
 	}
-	private async adjustPoints(label: string, amount?: number) {
-		if (amount === undefined) {
-			const modal = new PointsEntryModal(this.app, async (value, note) => { await this.record(value, note || label); }); modal.open(); return;
+	private scheduleRefresh() {
+		window.clearTimeout(this.refreshTimer);
+		this.refreshTimer = window.setTimeout(() => void this.refresh(), 150);
+	}
+	private async refresh() {
+		const request = ++this.request;
+		try {
+			const snapshot = await pointsService(this.plugin).snapshot();
+			if (this.disposed || request !== this.request) return;
+			this.snapshot = snapshot;
+			this.summaryEl.empty();
+			for (const [label, value, primary] of [
+				[t("Available points"), numberText(snapshot.balance), true],
+				[t("Today's points"), numberText(snapshot.todayPoints), false],
+				[t("Habits / check-ins"), `${snapshot.habitCount} / ${snapshot.recordCount}`, false],
+			] as const) {
+				const card = this.summaryEl.createDiv({ cls: `tg-points-card${primary ? " is-primary" : ""}` });
+				card.createDiv({ cls: "tg-points-label", text: label });
+				card.createDiv({ cls: "tg-points-balance", text: value });
+			}
+			if (this.activeTab !== "daily" || !this.habits) this.renderBody();
+		} catch (error) { if (!this.disposed) this.bodyEl.setText(String(error)); }
+	}
+	private renderTabs() {
+		(this.containerEl.querySelector(".tg-points-tools select") as HTMLElement | null)?.toggle(this.activeTab === "history");
+		this.tabsEl.empty();
+		for (const [id, label] of [["daily", "Daily check-in"], ["actions", "Bonuses and rewards"], ["history", "Points history"], ["rules", "Points rules"]] as const) {
+			const button = this.tabsEl.createEl("button", { text: t(label), attr: { role: "tab", "aria-selected": String(id === this.activeTab) } });
+			button.toggleClass("is-active", id === this.activeTab);
+			button.addEventListener("click", () => { this.activeTab = id; this.renderTabs(); this.clearBody(); this.renderBody(); });
 		}
-		await this.record(amount, label);
 	}
-	private async record(delta: number, label: string) {
-		const ledger = this.plugin.settings.rewards.pointsLedger || (this.plugin.settings.rewards.pointsLedger = []);
-		ledger.push({ id: `manual-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, delta, label, createdAt: Date.now(), source: "manual" });
-		await this.plugin.saveSettings(); this.render(); this.app.workspace.trigger("task-genius:points-updated");
+	private clearBody() {
+		if (this.scope) this.removeChild(this.scope);
+		this.scope = this.addChild(new Component());
+		this.habits = undefined;
+		this.bodyEl.empty();
 	}
-	private async redeem(reward: RewardItem) {
-		const cost = Number(reward.pointCost || 0); const balance = (this.plugin.settings.rewards.pointsLedger || []).reduce((s, e) => s + e.delta, 0);
-		if (cost <= 0 || balance < cost) return;
-		const ledger = this.plugin.settings.rewards.pointsLedger!;
-		ledger.push({ id: `redeem-${Date.now()}-${reward.id}`, delta: -cost, label: `${t("Redeemed")}: ${reward.name}`, createdAt: Date.now(), source: "redemption" });
-		if (reward.inventory > 0) reward.inventory--;
-		await this.plugin.saveSettings(); new Notice(t("Reward redeemed")); this.render(); this.app.workspace.trigger("task-genius:points-updated");
+	private matches(text: string) { return !this.query || text.toLocaleLowerCase().includes(this.query); }
+	private renderBody() {
+		if (!this.snapshot || this.disposed) return;
+		this.bodyEl.toggleClass("is-actions", this.activeTab === "actions");
+		this.bodyEl.toggleClass("is-history", this.activeTab === "history");
+		if (this.activeTab === "daily" && this.habits) { this.habits.setSearchQuery(this.query); return; }
+		this.clearBody();
+		if (this.activeTab === "daily") void this.renderHabits();
+		else if (this.activeTab === "actions") this.renderActions();
+		else if (this.activeTab === "history") this.renderHistory();
+		else this.renderRules();
 	}
-	private addReward() { this.editReward({ id: `reward-${Date.now()}`, name: "", occurrence: "common", inventory: -1, pointCost: 0 }); }
-	private editReward(reward: RewardItem) {
-		const isNew = !this.plugin.settings.rewards.rewardItems.some(item => item.id === reward.id);
-		const modal = new RewardEditorModal(this.app, reward, async updated => {
-			if (isNew) this.plugin.settings.rewards.rewardItems.push(updated);
-			else Object.assign(reward, updated);
-			await this.plugin.saveSettings(); this.render();
-		}); modal.open();
+	private async renderHabits() {
+		const scope = this.scope;
+		try {
+			const integration = await this.plugin.ensureHabitsIntegration();
+			if (this.disposed || scope !== this.scope) return;
+			const root = this.bodyEl.createDiv({ cls: "tg-habits-surface" });
+			this.habits = scope!.addChild(new HabitsBlock(this.app, integration.store, () => integration.settings, integration.events, "", root));
+			this.habits.setSearchQuery(this.query);
+		} catch (error) { if (scope === this.scope) this.bodyEl.setText(String(error)); }
+	}
+	private panel(label: string) {
+		const panel = this.bodyEl.createDiv({ cls: "tg-points-panel" });
+		panel.createEl("h3", { text: label });
+		return panel;
+	}
+	private renderActions() {
+		const snapshot = this.snapshot!;
+		const bonuses = this.panel(t("Bonus actions"));
+		this.button(bonuses, t("Edit bonus actions"), () => this.editList("examplePropertyLeft"));
+		for (const item of snapshot.bonuses.filter(item => this.matches(item.text))) {
+			const row = bonuses.createDiv({ cls: "tg-reward-card" });
+			row.createDiv({ text: item.text });
+			this.button(row, t("Record points"), () => this.editRecord(item.text, item.amount ?? 1));
+		}
+		const shop = this.panel(t("Reward shop"));
+		this.button(shop, t("Edit reward wishes"), () => this.editList("examplePropertyRight"));
+		for (const item of snapshot.wishes.filter(item => this.matches(item.text))) {
+			const row = shop.createDiv({ cls: "tg-reward-card" }); row.createDiv({ text: item.text });
+			const cost = Math.abs(item.amount ?? 0);
+			const button = this.button(row, cost ? `${t("Redeem")} · ${numberText(cost)}` : t("Set a point cost to enable redemption"), () => this.confirmRedemption(item.text, cost));
+			button.disabled = cost <= 0 || snapshot.balance < cost;
+		}
+		for (const reward of this.plugin.settings.rewards.rewardItems.filter(item => item.pointCost !== undefined && this.matches(item.name))) {
+			const row = shop.createDiv({ cls: "tg-reward-card" }); row.createDiv({ text: reward.name });
+			const actions = row.createDiv({ cls: "tg-reward-actions" });
+			const cost = reward.pointCost || 0;
+			const redeem = this.button(actions, `${t("Redeem")} · ${numberText(cost)}`, () => this.confirmRedemption(reward.name, cost, reward.id));
+			redeem.disabled = cost <= 0 || snapshot.balance < cost || reward.inventory === 0;
+			this.button(actions, t("Edit"), () => this.editReward(reward));
+			this.button(actions, t("Delete"), () => this.confirm(t("Delete this reward?"), async () => { this.plugin.settings.rewards.rewardItems = this.plugin.settings.rewards.rewardItems.filter(item => item.id !== reward.id); await this.plugin.saveSettings(); }));
+		}
+		this.button(shop, t("Add reward"), () => this.editReward());
+	}
+	private renderHistory() {
+		const snapshot = this.snapshot!;
+		const panel = this.panel(t("Points history"));
+		const records = [
+			...snapshot.manual.map(item => ({ id: item.id, date: item.date, label: item.text, amount: item.points, manual: true })),
+			...snapshot.ledger.map(item => ({ id: item.id, date: localPointDate(new Date(item.createdAt)), label: item.label, amount: item.delta, manual: false })),
+		].filter(item => this.matches(`${item.date} ${item.label}`) && (this.historyFilter !== "today" || item.date === localPointDate()) && (this.historyFilter !== "positive" || item.amount > 0) && (this.historyFilter !== "negative" || item.amount < 0)).sort((a, b) => b.date.localeCompare(a.date));
+		for (const record of records) {
+			const row = panel.createDiv({ cls: "tg-points-entry" });
+			const detail = row.createDiv(); detail.createDiv({ text: record.label }); detail.createDiv({ cls: "tg-points-date", text: record.date });
+			row.createDiv({ cls: record.amount < 0 ? "tg-points-delta is-negative" : "tg-points-delta", text: `${record.amount > 0 ? "+" : ""}${numberText(record.amount)}` });
+			if (record.manual) this.button(row, t("Delete"), () => this.confirm(t("Delete this points record?"), () => pointsService(this.plugin).deleteRecord(record.id)));
+		}
+		if (!records.length) panel.createDiv({ cls: "tg-points-empty", text: t("No matching records") });
+		const habits = this.panel(t("Habit points"));
+		for (const item of snapshot.summaries.filter(item => this.matches(item.name))) {
+			const row = habits.createDiv({ cls: "tg-points-entry" });
+			row.createDiv({ text: `${item.name} · ${item.entries} ${t("check-ins")}` });
+			row.createDiv({ text: numberText(this.historyFilter === "today" ? item.todayPoints : item.points) });
+		}
+	}
+	private renderRules() {
+		const snapshot = this.snapshot!;
+		const panel = this.panel(t("Points rules"));
+		new Setting(panel).setName(t("Points data file")).setDesc(snapshot.path)
+			.addButton(button => button.setButtonText(t("Open")).onClick(() => void this.app.workspace.openLinkText(snapshot.path, "", false)))
+			.addButton(button => button.setButtonText(t("Change")).onClick(() => new PointTextModal(this.app, t("Points data file"), snapshot.path, async value => {
+				if (!value.trim().endsWith(".md") || /^(?:[a-zA-Z]:|[\\/])/.test(value) || value.split(/[\\/]/).includes("..")) throw new Error(t("Choose a Markdown file inside the vault."));
+				this.plugin.settings.rewards.pointsDataFile = value.trim(); await this.plugin.saveSettings(); await this.refresh();
+			}).open()));
+		new Setting(panel).setName(t("Default habit points")).setDesc(t("Habit-specific points override the default. Negative values deduct points above the habit allowance."))
+			.addToggle(toggle => toggle.setValue(snapshot.data.defaultPointRule?.enabled !== false).onChange(value => void pointsService(this.plugin).saveDefaultRate(Number(snapshot.data.defaultPointRule?.baseRate ?? 0.1), value)))
+			.addButton(button => button.setButtonText(numberText(Number(snapshot.data.defaultPointRule?.baseRate ?? 0.1))).onClick(() => new PointAmountModal(this.app, t("Default habit points"), t("Default rule"), Number(snapshot.data.defaultPointRule?.baseRate ?? 0.1), async (_label, amount) => pointsService(this.plugin).saveDefaultRate(amount, true), true).open()));
+		new Setting(panel).setName(t("Default task points")).setDesc(t("Use 0 to award task points only when a task has its own point value."))
+			.addButton(button => button.setButtonText(String(this.plugin.settings.rewards.pointsPerTask ?? 0)).onClick(() => new PointAmountModal(this.app, t("Default task points"), t("Task"), Number(this.plugin.settings.rewards.pointsPerTask ?? 0), async (_label, amount) => {
+			if (amount < 0) throw new Error(t("Enter a positive point cost."));
+			this.plugin.settings.rewards.pointsPerTask = amount; await this.plugin.saveSettings(); await this.refresh();
+		}, true).open()));
+		for (const item of snapshot.summaries.filter(item => this.matches(item.name))) {
+			new Setting(panel).setName(item.name).setDesc(`${t("Points per unit")}: ${numberText(item.rate)} · ${t("Total")}: ${numberText(item.points)}`)
+				.addButton(button => button.setButtonText(t("Edit")).onClick(() => new PointAmountModal(this.app, t("Habit points"), item.name, item.rate, async (_label, rate) => pointsService(this.plugin).saveHabitRate(item.path, rate), true).open()))
+				.addButton(button => button.setButtonText(t("Use default rule")).onClick(() => void pointsService(this.plugin).saveHabitRate(item.path, null)));
+		}
+	}
+	private editRecord(label = "", amount = 1) { new PointAmountModal(this.app, t("Record points"), label, amount, (text, points, date) => pointsService(this.plugin).addRecord(text, points, date)).open(); }
+	private editList(key: "examplePropertyLeft" | "examplePropertyRight") {
+		new PointTextModal(this.app, key === "examplePropertyLeft" ? t("Bonus actions") : t("Reward wishes"), (this.snapshot!.data[key] || []).join("\n"), value => pointsService(this.plugin).saveList(key, value.split(/\r?\n/)), true).open();
+	}
+	private confirmRedemption(label: string, cost: number, id?: string) { this.confirm(`${t("Redeem")}: ${label} · ${numberText(cost)}`, () => pointsService(this.plugin).redeem(label, cost, id)); }
+	private confirm(label: string, save: () => Promise<unknown>) { new PointConfirmModal(this.app, label, async () => { await save(); await this.refresh(); }).open(); }
+	private editReward(reward?: RewardItem) {
+		new PointRewardModal(this.app, reward, async (label, amount, inventory) => {
+			if (reward) { reward.name = label; reward.pointCost = amount; reward.inventory = inventory; }
+			else this.plugin.settings.rewards.rewardItems.push({ id: `reward-${Date.now()}`, name: label, pointCost: amount, inventory, occurrence: "common" });
+			await this.plugin.saveSettings(); await this.refresh();
+		}).open();
+	}
+	private button(parent: HTMLElement, text: string, action: () => void, primary = false) {
+		const button = parent.createEl("button", { text, cls: primary ? "mod-cta" : "" }); button.addEventListener("click", action); return button;
 	}
 }
 
-class PointsEntryModal extends Modal {
-	constructor(app: App, private save: (amount: number, label?: string) => Promise<void>, private initial = 1, private title = t("Add points"), private allowNegative = true) { super(app); }
-	onOpen() { this.setTitle(this.title); let amount = this.initial, label = ""; new Setting(this.contentEl).setName(t("Points")).addText(text => text.setValue(String(this.initial)).onChange(value => amount = Number(value))); if (this.title === t("Add points")) new Setting(this.contentEl).setName(t("Description")).addText(text => text.onChange(value => label = value)); new Setting(this.contentEl).addButton(button => button.setButtonText(t("Save")).setCta().onClick(() => { if (!Number.isFinite(amount) || (!this.allowNegative && amount < 0) || (this.title === t("Add points") && amount === 0)) { new Notice(t("Enter a non-zero number")); return; } void this.save(amount, label || t("Manual points")).then(() => this.close()); })); }
+class PointAmountModal extends Modal {
+	constructor(app: App, private title: string, private label: string, private amount: number,
+		private save: (label: string, amount: number, date: string) => Promise<unknown>, private allowZero = false) { super(app); }
+	onOpen() {
+		this.setTitle(this.title);
+		let label = this.label, amount = this.amount, date = localPointDate();
+		new Setting(this.contentEl).setName(t("Description")).addText(text => text.setValue(label).onChange(value => label = value));
+		new Setting(this.contentEl).setName(t("Points")).addText(text => text.setValue(String(amount)).onChange(value => amount = Number(value)));
+		if (this.title === t("Record points")) new Setting(this.contentEl).setName(t("Date")).addText(text => { text.inputEl.type = "date"; text.setValue(date).onChange(value => date = value); });
+		new Setting(this.contentEl).addButton(button => button.setButtonText(t("Save")).setCta().onClick(async () => {
+			if (!label.trim() || !Number.isFinite(amount) || !this.allowZero && amount === 0) { new Notice(t("Enter a description and a valid point amount.")); return; }
+			button.setDisabled(true);
+			try { await this.save(label, amount, date); this.close(); } catch (error) { new Notice(String(error)); button.setDisabled(false); }
+		}));
+	}
+}
+class PointTextModal extends Modal {
+	constructor(app: App, private title: string, private value: string, private save: (value: string) => Promise<unknown>, private multiline = false) { super(app); }
+	onOpen() {
+		this.setTitle(this.title); let value = this.value;
+		const setting = new Setting(this.contentEl).setName(this.multiline ? t("One item per line") : t("File path"));
+		if (this.multiline) setting.addTextArea(text => { text.setValue(value).onChange(next => value = next); text.inputEl.rows = 10; });
+		else setting.addText(text => text.setValue(value).onChange(next => value = next));
+		new Setting(this.contentEl).addButton(button => button.setButtonText(t("Save")).setCta().onClick(async () => {
+			button.setDisabled(true); try { await this.save(value); this.close(); } catch (error) { new Notice(String(error)); button.setDisabled(false); }
+		}));
+	}
+}
+class PointConfirmModal extends Modal {
+	constructor(app: App, private title: string, private save: () => Promise<unknown>) { super(app); }
+	onOpen() {
+		this.setTitle(this.title);
+		new Setting(this.contentEl).addButton(button => button.setButtonText(t("Cancel")).onClick(() => this.close()))
+			.addButton(button => button.setButtonText(t("Confirm")).setCta().onClick(async () => {
+				button.setDisabled(true); try { await this.save(); this.close(); } catch (error) { new Notice(String(error)); button.setDisabled(false); }
+			}));
+	}
 }
 
-class RewardEditorModal extends Modal {
-	constructor(app: App, private reward: RewardItem, private save: (reward: RewardItem) => Promise<void>) { super(app); }
-	onOpen() { this.setTitle(t("Reward")); let name = this.reward.name, cost = Number(this.reward.pointCost || 0), inventory = this.reward.inventory; new Setting(this.contentEl).setName(t("Name")).addText(text => text.setValue(name).onChange(value => name = value)); new Setting(this.contentEl).setName(t("Point cost")).addText(text => text.setValue(String(cost)).onChange(value => cost = Number(value))); new Setting(this.contentEl).setName(t("Inventory")).addText(text => text.setValue(String(inventory)).onChange(value => inventory = Number(value))); new Setting(this.contentEl).addButton(button => button.setButtonText(t("Save")).setCta().onClick(() => { if (!name.trim() || !Number.isFinite(cost) || cost < 0 || !Number.isFinite(inventory) || (inventory < 0 && inventory !== -1)) { new Notice(t("Check the reward details")); return; } void this.save({ ...this.reward, name: name.trim(), pointCost: cost, inventory }).then(() => this.close()); })); }
+class PointRewardModal extends Modal {
+	constructor(app: App, private reward: RewardItem | undefined, private save: (label: string, amount: number, inventory: number) => Promise<unknown>) { super(app); }
+	onOpen() {
+		this.setTitle(t("Reward"));
+		let label = this.reward?.name || "", amount = this.reward?.pointCost || 1, inventory = this.reward?.inventory ?? -1;
+		new Setting(this.contentEl).setName(t("Name")).addText(text => text.setValue(label).onChange(value => label = value));
+		new Setting(this.contentEl).setName(t("Point cost")).addText(text => text.setValue(String(amount)).onChange(value => amount = Number(value)));
+		new Setting(this.contentEl).setName(t("Inventory (-1 for ∞)")).addText(text => text.setValue(String(inventory)).onChange(value => inventory = Number(value)));
+		new Setting(this.contentEl).addButton(button => button.setButtonText(t("Save")).setCta().onClick(async () => {
+			if (!label.trim() || !Number.isFinite(amount) || amount <= 0 || !Number.isInteger(inventory) || inventory < -1) { new Notice(t("Check the reward details")); return; }
+			button.setDisabled(true);
+			try { await this.save(label.trim(), amount, inventory); this.close(); } catch (error) { new Notice(String(error)); button.setDisabled(false); }
+		}));
+	}
 }

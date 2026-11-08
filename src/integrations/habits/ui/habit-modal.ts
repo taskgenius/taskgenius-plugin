@@ -222,7 +222,10 @@ export class HabitModal extends Modal {
 	private weekdays: number[] = [new Date().getDay()];
 	private monthDay = new Date().getDate();
 	private intervalDays = 2;
-	private intervalMode: "fixed" | "completion" = "fixed";
+	private intervalMode: "fixed" | "completion" | "cycle" = "fixed";
+	private cycleActiveDays = 1;
+	private dailyTarget = 1;
+	private restartCycleDate = "";
 	private intervalWindowDays = 1;
 	private restartIntervalCycle = false;
 	private times: string[] = [];
@@ -294,7 +297,9 @@ export class HabitModal extends Modal {
 				this.intervalDays = editing.intervalDays;
 				this.intervalMode = editing.intervalMode ?? "fixed";
 				this.intervalWindowDays = editing.intervalWindowDays ?? 1;
+				this.cycleActiveDays = editing.cycleActiveDays ?? 1;
 			}
+			this.dailyTarget = editing.dailyTarget ?? 0;
 			this.times = [...editing.times];
 			// A limit habit's target may legitimately be 0 ("none at all");
 			// only build habits coerce a missing target to 1.
@@ -652,6 +657,9 @@ export class HabitModal extends Modal {
 							intervalDays: this.intervalDays,
 							intervalMode: this.intervalMode,
 							intervalWindowDays: this.intervalWindowDays,
+							cycleActiveDays: this.cycleActiveDays,
+							dailyTarget: this.dailyTarget,
+							restartCycleDate: this.restartCycleDate,
 							restartIntervalCycle: this.restartIntervalCycle,
 							// The time picker is hidden for flexible
 							// frequencies, so a stale value from before the
@@ -930,6 +938,13 @@ export class HabitModal extends Modal {
 				});
 			});
 
+		if (isFlexibleFrequency(this.frequency) && this.goalDirection !== "max") {
+			new Setting(contentEl).setName(t("Daily completion target"))
+				.setDesc(t("Finish today's card after this amount; the weekly or monthly quota is tracked separately. Use 0 to track only the period quota."))
+				.addText(text => text.setValue(String(this.dailyTarget)).onChange(value => {
+					if (Number.isFinite(Number(value))) this.dailyTarget = Math.max(0, Number(value));
+				}));
+		}
 		if (this.frequency === "weekly") {
 			const setting = new Setting(contentEl)
 				.setName(t("Days of week"))
@@ -982,8 +997,9 @@ export class HabitModal extends Modal {
 				.addDropdown(dropdown => dropdown
 					.addOption("fixed", t("From start date"))
 					.addOption("completion", t("From actual completion"))
+					.addOption("cycle", t("Work and rest cycle"))
 					.setValue(this.intervalMode)
-					.onChange(value => { this.intervalMode = value === "completion" ? "completion" : "fixed"; }));
+					.onChange(value => { this.intervalMode = value === "cycle" ? "cycle" : value === "completion" ? "completion" : "fixed"; this.build(); }));
 			new Setting(contentEl)
 				.setName(t("Repeat every"))
 				.setDesc(
@@ -1005,7 +1021,13 @@ export class HabitModal extends Modal {
 						},
 					);
 				});
-			new Setting(contentEl)
+			if (this.intervalMode === "cycle") {
+				new Setting(contentEl).setName(t("Active days at the start of each cycle"))
+					.setDesc(t("For a four-day cycle with three active days, check in separately on days 1, 2, and 3; day 4 is a rest day."))
+					.addText(text => text.setValue(String(this.cycleActiveDays)).onChange(value => {
+						if (Number.isFinite(Number(value))) this.cycleActiveDays = Math.max(1, Math.min(this.intervalDays, Math.round(Number(value))));
+					}));
+			} else new Setting(contentEl)
 				.setName(t("Check-in window"))
 				.setDesc(t("You can complete this habit on any of these days in each interval. Missed windows do not shift the next fixed cycle."))
 				.addText(text => {
@@ -1017,9 +1039,9 @@ export class HabitModal extends Modal {
 				});
 			if (this.editing) {
 				new Setting(contentEl)
-					.setName(t("Restart cycle from today"))
-					.setDesc(t("Keep past records and start a new interval cycle today."))
-					.addToggle(toggle => toggle.setValue(false).onChange(value => this.restartIntervalCycle = value));
+					.setName(t("Restart cycle on"))
+					.setDesc(t("Choose a new cycle start date. Existing records and earlier schedules are preserved."))
+					.addText(text => { text.inputEl.type = "date"; text.setValue(this.restartCycleDate).onChange(value => this.restartCycleDate = value); });
 			}
 		}
 

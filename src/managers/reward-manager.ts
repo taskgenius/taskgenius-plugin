@@ -26,7 +26,6 @@ export class RewardManager extends Component {
 				"task-genius:task-completed",
 				(task: Task) => {
 					void this.awardTaskPoints(task);
-					this.triggerReward(task);
 				}
 			)
 		);
@@ -38,7 +37,7 @@ export class RewardManager extends Component {
 		const taskId = String(task.id || `${task.filePath}:${task.line}`);
 		const transactionId = taskCompletionTransactionId(task);
 		if (ledger.some(entry => entry.id === transactionId)) return;
-		const points = resolveTaskPoints(task, Number(settings.pointsPerTask ?? 10));
+		const points = resolveTaskPoints(task, Number(settings.pointsPerTask ?? 0));
 		if (!Number.isFinite(points) || points === 0) return;
 		ledger.push({ id: transactionId, delta: points, label: task.content || task.originalMarkdown || "Task completed", createdAt: Date.now(), source: "task", taskId });
 		await this.plugin.saveSettings();

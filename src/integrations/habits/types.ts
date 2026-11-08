@@ -178,7 +178,10 @@ export interface HabitDefinition {
 	/** Number of consecutive days available to log one interval occurrence. */
 	intervalWindowDays?: number;
 	/** Fixed calendar cycle, or a new interval after actual completion. */
-	intervalMode?: "fixed" | "completion";
+	intervalMode?: "fixed" | "completion" | "cycle";
+	cycleActiveDays?: number;
+	cycleRestarts?: string[];
+	dailyTarget?: number;
 	/**
 	 * Optional times of day the habit is planned for, as 24-hour `HH:mm`
 	 * strings, sorted and without duplicates — one entry for a once-a-day
@@ -324,7 +327,10 @@ export interface NewHabitOptions {
 	intervalDays: number;
 	intervalWindowDays?: number;
 	/** Fixed calendar cycle, or a new interval after actual completion. */
-	intervalMode?: "fixed" | "completion";
+	intervalMode?: "fixed" | "completion" | "cycle";
+	cycleActiveDays?: number;
+	dailyTarget?: number;
+	restartCycleDate?: string;
 	restartIntervalCycle?: boolean;
 	times: string[];
 	target: number;

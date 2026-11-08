@@ -25,7 +25,7 @@ import {
 	ProgressData,
 } from "@/editor-extensions/ui-widgets/progress-bar-widget";
 import { QuickCaptureModal } from "@/components/features/quick-capture/modals/QuickCaptureModalWithSwitch";
-import { ProjectFileManager } from "@/managers/project-file-manager";
+import { ProjectFileManager, ProjectCreateModal, ProjectArchiveModal, ProjectEditModal } from "@/managers/project-file-manager";
 
 interface SelectedProjects {
 	projects: string[];
@@ -34,6 +34,8 @@ interface SelectedProjects {
 }
 
 export class ProjectsComponent extends Component {
+	private searchQuery = "";
+	setSearchQuery(query: string): void { this.searchQuery = query.trim().toLocaleLowerCase(); }
 	// UI Elements
 	public containerEl: HTMLElement;
 	private projectsHeaderEl: HTMLElement;
@@ -182,6 +184,8 @@ export class ProjectsComponent extends Component {
 		const headerButtons = headerEl.createDiv({
 			cls: "projects-sidebar-header-btn-group",
 		});
+		new ExtraButtonComponent(headerButtons).setIcon("plus").setTooltip(t("New project")).onClick(() => new ProjectCreateModal(this.app, new ProjectFileManager(this.app), () => this.setTasks(this.sourceTasks, this.allTasks)).open());
+		new ExtraButtonComponent(headerButtons).setIcon("archive").setTooltip(t("Archived projects")).onClick(() => new ProjectArchiveModal(this.app, new ProjectFileManager(this.app), () => this.setTasks(this.sourceTasks, this.allTasks)).open());
 
 		// Add view toggle button for tree/list
 		const treeToggleBtn = headerButtons.createDiv({
@@ -371,7 +375,7 @@ export class ProjectsComponent extends Component {
 		});
 		// Include active project notes even when a project has no tasks yet.
 		for (const project of projectNotes) {
-			if (!project.archived && !this.allProjectsMap.has(project.name)) {
+			if (!project.archived && !this.allProjectsMap.has(project.name) && (!this.searchQuery || project.name.toLocaleLowerCase().includes(this.searchQuery))) {
 				this.allProjectsMap.set(project.name, new Set());
 			}
 		}
@@ -1198,6 +1202,15 @@ export class ProjectsComponent extends Component {
 
 	/** Create or update the tgProject info button in the right header */
 	private updateTgProjectPropsButton(selectedProject: string | null): void {
+		const manager = new ProjectFileManager(this.app);
+		const projectNote = selectedProject ? manager.find(selectedProject) : undefined;
+		if (projectNote && this.headerTopRightRowEl) {
+			this.teardownProjectPropsUI(); this.projectPropsBtnEl?.remove();
+			const button = this.headerTopRightRowEl.createDiv({ cls: "projects-props-btn", attr: { "aria-label": t("Edit project details") } });
+			setIcon(button, "pencil"); this.projectPropsBtnEl = button;
+			button.addEventListener("click", () => new ProjectEditModal(this.app, manager, projectNote, () => this.setTasks(this.sourceTasks, this.allTasks)).open());
+			return;
+		}
 		if (!this.headerTopRightRowEl) return;
 		// No selection: remove button and popover
 		if (!selectedProject) {

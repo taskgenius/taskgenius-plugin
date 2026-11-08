@@ -103,6 +103,7 @@ export function habitScheduleLabel(habit: HabitDefinition): string {
 		return t("Monthly · day {day}", { day: habit.monthDay });
 	}
 	if (habit.frequency === "interval") {
+		if (habit.intervalMode === "cycle") return t("{active} active days / {days}-day cycle", { active: habit.cycleActiveDays || 1, days: habit.intervalDays });
 		return habit.intervalDays === 2
 			? t("Every other day")
 			: t("Every {n} days", { n: habit.intervalDays });

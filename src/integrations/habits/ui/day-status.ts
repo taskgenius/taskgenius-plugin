@@ -12,7 +12,7 @@ import type { HabitDefinition } from "../types";
 import { t } from "../i18n";
 import {
 	isActive,
-	isComplete,
+	isDailyComplete as isComplete,
 	isFailedOn,
 	isPausedOn,
 	isSkippedOn,

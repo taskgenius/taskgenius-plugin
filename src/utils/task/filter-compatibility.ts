@@ -38,7 +38,18 @@ export function parseAdvancedFilterQuery(query: string): FilterNode {
 }
 
 function compareFilterValue(actual: unknown, operator: string, expected: string, isDate = false): boolean {
+	if (["none", "empty"].includes(expected.toLowerCase())) return operator === "!=" ? actual != null && actual !== "" : actual == null || actual === "";
   if (actual === undefined || actual === null) return false;
+	if (isDate) {
+		const key = expected.toLowerCase();
+		const now = new Date();
+		const offset = key === "tomorrow" ? 1 : key === "yesterday" ? -1 : 0;
+		const date = ["today", "tomorrow", "yesterday"].includes(key) ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset) : /^\d{4}-\d{2}-\d{2}$/.test(expected) ? new Date(Number(expected.slice(0, 4)), Number(expected.slice(5, 7)) - 1, Number(expected.slice(8, 10))) : new Date(expected);
+		const start = date.getTime(), end = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1).getTime();
+		const value = typeof actual === "number" ? actual : new Date(String(actual)).getTime();
+		if (!Number.isFinite(start) || !Number.isFinite(value)) return false;
+		return operator === ">" ? value >= end : operator === ">=" ? value >= start : operator === "<" ? value < start : operator === "<=" ? value < end : operator === "!=" ? value < start || value >= end : value >= start && value < end;
+	}
   const text = String(actual).toLowerCase();
   const target = expected.toLowerCase();
   const actualNumber = Number(actual);
@@ -59,7 +70,8 @@ function evaluateTerm(raw: string, task: any): boolean {
   if (field) {
     const key = field[1].toLowerCase(); const op = field[2] || ""; const value = field[3].replace(/^("([\s\S]*)"|'([\s\S]*)')$/, "$2$3");
     const meta = task.metadata || {};
-	    const actual = key === "priority" ? (meta.priority ?? task.priority) : key === "date" ? (meta.dueDate ?? meta.scheduledDate) : key === "due" ? meta.dueDate : key === "scheduled" ? meta.scheduledDate : key === "start" ? meta.startDate : key === "tag" || key === "tags" ? (meta.tags ?? task.tags) : key === "project" ? (meta.project ?? task.project ?? meta.tgProject?.name) : key === "context" ? (meta.context ?? task.context) : key === "status" ? (task.statusName ?? task.status) : key === "text" || key === "content" ? task.content : meta[key] ?? task[key];
+	    const status = task.statusName ?? (task.completed ? "completed" : ({ " ": "not-started", "?": "planned", "/": "in-progress", ">": "in-progress", "-": "abandoned", "~": "paused", "=": "paused" } as Record<string, string>)[task.status] ?? task.status);
+	    const actual = key === "priority" ? (meta.priority ?? task.priority) : key === "path" || key === "file" ? task.filePath : key === "date" ? (meta.dueDate ?? meta.scheduledDate) : key === "due" || key === "duedate" ? meta.dueDate : key === "scheduled" || key === "scheduleddate" ? meta.scheduledDate : key === "start" || key === "startdate" ? meta.startDate : key === "tag" || key === "tags" ? (meta.tags ?? task.tags) : key === "project" ? (meta.project ?? task.project ?? meta.tgProject?.name) : key === "context" ? (meta.context ?? task.context) : key === "status" ? status : key === "text" || key === "content" ? task.content : meta[key] ?? task[key];
     if (key === "priority" && value.startsWith("#")) {
       const priority = parsePriorityFilterValue(value);
       if (priority !== null) return compareFilterValue(actual, op || "=", String(priority));

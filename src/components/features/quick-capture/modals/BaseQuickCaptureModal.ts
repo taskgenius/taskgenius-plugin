@@ -616,6 +616,8 @@ export abstract class BaseQuickCaptureModal extends Modal {
 
 		const captureOptions = {
 			...this.plugin.settings.quickCapture,
+			project: this.currentMode === "checkbox" ? this.taskMetadata.project : undefined,
+			projectTagPrefixes: Object.values(this.plugin.settings.projectTagPrefix || {}).map(String),
 			targetFile,
 			targetType,
 			// For file mode, always replace

@@ -4,6 +4,7 @@ import {
 	debounce,
 	MarkdownRenderer as ObsidianMarkdownRenderer,
 	TFile,
+	Menu,
 } from "obsidian";
 import { type Task } from "@/types/task";
 import "@/styles/gantt/gantt.css";
@@ -23,6 +24,9 @@ import { ScrollToDateButton } from '@/components/features/task/filter/in-view/cu
 import { PRIORITY_MAP } from "@/common/default-symbol";
 
 import { GanttSpecificConfig } from "@/common/setting-definition";
+import { buildProjectPlan } from "@/managers/project-plan";
+import { ProjectFileManager, ProjectEditModal } from "@/managers/project-file-manager";
+import { t } from "@/translations/helper";
 
 // Define the PRIORITY_MAP here as well, or import it if moved to a shared location
 // This is needed to convert filter value (icon/text) back to number for comparison
@@ -320,6 +324,7 @@ export class GanttComponent extends Component {
 
 
 	setTasks(newTasks: Task[]) {
+		if (this.viewId === "gantt" && newTasks.length > 0 && !newTasks.some(task => task.metadata.projectPlan)) newTasks = buildProjectPlan(this.app, newTasks);
 		this.preparedTasks = []; // Clear prepared tasks
 
 		this.tasks = this.sortTasks(newTasks);
@@ -1057,10 +1062,20 @@ export class GanttComponent extends Component {
 	};
 
 	private handleTaskClick(task: Task) {
+		if (task.metadata.projectPlan) { void this.app.workspace.openLinkText(task.filePath, "", false); return; }
 		this.params.onTaskSelected?.(task);
 	}
 
 	private handleTaskContextMenu(event: MouseEvent, task: Task) {
+		if (task.metadata.projectPlan) {
+			const manager = new ProjectFileManager(this.app);
+			const project = manager.find(task.metadata.project || task.content);
+			if (!project) return;
+			const menu = new Menu();
+			menu.addItem(item => item.setTitle(t("Edit project details")).setIcon("pencil").onClick(() => new ProjectEditModal(this.app, manager, project, () => void this.plugin.triggerViewUpdate()).open()));
+			menu.addItem(item => item.setTitle(t("Archive project")).setIcon("archive").onClick(async () => { await manager.setArchived(project.name, true); await this.plugin.triggerViewUpdate(); }));
+			menu.showAtMouseEvent(event); return;
+		}
 		this.params.onTaskContextMenu?.(event, task);
 	}
 

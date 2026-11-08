@@ -254,7 +254,10 @@ export class HabitStore {
 				2,
 				365,
 			),
-			intervalMode: fm[k.intervalMode] === "completion" ? "completion" : "fixed",
+			intervalMode: fm[k.intervalMode] === "cycle" ? "cycle" : fm[k.intervalMode] === "completion" ? "completion" : "fixed",
+			cycleActiveDays: this.clampInt(this.readNumber(fm.cycleActiveDays, 1), 1, this.readNumber(fm[k.intervalDays], 2)),
+			cycleRestarts: this.readDateList(fm.cycleRestarts),
+			dailyTarget: Math.max(0, this.readNumber(fm.dailyTarget, 0)),
 			intervalWindowDays: this.clampInt(this.readNumber(fm[k.intervalWindowDays], 1), 1, this.readNumber(fm[k.intervalDays], 2)),
 			times: this.readTimes(fm[`${k.time}s`], fm[k.time]),
 			target: this.readNumber(fm[k.target], 1),
@@ -597,6 +600,8 @@ export class HabitStore {
 		delete fm[k.intervalDays];
 		delete fm[k.intervalWindowDays];
 		delete fm[k.intervalMode];
+		delete fm.cycleActiveDays;
+		delete fm.dailyTarget;
 		if (options.frequency === "weekly") {
 			fm[k.frequency] = "weekly";
 			const days = this.normalizeWeekdays(options.weekdays);
@@ -613,11 +618,17 @@ export class HabitStore {
 			fm[k.intervalDays] = this.clampInt(options.intervalDays, 2, 365);
 			if ((options.intervalWindowDays ?? 1) > 1) fm[k.intervalWindowDays] = this.clampInt(options.intervalWindowDays ?? 1, 1, options.intervalDays ?? 2);
 			if (options.intervalMode === "completion") fm[k.intervalMode] = "completion";
+			if (options.intervalMode === "cycle") {
+				fm[k.intervalMode] = "cycle";
+				fm.cycleActiveDays = this.clampInt(options.cycleActiveDays ?? 1, 1, options.intervalDays);
+				delete fm[k.intervalWindowDays];
+			}
 		} else if (
 			options.frequency === "flexibleWeekly" ||
 			options.frequency === "flexibleMonthly"
 		) {
 			fm[k.frequency] = options.frequency;
+			if ((options.dailyTarget ?? 0) > 0) fm.dailyTarget = options.dailyTarget;
 		} else {
 			delete fm[k.frequency];
 		}
@@ -1316,7 +1327,10 @@ export class HabitStore {
 				delete fm[k.goalDirection];
 			}
 			this.writeFrequency(fm, options);
-			if (options.frequency === "interval" && options.restartIntervalCycle) fm[k.startDate] = toDateKey(new Date());
+			if (options.frequency === "interval" && (options.restartIntervalCycle || options.restartCycleDate)) {
+				const day = options.restartCycleDate || toDateKey(new Date());
+				if (/^\d{4}-\d{2}-\d{2}$/.test(day)) fm.cycleRestarts = [...new Set([...this.readDateList(fm.cycleRestarts), day])].sort();
+			}
 			this.writeTimes(fm, options);
 			this.writeNoteFields(fm, options, cleanName);
 			if (

@@ -20,4 +20,13 @@ describe("advanced task filters", () => {
 		expect(matches("DUE:<2026-11-30")).toBe(true);
 		expect(evaluateFilterNode(parseAdvancedFilterQuery("STATUS:in-progress"), { ...task, statusName: "in-progress" })).toBe(true);
 	});
+	test("relative dates match the full local day and missing-date filters remain useful", () => {
+		const now = new Date(), noon = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12).getTime();
+		const dated = { ...task, metadata: { ...task.metadata, dueDate: noon } };
+		expect(evaluateFilterNode(parseAdvancedFilterQuery("due:today"), dated)).toBe(true);
+		expect(evaluateFilterNode(parseAdvancedFilterQuery("due:>today"), dated)).toBe(false);
+		expect(evaluateFilterNode(parseAdvancedFilterQuery("due:<=today"), dated)).toBe(true);
+		expect(evaluateFilterNode(parseAdvancedFilterQuery("due:none"), { metadata: {} })).toBe(true);
+		expect(evaluateFilterNode(parseAdvancedFilterQuery("status:completed"), { completed: true, metadata: {} })).toBe(true);
+	});
 });
