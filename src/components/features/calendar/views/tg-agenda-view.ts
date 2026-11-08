@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 /**
  * TGAgendaView - Agenda view extending @taskgenius/calendar BaseView
  *
@@ -57,7 +58,7 @@ export interface AgendaViewOptions {
 export class TGAgendaView<T = unknown> extends BaseView<T> {
 	static meta: ViewMeta = {
 		type: "agenda",
-		label: "Agenda",
+		label: settingsText("Agenda"),
 		shortLabel: "A",
 		order: 40,
 	};

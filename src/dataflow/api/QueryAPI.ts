@@ -208,6 +208,11 @@ export class QueryAPI {
 	/**
 	 * Update the synchronous cache with fresh data
 	 */
+	/** Refresh synchronous readers after a repository rebuild. */
+	public async refreshCache(): Promise<void> {
+		await this.updateCache();
+	}
+
 	private async updateCache(): Promise<void> {
 		this.taskCache = await this.repository.all();
 		this.cacheTimestamp = Date.now();

@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 import { Setting, Platform } from "obsidian";
 import { t } from "@/translations/helper";
 import { TaskProgressBarSettingTab } from "@/setting";
@@ -182,9 +183,9 @@ export function renderDesktopIntegrationSettingsTab(
 			};
 			const mode = s.desktopIntegration.trayMode || "status";
 			dd.addOptions({
-				system: "System tray",
-				status: "Status bar",
-				both: "Both",
+				system: settingsText("System tray"),
+				status: settingsText("Status bar"),
+				both: settingsText("Both"),
 			})
 				.setValue(mode)
 				.onChange((v) => {

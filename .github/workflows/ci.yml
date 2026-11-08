@@ -2,9 +2,9 @@ name: CI
 
 on:
     push:
-        branches: [master, main]
+        branches: [master, main, "legacy/**"]
     pull_request:
-        branches: [master, main]
+        branches: [master, main, "legacy/**"]
 
 jobs:
     build:
@@ -13,6 +13,8 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4
+              with:
+                  submodules: true
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
@@ -22,7 +24,7 @@ jobs:
             - name: Setup pnpm
               uses: pnpm/action-setup@v4
               with:
-                  version: 10
+                  version: 10.26.0
 
             - name: Get pnpm store directory
               shell: bash
@@ -38,10 +40,10 @@ jobs:
                       ${{ runner.os }}-pnpm-store-
 
             - name: Install dependencies
-              run: pnpm install
+              run: pnpm install --frozen-lockfile --ignore-scripts
 
             - name: Build
-              run: pnpm run build
+              run: pnpm build:release
 
             - name: Run tests
-              run: pnpm run test --passWithNoTests
+              run: pnpm exec jest --runInBand --passWithNoTests

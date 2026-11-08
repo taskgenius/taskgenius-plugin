@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 import { App, Modal, setIcon } from "obsidian";
 
 export class IframeModal extends Modal {
@@ -21,8 +22,8 @@ export class IframeModal extends Modal {
 			const externalLinkBtn = headerActions.createEl('button', {
 				cls: 'clickable-icon task-genius-external-link-btn',
 				attr: {
-					'aria-label': 'Open in external browser',
-					'title': 'Open in external browser'
+					'aria-label': settingsText('Open in external browser'),
+					'title': settingsText('Open in external browser')
 				}
 			});
 			

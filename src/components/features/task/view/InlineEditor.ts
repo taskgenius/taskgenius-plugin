@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 import { App, Component, debounce, setIcon, Menu } from "obsidian";
 import { StandardTaskMetadata, Task } from "@/types/task";
 import TaskProgressBarPlugin from "@/index";
@@ -587,7 +588,7 @@ export class InlineEditor extends Component {
 
 		// Add priority options
 		const options = [
-			{ value: "", text: "None" },
+			{ value: "", text: settingsText("None") },
 			{ value: "1", text: "⏬️ Lowest" },
 			{ value: "2", text: "🔽 Low" },
 			{ value: "3", text: "🔼 Medium" },
@@ -995,17 +996,17 @@ export class InlineEditor extends Component {
 		const menu = new Menu();
 
 		const availableFields = [
-			{ key: "project", label: "Project", icon: "folder" },
-			{ key: "tags", label: "Tags", icon: "tag" },
-			{ key: "context", label: "Context", icon: "at-sign" },
-			{ key: "dueDate", label: "Due Date", icon: "calendar" },
-			{ key: "startDate", label: "Start Date", icon: "play" },
-			{ key: "scheduledDate", label: "Scheduled Date", icon: "clock" },
+			{ key: "project", label: settingsText("Project"), icon: "folder" },
+			{ key: "tags", label: settingsText("Tags"), icon: "tag" },
+			{ key: "context", label: settingsText("Context"), icon: "at-sign" },
+			{ key: "dueDate", label: settingsText("Due Date"), icon: "calendar" },
+			{ key: "startDate", label: settingsText("Start Date"), icon: "play" },
+			{ key: "scheduledDate", label: settingsText("Scheduled Date"), icon: "clock" },
 			{ key: "cancelledDate", label: "Cancelled Date", icon: "x" },
 			{ key: "completedDate", label: "Completed Date", icon: "check" },
-			{ key: "priority", label: "Priority", icon: "alert-triangle" },
-			{ key: "recurrence", label: "Recurrence", icon: "repeat" },
-			{ key: "onCompletion", label: "On Completion", icon: "flag" },
+			{ key: "priority", label: settingsText("Priority"), icon: "alert-triangle" },
+			{ key: "recurrence", label: settingsText("Recurrence"), icon: "repeat" },
+			{ key: "onCompletion", label: settingsText("On Completion"), icon: "flag" },
 			{ key: "dependsOn", label: "Depends On", icon: "link" },
 			{ key: "id", label: "Task ID", icon: "hash" },
 		];

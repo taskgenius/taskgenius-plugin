@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 import { App, Modal, Setting } from "obsidian";
 import { DailyHabitProps } from "@/types/habit-card";
 import {
@@ -35,7 +36,7 @@ export class HabitChartModal extends Modal {
 		contentEl.empty();
 		this.modalEl.toggleClass("habit-chart-modal", true);
 
-		this.setTitle(`${this.habit.name} · Heatmap`);
+		this.setTitle(settingsText("{{value0}} · Heatmap", { interpolation: { value0: String(this.habit.name) } }));
 
 		// Controls (use Obsidian Setting + dropdowns)
 		const controls = contentEl.createDiv({ cls: "habit-chart-controls" });

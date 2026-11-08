@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 import { Setting, Notice, TFile, TFolder } from "obsidian";
 import { TaskProgressBarSettingTab } from "@/setting";
 import { t } from "@/translations/helper";
@@ -531,11 +532,11 @@ export function renderQuickCaptureSettingsTab(
 		);
 
 	const defaultTemplates: QuickCaptureTemplateDefinition[] = [
-		{ name: "Daily Note", template: "{{DATE:YYYY-MM-DD}}" },
-		{ name: "Meeting", template: "{{DATE:YYYY-MM-DD}} - Meeting" },
-		{ name: "Task", template: "{{DATE:YYYY-MM-DD}} - Task" },
-		{ name: "Project", template: "Project - {{DATE:YYYY-MM}}" },
-		{ name: "Notes", template: "Notes - {{DATE:YYYY-MM-DD-HHmm}}" },
+		{ name: settingsText("Daily Note"), template: "{{DATE:YYYY-MM-DD}}" },
+		{ name: settingsText("Meeting"), template: "{{DATE:YYYY-MM-DD}} - Meeting" },
+		{ name: settingsText("Task"), template: "{{DATE:YYYY-MM-DD}} - Task" },
+		{ name: settingsText("Project"), template: "Project - {{DATE:YYYY-MM}}" },
+		{ name: settingsText("Notes"), template: "Notes - {{DATE:YYYY-MM-DD-HHmm}}" },
 	];
 
 	const rawTemplates = settingTab.plugin.settings.quickCapture

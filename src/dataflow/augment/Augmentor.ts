@@ -85,6 +85,11 @@ export class Augmentor {
 		}
 	}
 
+	/** Discard derived dates after source metadata or settings change. */
+	public clearCache(): void {
+		this.dateInheritanceAugmentor?.clearCache();
+	}
+
 	/**
 	 * Update settings from plugin to control inheritance behavior
 	 */

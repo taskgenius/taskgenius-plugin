@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 import { Setting, TextAreaComponent } from "obsidian";
 import { DEFAULT_SETTINGS } from "@/common/setting-definition";
 import { t } from "@/translations/helper";
@@ -471,7 +472,7 @@ function displayNumberToProgressbar(
 				);
 				previewEl.setText(`${t("Preview")}: ${renderedText}`);
 			} catch (error) {
-				previewEl.setText(`${t("Preview")}: Error`);
+				previewEl.setText(settingsText("{{value0}}: Error", { interpolation: { value0: String(t("Preview")) } }));
 				previewEl.addClass("expression-preview-error");
 			}
 
@@ -586,7 +587,7 @@ function addProgressRangesSettings(
 					})
 			)
 			.addButton((button) => {
-				button.setButtonText("Delete").onClick(async () => {
+				button.setButtonText(settingsText("Delete")).onClick(async () => {
 					settingTab.plugin.settings.progressRanges.splice(index, 1);
 					settingTab.applySettingsUpdate();
 					settingTab.display();
@@ -628,7 +629,7 @@ function addProgressRangesSettings(
 				})
 		)
 		.addButton((button) => {
-			button.setButtonText("Add").onClick(async () => {
+			button.setButtonText(settingsText("Add")).onClick(async () => {
 				const settingsContainer = button.buttonEl.parentElement;
 				if (!settingsContainer) return;
 
@@ -730,7 +731,7 @@ function updateFormatPreview(
 		previewContainer.setText(renderedText);
 		previewContainer.removeClass("custom-format-preview-error");
 	} catch (error) {
-		previewContainer.setText("Error rendering format");
+		previewContainer.setText(settingsText("Error rendering format"));
 		previewContainer.addClass("custom-format-preview-error");
 	}
 }

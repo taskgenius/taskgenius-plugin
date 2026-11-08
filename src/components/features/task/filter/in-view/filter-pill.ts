@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 import { Component, ExtraButtonComponent } from "obsidian";
 import { ActiveFilter, FilterPillOptions } from "./filter-type";
 
@@ -37,7 +38,7 @@ export class FilterPill extends Component {
 		// Create the remove button
 		const removeButton = pill.createEl("span", {
 			cls: "filter-pill-remove",
-			attr: { "aria-label": "Remove filter" },
+			attr: { "aria-label": settingsText("Remove filter") },
 		});
 
 		// Create and append the remove icon span inside the button

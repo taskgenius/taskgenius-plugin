@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 import {
 	App,
 	PluginSettingTab,
@@ -150,7 +151,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 		},
 		{
 			id: "task-timer",
-			name: "Task Timer",
+			name: settingsText("Task Timer"),
 			icon: "timer",
 			category: "workflow",
 		},

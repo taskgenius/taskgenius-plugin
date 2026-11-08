@@ -1,11 +1,11 @@
 {
 	"name": "task-genius",
-	"version": "9.13.1",
+	"version": "9.13.2",
 	"description": "Comprehensive task management plugin for Obsidian with progress bars, task status cycling, and advanced task tracking features.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
-		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"build": "pnpm check:i18n && pnpm check:release && tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json manifest-beta.json versions.json",
 		"e-t": "cross-env node scripts/extract-translations.cjs",
 		"g-l": "cross-env node scripts/generate-locale-files.cjs",
@@ -22,7 +22,10 @@
 		"release:beta:patch": "node scripts/smart-beta-release.mjs patch",
 		"release:beta:minor": "node scripts/smart-beta-release.mjs minor",
 		"release:beta:major": "node scripts/smart-beta-release.mjs major",
-		"release:beta:dry": "node scripts/smart-beta-release.mjs --dry-run"
+		"release:beta:dry": "node scripts/smart-beta-release.mjs --dry-run",
+		"check:i18n": "node scripts/check-settings-i18n.cjs",
+		"check:release": "node scripts/check-release-version.cjs",
+		"build:release": "pnpm --filter esbuild-plugin-inline-worker build && pnpm --filter @taskgenius/calendar build && pnpm build"
 	},
 	"keywords": [
 		"obsidian",
@@ -80,5 +83,6 @@
 		"regexp-match-indices": "^1.0.2",
 		"rrule": "^2.8.1",
 		"sortablejs": "^1.15.6"
-	}
+	},
+	"packageManager": "pnpm@10.26.0"
 }
