@@ -53,3 +53,7 @@ packages/*/node_modules
 
 # Documentation site (separate repository)
 docs-site
+
+# Local habit integration verification artifacts
+habits-*.log
+habits-*-jest.json

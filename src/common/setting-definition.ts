@@ -931,6 +931,7 @@ export interface TaskProgressBarSettings {
 
 	// Habit Settings
 	habit: HabitSettings;
+	habitsIntegration?: Partial<import("../integrations/habits/settings").HabitsPluginSettings>;
 
 	// Filter Configuration Settings
 	filterConfig: FilterConfigSettings;

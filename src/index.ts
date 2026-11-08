@@ -1,3 +1,4 @@
+import { TaskGeniusHabits } from "./integrations/habits/task-genius-host";
 import {
 	addIcon,
 	Editor,
@@ -156,6 +157,25 @@ export default class TaskProgressBarPlugin extends Plugin {
 	rewardManager: RewardManager;
 
 	habitManager: HabitManager;
+	habitsIntegration?: TaskGeniusHabits;
+	async ensureHabitsIntegration(): Promise<TaskGeniusHabits> {
+		if (this.settings.habit.enableHabits && !this.habitManager) {
+			this.habitManager = this.addChild(new HabitManager(this));
+		}
+		if (!this.habitsIntegration) {
+			this.habitsIntegration = new TaskGeniusHabits(this);
+			this.addChild(this.habitsIntegration);
+		}
+		const integration = this.habitsIntegration;
+		try { await integration.ready; return integration; }
+		catch (error) {
+			if (this.habitsIntegration === integration) {
+				this.removeChild(integration);
+				this.habitsIntegration = undefined;
+			}
+			throw error;
+		}
+	}
 
 	// Task timer manager and exporter
 	taskTimerManager: TaskTimerManager;
@@ -405,8 +425,7 @@ export default class TaskProgressBarPlugin extends Plugin {
 			});
 
 			if (this.settings.habit.enableHabits) {
-				this.habitManager = new HabitManager(this);
-				this.addChild(this.habitManager);
+				await this.ensureHabitsIntegration();
 			}
 
 			// Initialize ICS manager if sources are configured

@@ -1,0 +1,17 @@
+.tg-habits-surface {
+	--habits-radius: var(--radius-m);
+	font-family: var(--font-interface);
+	color: var(--text-normal);
+}
+.tg-habits-surface .habits-card,
+.tg-habits-surface .habits-compact-row,
+.tg-habits-surface .habits-stat-tile {
+	border-radius: var(--radius-m);
+	border-color: var(--background-modifier-border);
+	box-shadow: none;
+}
+.tg-habits-surface .habits-settings-tabs { border-bottom: 1px solid var(--background-modifier-border); }
+.tg-habits-surface .habits-settings-tab.is-active { color: var(--interactive-accent); }
+.tg-habits-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 12px 0; }
+.tg-habits-toolbar h2 { flex: 1; margin: 0; }
+.tg-habits-legacy { margin-top: 24px; border-top: 1px solid var(--background-modifier-border); padding-top: 12px; }

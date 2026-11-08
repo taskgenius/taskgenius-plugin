@@ -3,3 +3,7 @@ packages:
 
 onlyBuiltDependencies:
     - esbuild
+
+overrides:
+    'obsidian-daily-notes-interface>obsidian': '1.10.3'
+    dompurify: '^3.4.16'
