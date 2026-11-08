@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 import { Setting } from "obsidian";
 import { TaskProgressBarSettingTab } from "@/setting";
 
@@ -11,9 +12,9 @@ export function renderTaskTimerSettingTab(
 
 		// Main enable/disable setting
 		new Setting(timerSection)
-			.setName("Enable Task Timer")
+			.setName(settingsText("Enable Task Timer"))
 			.setDesc(
-				"Enable task timer functionality for tracking time spent on tasks",
+				settingsText("Enable task timer functionality for tracking time spent on tasks"),
 			)
 			.addToggle((toggle) => {
 				toggle
@@ -46,14 +47,14 @@ export function renderTaskTimerSettingTab(
 			metadataSection.addClass("task-timer-metadata-section");
 
 			const metadataHeading = metadataSection.createEl("h3");
-			metadataHeading.setText("Metadata Detection");
+			metadataHeading.setText(settingsText("Metadata Detection"));
 			metadataHeading.addClass("task-timer-section-heading");
 
 			// Frontmatter field setting
 			new Setting(metadataSection)
-				.setName("Frontmatter field")
+				.setName(settingsText("Frontmatter field"))
 				.setDesc(
-					"Field name in frontmatter to check for enabling task timer (e.g., 'task-timer: true')",
+					settingsText("Field name in frontmatter to check for enabling task timer (e.g., 'task-timer: true')"),
 				)
 				.addText((text) => {
 					text.setValue(
@@ -70,9 +71,9 @@ export function renderTaskTimerSettingTab(
 
 			// Folder paths setting
 			new Setting(metadataSection)
-				.setName("Folder paths")
+				.setName(settingsText("Folder paths"))
 				.setDesc(
-					"Comma-separated list of folder paths where task timer should be enabled",
+					settingsText("Comma-separated list of folder paths where task timer should be enabled"),
 				)
 				.addTextArea((textArea) => {
 					textArea
@@ -99,8 +100,8 @@ export function renderTaskTimerSettingTab(
 
 			// Tags setting
 			new Setting(metadataSection)
-				.setName("Tags")
-				.setDesc("Comma-separated list of tags that enable task timer")
+				.setName(settingsText("Tags"))
+				.setDesc(settingsText("Comma-separated list of tags that enable task timer"))
 				.addTextArea((textArea) => {
 					textArea
 						.setValue(
@@ -129,14 +130,14 @@ export function renderTaskTimerSettingTab(
 			formatSection.addClass("task-timer-format-section");
 
 			const formatHeading = formatSection.createEl("h3");
-			formatHeading.setText("Time Format");
+			formatHeading.setText(settingsText("Time Format"));
 			formatHeading.addClass("task-timer-section-heading");
 
 			// Time format template setting
 			new Setting(formatSection)
-				.setName("Time format template")
+				.setName(settingsText("Time format template"))
 				.setDesc(
-					"Template for displaying completed task time. Use {h} for hours, {m} for minutes, {s} for seconds",
+					settingsText("Template for displaying completed task time. Use {h} for hours, {m} for minutes, {s} for seconds"),
 				)
 				.addText((text) => {
 					text.setValue(
@@ -156,7 +157,7 @@ export function renderTaskTimerSettingTab(
 
 			const examplesTitle = examplesDiv.createDiv();
 			examplesTitle.addClass("task-timer-examples-title");
-			examplesTitle.setText("Format Examples:");
+			examplesTitle.setText(settingsText("Format Examples:"));
 
 			const examplesList = examplesDiv.createEl("ul");
 
@@ -179,14 +180,14 @@ export function renderTaskTimerSettingTab(
 			blockRefSection.addClass("task-timer-blockref-section");
 
 			const blockRefHeading = blockRefSection.createEl("h3");
-			blockRefHeading.setText("Block References");
+			blockRefHeading.setText(settingsText("Block References"));
 			blockRefHeading.addClass("task-timer-section-heading");
 
 			// Block reference prefix setting
 			new Setting(blockRefSection)
-				.setName("Block reference prefix")
+				.setName(settingsText("Block reference prefix"))
 				.setDesc(
-					"Prefix for generated block reference IDs (e.g., 'timer' creates ^timer-123456-7890)",
+					settingsText("Prefix for generated block reference IDs (e.g., 'timer' creates ^timer-123456-7890)"),
 				)
 				.addText((text) => {
 					text.setValue(
@@ -206,7 +207,7 @@ export function renderTaskTimerSettingTab(
 			commandsSection.addClass("task-timer-commands-section");
 
 			const commandsHeading = commandsSection.createEl("h3");
-			commandsHeading.setText("Data Management");
+			commandsHeading.setText(settingsText("Data Management"));
 			commandsHeading.addClass("task-timer-section-heading");
 
 			const commandsDesc = commandsSection.createDiv();
@@ -214,31 +215,31 @@ export function renderTaskTimerSettingTab(
 
 			const descParagraph = commandsDesc.createEl("p");
 			descParagraph.setText(
-				"Use the command palette to access timer data management:",
+				settingsText("Use the command palette to access timer data management:"),
 			);
 
 			const commandsList = commandsDesc.createEl("ul");
 
 			const commands = [
 				{
-					name: "Export task timer data",
-					desc: "Export all timer data to JSON",
+					name: settingsText("Export task timer data"),
+					desc: settingsText("Export all timer data to JSON"),
 				},
 				{
-					name: "Import task timer data",
-					desc: "Import timer data from JSON file",
+					name: settingsText("Import task timer data"),
+					desc: settingsText("Import timer data from JSON file"),
 				},
 				{
-					name: "Export task timer data (YAML)",
-					desc: "Export to YAML format",
+					name: settingsText("Export task timer data (YAML)"),
+					desc: settingsText("Export to YAML format"),
 				},
 				{
-					name: "Create task timer backup",
-					desc: "Create a backup of active timers",
+					name: settingsText("Create task timer backup"),
+					desc: settingsText("Create a backup of active timers"),
 				},
 				{
-					name: "Show task timer statistics",
-					desc: "Display timer usage statistics",
+					name: settingsText("Show task timer statistics"),
+					desc: settingsText("Display timer usage statistics"),
 				},
 			];
 

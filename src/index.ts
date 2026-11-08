@@ -2093,6 +2093,11 @@ export default class TaskProgressBarPlugin extends Plugin {
 				}
 			}
 		}
+		for (const leaf of this.app.workspace.getLeavesOfType("fluent-task-genius-view")) {
+			const view = leaf.view as any;
+			view.layoutManager?.sidebar?.render();
+			await view.dataManager?.loadTasks(false);
+		}
 	}
 
 	/**

@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 /**
  * Bulk Date Offset Modal
  * Modal for postponing/advancing dates by a relative offset for bulk operations
@@ -104,7 +105,7 @@ export class BulkDateOffsetModal extends Modal {
 		customInput.max = "365";
 
 		new ButtonComponent(customInputContainer)
-			.setButtonText("Apply")
+			.setButtonText(settingsText("Apply"))
 			.setCta()
 			.onClick(() => {
 				const days = parseInt(customInput.value) || 0;

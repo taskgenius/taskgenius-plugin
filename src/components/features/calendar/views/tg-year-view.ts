@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 /**
  * TGYearView - Year view extending @taskgenius/calendar BaseView
  *
@@ -65,7 +66,7 @@ export interface YearViewOptions {
 export class TGYearView<T = unknown> extends BaseView<T> {
 	static meta: ViewMeta = {
 		type: "year",
-		label: "Year",
+		label: settingsText("Year"),
 		shortLabel: "Y",
 		order: 50,
 	};

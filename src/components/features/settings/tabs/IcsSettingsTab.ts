@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 /**
  * ICS Settings Component
  * Provides UI for managing ICS calendar sources
@@ -682,7 +683,7 @@ class IcsSourceModal extends Modal {
 						"text-replacement-header"
 					);
 					const titleEl = ruleHeader.createEl("strong", {
-						text: rule.name || `Rule ${index + 1}`,
+						text: rule.name || settingsText("Rule {{value0}}", { interpolation: { value0: String(index + 1) } }),
 					});
 
 					const statusEl = ruleHeader.createEl("span", {
@@ -1069,7 +1070,7 @@ class IcsSourceModal extends Modal {
 			)
 			.setClass("holiday-setting")
 			.addText((text) => {
-				text.setPlaceholder("{title} ({count} days)")
+				text.setPlaceholder(settingsText("{title} ({count} days)"))
 					.setValue(
 						this.source.holidayConfig!.groupDisplayFormat || ""
 					)
@@ -1482,25 +1483,25 @@ class TextReplacementModal extends Modal {
 		// Remove prefix example
 		const example1 = examplesList.createEl("li");
 		example1.createEl("strong", { text: t("Remove prefix") + ": " });
-		example1.createSpan({ text: "Pattern: " });
+		example1.createSpan({ text: settingsText("Pattern: ") });
 		example1.createEl("code", { text: "^Meeting: " });
-		example1.createSpan({ text: ", Replacement: " });
+		example1.createSpan({ text: settingsText(", Replacement: ") });
 		example1.createEl("code", { text: "" });
 
 		// Replace room numbers example
 		const example2 = examplesList.createEl("li");
 		example2.createEl("strong", { text: t("Replace room numbers") + ": " });
-		example2.createSpan({ text: "Pattern: " });
+		example2.createSpan({ text: settingsText("Pattern: ") });
 		example2.createEl("code", { text: "Room (\\d+)" });
-		example2.createSpan({ text: ", Replacement: " });
+		example2.createSpan({ text: settingsText(", Replacement: ") });
 		example2.createEl("code", { text: "Conference Room $1" });
 
 		// Swap words example
 		const example3 = examplesList.createEl("li");
 		example3.createEl("strong", { text: t("Swap words") + ": " });
-		example3.createSpan({ text: "Pattern: " });
+		example3.createSpan({ text: settingsText("Pattern: ") });
 		example3.createEl("code", { text: "(\\w+) with (\\w+)" });
-		example3.createSpan({ text: ", Replacement: " });
+		example3.createSpan({ text: settingsText(", Replacement: ") });
 		example3.createEl("code", { text: "$2 and $1" });
 
 		// Test section

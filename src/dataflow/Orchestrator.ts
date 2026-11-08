@@ -1,3 +1,4 @@
+import { snapshotIndexSettings } from "./settings-signature";
 import { App, TFile, Vault, MetadataCache, EventRef, debounce } from "obsidian";
 import type { Task, TgProject } from "../types/task";
 import type { ProjectConfigManagerOptions } from "../managers/project-config-manager";
@@ -64,6 +65,9 @@ export class DataflowOrchestrator {
 
 	// Track last processed sequence to avoid infinite loops
 	private lastProcessedSeq: number = 0;
+	private indexSettingsSignature: string;
+	private fileFilterSignature: string | undefined;
+	private settingsUpdateQueue: Promise<void> = Promise.resolve();
 
 	constructor(
 		private app: App,
@@ -72,6 +76,8 @@ export class DataflowOrchestrator {
 		private plugin: any, // Plugin instance for parser access
 		projectOptions?: Partial<ProjectConfigManagerOptions>,
 	) {
+		this.indexSettingsSignature = snapshotIndexSettings(plugin.settings);
+		this.fileFilterSignature = JSON.stringify(plugin.settings?.fileFilter);
 		// Initialize components
 		this.queryAPI = new QueryAPI(app, vault, metadataCache);
 		this.repository = this.queryAPI.getRepository();
@@ -461,6 +467,10 @@ export class DataflowOrchestrator {
 				);
 
 				if (reason === "delete") {
+					const pending = this.processingQueue.get(path);
+					if (pending) clearTimeout(pending);
+					this.processingQueue.delete(path);
+					this.projectResolver.clearCache(path);
 					// Remove file from index
 					await this.repository.removeFile(path);
 				} else {
@@ -469,6 +479,11 @@ export class DataflowOrchestrator {
 						path,
 					) as TFile;
 					if (file) {
+						if (reason !== "error") {
+							this.projectResolver.clearCache(path);
+							this.augmentor.clearCache();
+							await this.storage.clearFile(path);
+						}
 						await this.processFile(file);
 					}
 				}
@@ -822,6 +837,8 @@ export class DataflowOrchestrator {
 				augmentedTasks = await this.augmentor.merge(augmentContext);
 			}
 
+			if (!this.vault.getAbstractFileByPath(filePath)) return;
+
 			// Step 3: Update repository (index + storage + events)
 			// Generate a unique sequence for this operation
 			this.lastProcessedSeq = Seq.next();
@@ -848,7 +865,14 @@ export class DataflowOrchestrator {
 	/**
 	 * Update settings and propagate to components
 	 */
-	updateSettings(settings: any): void {
+	updateSettings(settings: any): Promise<void> {
+		this.settingsUpdateQueue = this.settingsUpdateQueue.catch(() => {}).then(() => this.applySettings(settings));
+		return this.settingsUpdateQueue;
+	}
+
+	private async applySettings(settings: any): Promise<void> {
+		const indexSignature = snapshotIndexSettings(settings);
+		const filterSignature = JSON.stringify(settings?.fileFilter);
 		// Update worker processing setting
 		const enableWorkerProcessing =
 			settings?.fileSource?.performance?.enableWorkerProcessing ??
@@ -1002,7 +1026,7 @@ export class DataflowOrchestrator {
 			(this.repository as any).setFileFilterManager?.(
 				this.fileFilterManager,
 			);
-			fileFilterChanged = true;
+			fileFilterChanged = filterSignature !== this.fileFilterSignature;
 		}
 
 		if (fileFilterChanged) {
@@ -1030,6 +1054,13 @@ export class DataflowOrchestrator {
 			});
 			this.restoreByFilterDebounced?.();
 		}
+		if (indexSignature !== this.indexSettingsSignature) {
+			await this.onSettingsChange(["parser", "augment", "project"]);
+		} else {
+			emit(this.app, Events.SETTINGS_CHANGED, { scopes: [], timestamp: Date.now() });
+		}
+		this.indexSettingsSignature = indexSignature;
+		this.fileFilterSignature = filterSignature;
 	}
 
 	/**
@@ -1702,6 +1733,8 @@ export class DataflowOrchestrator {
 	 * Clear all data and rebuild
 	 */
 	async rebuild(): Promise<void> {
+		this.projectResolver.clearCache();
+		this.augmentor.clearCache();
 		// Clear all data
 		await this.repository.clear();
 
@@ -1722,6 +1755,7 @@ export class DataflowOrchestrator {
 
 		// Persist the rebuilt index
 		await this.repository.persist();
+		await this.queryAPI.refreshCache();
 
 		// Emit ready event
 		emit(this.app, Events.CACHE_READY, {
@@ -1744,6 +1778,7 @@ export class DataflowOrchestrator {
 			await this.storage.clearNamespace("augmented");
 			await this.storage.clearNamespace("project");
 			this.projectResolver.clearCache();
+			this.augmentor.clearCache();
 		}
 
 		if (scopes.includes("index")) {

@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 /**
  * FileTaskSettings - UI component for File Task configuration
  *
@@ -913,7 +914,7 @@ function createStatusMappingSection(
 			row.createEl("td", { text: example.metadata });
 			row.createEl("td", { text: "→" });
 			row.createEl("td", {
-				text: example.symbol === " " ? "(space)" : example.symbol,
+				text: example.symbol === " " ? settingsText("(space)") : example.symbol,
 			});
 		});
 

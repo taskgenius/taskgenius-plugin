@@ -1,3 +1,4 @@
+import { removeBlankTasks } from "@/utils/task/removeBlankTasks";
 import type {
 	Task,
 	TaskCache,
@@ -84,6 +85,22 @@ export class Repository {
 					`[Repository] Found persisted snapshot with ${snapshotTaskCount} tasks, restoring...`
 				);
 				await this.indexer.restoreFromSnapshot(consolidated.data);
+				// Old snapshots can contain empty placeholders even when no file has
+				// changed since the upgrade. Normalize before publishing CACHE_READY.
+				const restored = await this.indexer.getAllTasks();
+				const byFile = new Map<string, Task[]>();
+				for (const task of restored) {
+					if (!byFile.has(task.filePath)) byFile.set(task.filePath, []);
+					byFile.get(task.filePath)!.push(task);
+				}
+				for (const [filePath, tasks] of byFile) {
+					const normalized = removeBlankTasks(tasks);
+					if (normalized !== tasks) {
+						await this.indexer.updateIndexWithTasks(filePath, normalized);
+						await this.storage.storeAugmented(filePath, normalized);
+					}
+				}
+
 
 				const taskCount = await this.indexer.getTotalTaskCount();
 				console.log(
@@ -135,6 +152,7 @@ export class Repository {
 		sourceSeq?: number,
 		options?: { persist?: boolean; forceEmit?: boolean }
 	): Promise<void> {
+		tasks = removeBlankTasks(tasks);
 		const persist = options?.persist !== false; // default true
 		const forceEmit = options?.forceEmit === true;
 		// Check if tasks have actually changed relative to storage
@@ -190,7 +208,8 @@ export class Repository {
 		let hasActualChanges = false;
 
 		// Process each file update and check for actual changes
-		for (const [filePath, tasks] of updates) {
+		for (const [filePath, incomingTasks] of updates) {
+			const tasks = removeBlankTasks(incomingTasks);
 			// Check if tasks have actually changed relative to storage
 			const existingAugmented = await this.storage.loadAugmented(
 				filePath

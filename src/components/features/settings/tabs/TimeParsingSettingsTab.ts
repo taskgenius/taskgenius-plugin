@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 import { PluginSettingTab, Setting } from "obsidian";
 import { t } from "@/translations/helper";
 import { TaskProgressBarSettingTab } from "@/setting";
@@ -339,7 +340,7 @@ export function renderTimeParsingSettingsTab(
 			cls: "time-parsing-example",
 		});
 		exampleEl.createEl("span", {
-			text: "Input: ",
+			text: settingsText("Input: "),
 			cls: "example-label",
 		});
 		exampleEl.createEl("code", {
@@ -348,7 +349,7 @@ export function renderTimeParsingSettingsTab(
 		});
 		exampleEl.createEl("br");
 		exampleEl.createEl("span", {
-			text: "Output: ",
+			text: settingsText("Output: "),
 			cls: "example-label",
 		});
 		exampleEl.createEl("code", {

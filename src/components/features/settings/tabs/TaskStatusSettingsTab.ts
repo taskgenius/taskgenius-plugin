@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 import { Modal, setIcon, Setting } from "obsidian";
 import { t } from "@/translations/helper";
 import { allStatusCollections } from "@/common/task-status";
@@ -110,7 +111,7 @@ export function renderTaskStatusSettingsTab(
 		)
 		.setHeading()
 		.addDropdown((dropdown) => {
-			dropdown.addOption("custom", "Custom");
+			dropdown.addOption("custom", settingsText("Custom"));
 			for (const statusCollection of allStatusCollections) {
 				dropdown.addOption(statusCollection, statusCollection);
 			}
@@ -125,11 +126,11 @@ export function renderTaskStatusSettingsTab(
 
 				// Confirm before applying the theme
 				const modal = new Modal(settingTab.app);
-				modal.titleEl.setText(`Apply ${value} Theme?`);
+				modal.titleEl.setText(settingsText("Apply {{value0}} Theme?", { interpolation: { value0: String(value) } }));
 
 				const content = modal.contentEl.createDiv();
 				content.setText(
-					`This will override your current checkbox status settings with the ${value} theme. Do you want to continue?`,
+					settingsText("This will override your current checkbox status settings with the {{value0}} theme. Do you want to continue?", { interpolation: { value0: String(value) } }),
 				);
 
 				const buttonContainer = modal.contentEl.createDiv({
@@ -342,45 +343,45 @@ export function renderTaskStatusSettingsTab(
 
 	// Configure Completed status
 	createStatusConfigButton("completed", {
-		title: "Completed",
+		title: settingsText("Completed"),
 		description:
-			"Configure symbols that represent completed tasks in square brackets",
+			settingsText("Configure symbols that represent completed tasks in square brackets"),
 		placeholder: "x",
 		icon: "completed",
 	});
 
 	// Configure Planned status
 	createStatusConfigButton("planned", {
-		title: "Planned",
+		title: settingsText("Planned"),
 		description:
-			"Configure symbols that represent planned tasks in square brackets",
+			settingsText("Configure symbols that represent planned tasks in square brackets"),
 		placeholder: "?",
 		icon: "planned",
 	});
 
 	// Configure In Progress status
 	createStatusConfigButton("inProgress", {
-		title: "In Progress",
+		title: settingsText("In Progress"),
 		description:
-			"Configure symbols that represent tasks in progress in square brackets",
+			settingsText("Configure symbols that represent tasks in progress in square brackets"),
 		placeholder: "/",
 		icon: "inProgress",
 	});
 
 	// Configure Abandoned status
 	createStatusConfigButton("abandoned", {
-		title: "Abandoned",
+		title: settingsText("Abandoned"),
 		description:
-			"Configure symbols that represent abandoned tasks in square brackets",
+			settingsText("Configure symbols that represent abandoned tasks in square brackets"),
 		placeholder: "-",
 		icon: "abandoned",
 	});
 
 	// Configure Not Started status (preserves empty spaces)
 	createStatusConfigButton("notStarted", {
-		title: "Not Started",
+		title: settingsText("Not Started"),
 		description:
-			'Configure symbols that represent not started tasks in square brackets. Default is space " "',
+			settingsText('Configure symbols that represent not started tasks in square brackets. Default is space " "'),
 		placeholder: " ",
 		icon: "notStarted",
 		preserveEmpty: true,
@@ -394,11 +395,11 @@ export function renderTaskStatusSettingsTab(
 			),
 		)
 		.addDropdown((dropdown) => {
-			dropdown.addOption("notStarted", "Not Started");
-			dropdown.addOption("abandoned", "Abandoned");
-			dropdown.addOption("planned", "Planned");
-			dropdown.addOption("completed", "Completed");
-			dropdown.addOption("inProgress", "In Progress");
+			dropdown.addOption("notStarted", settingsText("Not Started"));
+			dropdown.addOption("abandoned", settingsText("Abandoned"));
+			dropdown.addOption("planned", settingsText("Planned"));
+			dropdown.addOption("completed", settingsText("Completed"));
+			dropdown.addOption("inProgress", settingsText("In Progress"));
 			dropdown.setValue(
 				settingTab.plugin.settings.countOtherStatusesAs || "notStarted",
 			);
@@ -634,7 +635,7 @@ export function renderTaskStatusSettingsTab(
 				),
 			)
 			.addDropdown((dropdown) => {
-				dropdown.addOption("custom", "Custom");
+				dropdown.addOption("custom", settingsText("Custom"));
 				for (const statusCollection of allStatusCollections) {
 					dropdown.addOption(statusCollection, statusCollection);
 				}
@@ -649,13 +650,11 @@ export function renderTaskStatusSettingsTab(
 
 					// Confirm before applying the theme
 					const modal = new Modal(settingTab.app);
-					modal.titleEl.setText(`Add ${value} Theme as New Cycle?`);
+					modal.titleEl.setText(settingsText("Add {{value0}} Theme as New Cycle?", { interpolation: { value0: String(value) } }));
 
 					const content = modal.contentEl.createDiv();
 					content.setText(
-						t(
-							`This will add a new status cycle based on the ${value} theme.`,
-						),
+						settingsText("This will add a new status cycle based on the {{value0}} theme.", { interpolation: { value0: String(value) } }),
 					);
 
 					const buttonContainer = modal.contentEl.createDiv({
@@ -711,7 +710,7 @@ export function renderTaskStatusSettingsTab(
 								const newStatusCycle: StatusCycle = {
 									id: `cycle-${Date.now()}`,
 									name: value,
-									description: t(`${value} theme workflow`),
+									description: settingsText("{{value0}} theme workflow", { interpolation: { value0: String(value) } }),
 									priority:
 										settingTab.plugin.settings.statusCycles!
 											.length,

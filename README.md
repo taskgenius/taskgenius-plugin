@@ -77,3 +77,8 @@ Join our active community for help, tips, and feature discussions:
 [FSL-1.1-ALv2](./LICENSE)
 
 Feel free to use any part in the `src/components`, such as the Inline Markdown Editor or the Kanban component.
+## 旧布局维护分支
+
+`legacy/9.13.1` 从官方 9.13.1 标签维护，保留原设置导航与布局。设置中文、状态菜单和索引刷新修复在此分支独立实现。
+
+发布步骤见 [RELEASING.zh-CN.md](RELEASING.zh-CN.md)。使用 `pnpm build:release` 生成 `dist/main.js`、`dist/manifest.json`、`dist/styles.css`，随后由仓库所有者自行创建 GitHub Release。PR 或构建成功本身不会发布 Release。

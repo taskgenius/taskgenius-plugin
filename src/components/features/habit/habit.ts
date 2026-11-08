@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 import {
 	Component,
 	App,
@@ -214,12 +215,12 @@ export class EventDetailModal extends Modal {
 		const {contentEl} = this;
 		contentEl.addClass("habit-event-modal");
 		contentEl.createEl("h2", {
-			text: `Record Details for ${this.eventName}`,
+			text: settingsText("Record Details for {{value0}}", { interpolation: { value0: String(this.eventName) } }),
 		});
 
-		new Setting(contentEl).setName("Details").addText((text) =>
+		new Setting(contentEl).setName(settingsText("Details")).addText((text) =>
 			text
-				.setPlaceholder(`Enter details for ${this.eventName}...`)
+				.setPlaceholder(settingsText("Enter details for {{value0}}...", { interpolation: { value0: String(this.eventName) } }))
 				.onChange((value) => {
 					this.details = value;
 				})
@@ -228,7 +229,7 @@ export class EventDetailModal extends Modal {
 		new Setting(contentEl)
 			.addButton((btn) =>
 				btn
-					.setButtonText("Cancel")
+					.setButtonText(settingsText("Cancel"))
 					.setWarning()
 					.onClick(() => {
 						this.close();
@@ -236,7 +237,7 @@ export class EventDetailModal extends Modal {
 			)
 			.addButton((btn) =>
 				btn
-					.setButtonText("Submit")
+					.setButtonText(settingsText("Submit"))
 					.setCta()
 					.onClick(() => {
 						this.close();

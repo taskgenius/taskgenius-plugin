@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 import { App, Component, Menu, Notice, TFile } from "obsidian";
 import TaskProgressBarPlugin from "@/index";
 import { StandardTaskMetadata, Task } from "@/types/task";
@@ -310,30 +311,7 @@ export class FluentActionHandlers extends Component {
 									text: `${priorityIndicator}${cycle.name}: → ${nextStatusResult.statusName}`,
 								});
 								subItem.onClick(async () => {
-									const willComplete = this.isCompletedMark(
-										nextStatusResult.mark
-									);
-									const updatedTask = {
-										...task,
-										status: nextStatusResult.mark,
-										completed: willComplete,
-									};
-
-									if (!task.completed && willComplete) {
-										updatedTask.metadata.completedDate =
-											Date.now();
-									} else if (
-										task.completed &&
-										!willComplete
-									) {
-										updatedTask.metadata.completedDate =
-											undefined;
-									}
-
-									await this.handleKanbanTaskStatusUpdate(
-										updatedTask,
-										nextStatusResult.mark
-									);
+							await this.handleKanbanTaskStatusUpdate(task, nextStatusResult.mark);
 								});
 							});
 						}
@@ -375,23 +353,7 @@ export class FluentActionHandlers extends Component {
 							text: statusName,
 						});
 						subItem.onClick(async () => {
-							const willComplete = this.isCompletedMark(mark);
-							const updatedTask = {
-								...task,
-								status: mark,
-								completed: willComplete,
-							};
-
-							if (!task.completed && willComplete) {
-								updatedTask.metadata.completedDate = Date.now();
-							} else if (task.completed && !willComplete) {
-								updatedTask.metadata.completedDate = undefined;
-							}
-
-							await this.handleKanbanTaskStatusUpdate(
-								updatedTask,
-								mark
-							);
+							await this.handleKanbanTaskStatusUpdate(task, mark);
 						});
 					});
 				}
@@ -416,20 +378,7 @@ export class FluentActionHandlers extends Component {
 							text: status,
 						});
 						subItem.onClick(async () => {
-							const willComplete = this.isCompletedMark(mark);
-							const updatedTask = {
-								...task,
-								status: mark,
-								completed: willComplete,
-							};
-
-							if (!task.completed && willComplete) {
-								updatedTask.metadata.completedDate = Date.now();
-							} else if (task.completed && !willComplete) {
-								updatedTask.metadata.completedDate = undefined;
-							}
-
-							await this.handleTaskUpdate(task, updatedTask);
+							await this.handleKanbanTaskStatusUpdate(task, mark);
 						});
 					});
 				}
@@ -505,11 +454,11 @@ export class FluentActionHandlers extends Component {
 				.setSubmenu();
 
 			const priorityLevels = [
-				{ level: 5, label: "Highest", icon: "alert-triangle" },
-				{ level: 4, label: "High", icon: "arrow-up" },
-				{ level: 3, label: "Medium", icon: "minus" },
-				{ level: 2, label: "Low", icon: "arrow-down" },
-				{ level: 1, label: "Lowest", icon: "chevron-down" },
+				{ level: 5, label: settingsText("Highest"), icon: "alert-triangle" },
+				{ level: 4, label: settingsText("High"), icon: "arrow-up" },
+				{ level: 3, label: settingsText("Medium"), icon: "minus" },
+				{ level: 2, label: settingsText("Low"), icon: "arrow-down" },
+				{ level: 1, label: settingsText("Lowest"), icon: "chevron-down" },
 			] as const;
 
 			priorityLevels.forEach(({ level, label, icon }) => {

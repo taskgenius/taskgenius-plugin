@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 /**
  * MCP Integration Settings Tab Component
  */
@@ -172,10 +173,10 @@ export function renderMcpIntegrationSettingsTab(
 		)
 		.addDropdown((dropdown) => {
 			dropdown
-				.addOption("127.0.0.1", "127.0.0.1 (Local only)")
+				.addOption("127.0.0.1", settingsText("127.0.0.1 (Local only)"))
 				.addOption(
 					"0.0.0.0",
-					"0.0.0.0 (All interfaces - for external access)"
+					settingsText("0.0.0.0 (All interfaces - for external access)")
 				)
 				.setValue(plugin.settings.mcpIntegration?.host || "127.0.0.1")
 				.onChange(async (value) => {
@@ -605,7 +606,7 @@ export function renderMcpIntegrationSettingsTab(
 
 	// Method A
 	const methodAItem = authList.createEl("li");
-	methodAItem.createEl("strong", { text: "Method A (Custom Header):" });
+	methodAItem.createEl("strong", { text: settingsText("Method A (Custom Header):") });
 	methodAItem.appendText(" ");
 	methodAItem.createEl("code", { text: `mcp-app-id: ${appId}` });
 	methodAItem.appendText(" + ");
@@ -615,7 +616,7 @@ export function renderMcpIntegrationSettingsTab(
 
 	// Method B
 	const methodBItem = authList.createEl("li");
-	methodBItem.createEl("strong", { text: "Method B (Combined Bearer):" });
+	methodBItem.createEl("strong", { text: settingsText("Method B (Combined Bearer):") });
 	methodBItem.appendText(" ");
 	methodBItem.createEl("code", {
 		text: `Authorization: Bearer ${authToken}+${appId}`,
@@ -1010,7 +1011,7 @@ export function renderMcpIntegrationSettingsTab(
 	const endpointContent = endpointBox.createDiv("mcp-endpoint-content");
 
 	const endpointLabel = endpointContent.createSpan("mcp-endpoint-label");
-	endpointLabel.setText("URL: ");
+	endpointLabel.setText(settingsText("URL: "));
 
 	const endpointUrl = serverUrl;
 	endpointContent.createEl("code", {
@@ -1165,7 +1166,7 @@ export function renderMcpIntegrationSettingsTab(
 			"mcp-example-block active"
 		);
 		curlExample.createEl("div", {
-			text: "1) Initialize",
+			text: settingsText("1) Initialize"),
 			cls: "mcp-example-subtitle",
 		});
 		const curlPreInit = curlExample.createEl("pre", {
@@ -1190,7 +1191,7 @@ export function renderMcpIntegrationSettingsTab(
 		}
 
 		curlExample.createEl("div", {
-			text: "2) Call tool with session id",
+			text: settingsText("2) Call tool with session id"),
 			cls: "mcp-example-subtitle",
 		});
 		const curlPreCall = curlExample.createEl("pre", {
@@ -1219,7 +1220,7 @@ export function renderMcpIntegrationSettingsTab(
 		// JavaScript example (Init + Call)
 		const jsExample = exampleCodeContainer.createDiv("mcp-example-block");
 		jsExample.createEl("div", {
-			text: "1) Initialize",
+			text: settingsText("1) Initialize"),
 			cls: "mcp-example-subtitle",
 		});
 		const jsPreInit = jsExample.createEl("pre", {
@@ -1237,7 +1238,7 @@ export function renderMcpIntegrationSettingsTab(
 		}
 
 		jsExample.createEl("div", {
-			text: "2) Call tool with session id",
+			text: settingsText("2) Call tool with session id"),
 			cls: "mcp-example-subtitle",
 		});
 		const jsPreCall = jsExample.createEl("pre", {
@@ -1258,7 +1259,7 @@ export function renderMcpIntegrationSettingsTab(
 		const pythonExample =
 			exampleCodeContainer.createDiv("mcp-example-block");
 		pythonExample.createEl("div", {
-			text: "1) Initialize",
+			text: settingsText("1) Initialize"),
 			cls: "mcp-example-subtitle",
 		});
 		const pythonPreInit = pythonExample.createEl("pre", {
@@ -1301,7 +1302,7 @@ print(f"Session ID: {session_id}")`,
 		}
 
 		pythonExample.createEl("div", {
-			text: "2) Call tool with session id",
+			text: settingsText("2) Call tool with session id"),
 			cls: "mcp-example-subtitle",
 		});
 		const pythonPreCall = pythonExample.createEl("pre", {

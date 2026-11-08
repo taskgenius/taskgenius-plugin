@@ -1,3 +1,4 @@
+import { t as settingsText } from "@/translations/helper";
 import {
 	App,
 	TFile,
@@ -178,11 +179,11 @@ export class FileNameInput {
 
 		// Get templates from settings and normalize legacy data if needed
 		const defaultTemplates: QuickCaptureTemplateDefinition[] = [
-			{ name: "Daily Note", template: "{{DATE:YYYY-MM-DD}}" },
-			{ name: "Meeting", template: "{{DATE:YYYY-MM-DD}} - Meeting" },
-			{ name: "Task", template: "{{DATE:YYYY-MM-DD}} - Task" },
-			{ name: "Project", template: "Project - {{DATE:YYYY-MM}}" },
-			{ name: "Notes", template: "Notes - {{DATE:YYYY-MM-DD-HHmm}}" },
+			{ name: settingsText("Daily Note"), template: "{{DATE:YYYY-MM-DD}}" },
+			{ name: settingsText("Meeting"), template: "{{DATE:YYYY-MM-DD}} - Meeting" },
+			{ name: settingsText("Task"), template: "{{DATE:YYYY-MM-DD}} - Task" },
+			{ name: settingsText("Project"), template: "Project - {{DATE:YYYY-MM}}" },
+			{ name: settingsText("Notes"), template: "Notes - {{DATE:YYYY-MM-DD-HHmm}}" },
 		];
 
 		const rawTemplates = this.plugin.settings.quickCapture
