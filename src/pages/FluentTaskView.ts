@@ -417,8 +417,8 @@ export class FluentTaskView extends ItemView {
 			// PHASE 6: Load Data (KEY PHASE)
 			// ====================
 			console.log("[Task Genius] Loading tasks...");
-			await this.dataManager.loadTasks(false); // Will trigger onTasksLoaded callback
 			await this.dataManager.registerDataflowListeners();
+			await this.dataManager.loadTasks(false); // Listeners precede the first snapshot.
 			console.log(
 				`[Task Genius] ✅ Loaded ${this.tasks.length} tasks, ${this.filteredTasks.length} after filters`
 			);
@@ -450,6 +450,7 @@ export class FluentTaskView extends ItemView {
 			}
 
 			this.isInitializing = false;
+			await this.dataManager?.finishInitialization();
 
 			if (this.DEBUG_MODE) {
 				console.log("[Task Genius] Calling final updateView()...");
@@ -990,6 +991,9 @@ export class FluentTaskView extends ItemView {
 	 * Register workspace and global events
 	 */
 	private registerEvents() {
+		this.registerEvent(this.app.workspace.on("task-genius:view-config-changed", () => {
+			void this.refreshSettings().catch(error => console.error("Task Genius view settings refresh", error));
+		}));
 		// Workspace switch event
 		if (this.plugin.workspaceManager) {
 			this.registerEvent(
@@ -1151,6 +1155,14 @@ export class FluentTaskView extends ItemView {
 	/**
 	 * Update view with current state
 	 */
+	public async refreshSettings(): Promise<void> {
+		if (this.isInitializing) return;
+		this.layoutManager.sidebar?.render();
+		this.componentManager.refreshConfiguration();
+		this.layoutManager.updateActionButtons();
+		await this.dataManager.loadTasks(false);
+	}
+
 	private updateView() {
 		if (this.isInitializing) {
 			console.log("[Task Genius] Skip update during initialization");
@@ -1175,13 +1187,8 @@ export class FluentTaskView extends ItemView {
 		// Update sidebar active item
 		this.layoutManager.setSidebarActiveItem(this.currentViewId);
 
-		// Control project list interaction based on view state
-		// Disable project list when showing full projects overview (no project selected)
-		// Enable it when in other views or when a specific project is selected
-		const isProjectsOverview =
-			this.currentViewId === "projects" &&
-			!this.viewState.selectedProject;
-		this.layoutManager.sidebar?.setProjectListEnabled(!isProjectsOverview);
+		this.layoutManager.sidebar?.setProjectListEnabled(true);
+		this.layoutManager.setActiveProject(this.viewState.selectedProject || null);
 
 		// Show loading state
 		if (this.isLoading) {
@@ -1205,7 +1212,7 @@ export class FluentTaskView extends ItemView {
 		}
 
 		// Show empty state
-		if (this.tasks.length === 0) {
+		if (this.tasks.length === 0 && this.componentManager.isContentBasedView(this.currentViewId)) {
 			this.componentManager.renderEmptyState();
 			return;
 		}

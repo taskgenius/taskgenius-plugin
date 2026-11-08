@@ -57,3 +57,7 @@ docs-site
 # Local habit integration verification artifacts
 habits-*.log
 habits-*-jest.json
+
+# Local UI audit verification
+/audit-*.log
+/audit-*.json

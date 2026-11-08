@@ -276,10 +276,14 @@ export class TopNavigation extends Component {
 		this.registerDomEvent(tab, "click", () => {
 			// Only trigger view change if switching to a different mode
 			if (this.currentViewMode !== mode) {
-				this.setViewMode(mode);
-				this.onViewModeChange(mode);
+				this.selectViewMode(mode);
 			}
 		});
+	}
+
+	public selectViewMode(mode: ViewMode): void {
+		this.setViewMode(mode);
+		this.onViewModeChange(mode);
 	}
 
 	public setViewMode(mode: ViewMode) {
@@ -408,6 +412,7 @@ export class TopNavigation extends Component {
 	}
 
 	public updateAvailableModes(modes: ViewMode[]) {
+		if (modes.length === this.availableModes.length && modes.every((mode, i) => mode === this.availableModes[i])) return;
 		const wasEmpty = this.availableModes.length === 0;
 		this.availableModes = modes;
 

@@ -253,6 +253,13 @@ export class HabitModal extends Modal {
 	private exampleIndex = 0;
 	private editing: HabitDefinition | null = null;
 
+	private closeButton: HTMLElement | null = null;
+	private closeFromHeader = (event: MouseEvent): void => {
+		if (event.button !== 0) return;
+		event.preventDefault();
+		event.stopPropagation();
+		this.close();
+	};
 	private previewIconEl: HTMLElement | null = null;
 	private previewNameEl: HTMLElement | null = null;
 	private iconButton: ButtonComponent | null = null;
@@ -315,6 +322,11 @@ export class HabitModal extends Modal {
 
 	onOpen(): void {
 		this.modalEl.addClass("habits-modal");
+		// Obsidian renamed the native header control in newer releases.
+		// Handle release on this control before unrelated document click handlers.
+		this.closeButton = this.modalEl.querySelector<HTMLElement>(".modal-header-button, .modal-close-button");
+		this.closeButton?.addEventListener("pointerup", this.closeFromHeader);
+		this.closeButton?.addEventListener("click", this.closeFromHeader, true);
 		this.exampleIndex = Math.floor(
 			Math.random() * this.exampleList().length,
 		);
@@ -322,6 +334,9 @@ export class HabitModal extends Modal {
 	}
 
 	onClose(): void {
+		this.closeButton?.removeEventListener("pointerup", this.closeFromHeader);
+		this.closeButton?.removeEventListener("click", this.closeFromHeader, true);
+		this.closeButton = null;
 		this.contentEl.empty();
 	}
 

@@ -27,7 +27,8 @@
 		"check:release": "node scripts/check-release-version.cjs",
 		"build:release": "pnpm --filter esbuild-plugin-inline-worker build && pnpm --filter @taskgenius/calendar build && pnpm build",
 		"test:habits": "node --test tests/habits/*.test.mjs",
-		"check:habits-css": "node scripts/scope-habits-css.mjs"
+		"check:habits-css": "node scripts/scope-habits-css.mjs",
+		"test:ui": "node --test tests/ui-audit/*.test.mjs"
 	},
 	"keywords": [
 		"obsidian",

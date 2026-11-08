@@ -37,7 +37,7 @@ function cacheKey(
 	mode: StatsRangeMode,
 	digest: string,
 ): string {
-	return `${settings.model}|${period}|${mode}|${digest}`;
+	return `${settings.baseUrl.trim().replace(/\/+$/, "")}|${settings.model}|${period}|${mode}|${digest}`;
 }
 
 /** A cached summary for this exact data, or null when none exists yet. */

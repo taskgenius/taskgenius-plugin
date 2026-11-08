@@ -29,6 +29,18 @@ export class FluentDataManager extends Component {
 
 	// Batch operation state flag
 	private isBatchOperating = false;
+	private loadRequest = 0;
+	private disposed = false;
+	private listenersRegistered = false;
+	private pendingDataRefresh = false;
+
+	async finishInitialization(): Promise<void> {
+		if (this.disposed || !this.pendingDataRefresh) return;
+		this.pendingDataRefresh = false;
+		await this.loadTasks(false);
+	}
+
+	onunload(): void { this.disposed = true; this.loadRequest++; }
 
 	constructor(
 		private plugin: TaskProgressBarPlugin,
@@ -64,6 +76,8 @@ export class FluentDataManager extends Component {
 	 * Returns loaded tasks via callback
 	 */
 	async loadTasks(showLoading = true): Promise<void> {
+		if (this.disposed) return;
+		const request = ++this.loadRequest;
 		try {
 			console.log(
 				"[FluentData] loadTasks started, showLoading:",
@@ -99,17 +113,17 @@ export class FluentDataManager extends Component {
 			}
 
 			// Return loaded tasks via callback
-			this.onTasksLoaded?.(loadedTasks, null);
+			if (!this.disposed && request === this.loadRequest) this.onTasksLoaded?.(loadedTasks, null);
 		} catch (error) {
 			console.error("[FluentData] Failed to load tasks:", error);
 			const errorMessage =
 				(error as Error).message || "Failed to load tasks";
 			// Return error via callback
-			this.onTasksLoaded?.([], errorMessage);
+			if (!this.disposed && request === this.loadRequest) this.onTasksLoaded?.([], errorMessage);
 		} finally {
 			// Always notify loading complete
 			console.log("[FluentData] loadTasks complete");
-			this.onLoadingStateChanged?.(false);
+			if (!this.disposed && request === this.loadRequest) this.onLoadingStateChanged?.(false);
 		}
 	}
 
@@ -400,8 +414,11 @@ export class FluentDataManager extends Component {
 	 * Notifies parent via onUpdateNeeded callback
 	 */
 	async registerDataflowListeners(): Promise<void> {
+		if (this.listenersRegistered || this.disposed) return;
+		this.listenersRegistered = true;
 		// Add debounced view update to prevent rapid successive refreshes
 		const debouncedViewUpdate = debounce(async () => {
+			if (this.disposed) return;
 			console.log("[FluentData] debouncedViewUpdate triggered");
 
 			// Skip update during batch operation to prevent list flashing
@@ -413,19 +430,23 @@ export class FluentDataManager extends Component {
 			}
 
 			if (!this.isInitializing()) {
+				this.pendingDataRefresh = false;
 				// Load tasks and notify parent
 				await this.loadTasks(false);
 				// Notify parent that data changed
-				this.onUpdateNeeded?.("dataflow");
+				if (!this.disposed) this.onUpdateNeeded?.("dataflow");
 			}
 		}, 500);
 
 		// Add debounced filter application
 		const debouncedApplyFilter = debounce(() => {
-			if (!this.isInitializing()) {
+			if (!this.disposed && !this.isInitializing()) {
 				this.onUpdateNeeded?.("filter-changed");
 			}
 		}, 400);
+
+		this.register(() => { (debouncedViewUpdate as any).cancel?.(); (debouncedApplyFilter as any).cancel?.(); });
+		const requestDataRefresh = () => { this.pendingDataRefresh = true; debouncedViewUpdate(); };
 
 		const scheduleFilterRefresh = () => {
 			if (this.isInitializing()) {
@@ -435,6 +456,14 @@ export class FluentDataManager extends Component {
 			// Re-use filter debounce so resorting happens once per burst
 			debouncedApplyFilter();
 		};
+
+		// Listen for cache ready event
+		this.registerEvent(
+			on(this.plugin.app, Events.CACHE_READY, async () => {
+				await this.loadTasks();
+				this.onUpdateNeeded?.("cache-ready");
+			}),
+		);
 
 		// Register dataflow event listeners
 		if (isDataflowEnabled(this.plugin)) {
@@ -468,20 +497,13 @@ export class FluentDataManager extends Component {
 				),
 			);
 
-			// Listen for cache ready event
-			this.registerEvent(
-				on(this.plugin.app, Events.CACHE_READY, async () => {
-					await this.loadTasks();
-					this.onUpdateNeeded?.("cache-ready");
-				}),
-			);
 
 			// Listen for task cache updates
 			this.registerEvent(
 				on(
 					this.plugin.app,
 					Events.TASK_CACHE_UPDATED,
-					debouncedViewUpdate,
+					requestDataRefresh,
 				),
 			);
 		} else {
@@ -489,7 +511,7 @@ export class FluentDataManager extends Component {
 			this.registerEvent(
 				this.plugin.app.workspace.on(
 					"task-genius:task-cache-updated",
-					debouncedViewUpdate,
+					requestDataRefresh,
 				),
 			);
 		}

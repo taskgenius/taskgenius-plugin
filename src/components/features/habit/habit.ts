@@ -47,7 +47,6 @@ export class Habit extends Component {
 			new ButtonComponent(toolbar).setButtonText(ht("Create habit")).setCta().onClick(() => {
 				new HabitModal(this.plugin.app, integration.store, () => {}, null, integration.settings.experimental.noteHabits).open();
 			});
-			integration.showCompatibilityNotice(this.containerEl);
 			const root = this.containerEl.createDiv();
 			this.addChild(new HabitsBlock(this.plugin.app, integration.store, () => integration.settings, integration.events, "", root));
 			if (this.plugin.settings.habit.habits?.length) {

@@ -251,3 +251,11 @@ test('all embedded settings tabs render in English and Chinese; folder input sav
   }
   globalThis.testLanguage='en';
 });
+
+test('AI summary cache separates endpoints even when model and statistics are identical',async()=>{
+ let requests=0;globalThis.mockHabitRequest=async request=>{requests++;return {status:200,json:{choices:[{message:{content:request.url}}]}};};
+ try{const first={baseUrl:'https://first.invalid',apiKey:'',model:'same-model'},second={...first,baseUrl:'https://second.invalid'};
+ assert.equal(await generateSummary(first,'weekly','rolling','endpoint-digest'),'https://first.invalid/chat/completions');
+ assert.equal(await generateSummary(second,'weekly','rolling','endpoint-digest'),'https://second.invalid/chat/completions');assert.equal(requests,2);
+ }finally{delete globalThis.mockHabitRequest;}
+});

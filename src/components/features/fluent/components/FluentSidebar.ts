@@ -31,7 +31,7 @@ export class FluentSidebar extends Component {
 	private containerEl: HTMLElement;
 	private plugin: TaskProgressBarPlugin;
 	private workspaceSelector: WorkspaceSelector;
-	public projectList: ProjectList;
+	public projectList?: ProjectList;
 	private collapsed = false;
 	private currentWorkspaceId: string;
 	private isTreeView = false;
@@ -180,7 +180,8 @@ export class FluentSidebar extends Component {
 			});
 	}
 
-	private render() {
+	public render() {
+		if (this.projectList) { this.removeChild(this.projectList); this.projectList = undefined; }
 		this.containerEl.empty();
 		this.destroySortables();
 		this.containerEl.addClass("fluent-sidebar");
@@ -1012,10 +1013,8 @@ export class FluentSidebar extends Component {
 				el.removeClass("is-active");
 			});
 		// Apply to any element that carries this view id (works in both modes)
-		const activeEls = this.containerEl.querySelectorAll(
-			`[data-view-id="${viewId}"]`,
-		);
-		activeEls.forEach((el) => el.addClass("is-active"));
+		const activeEls = this.containerEl.querySelectorAll<HTMLElement>("[data-view-id]");
+		activeEls.forEach(el => { if (el.dataset.viewId === viewId) el.addClass("is-active"); });
 	}
 
 	public updateWorkspace(workspaceOrId: string | WorkspaceData) {

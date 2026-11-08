@@ -642,7 +642,6 @@ export const zh: Record<string, string> = {
 	"That day won't work — it's either already due for this habit or already claimed by another reschedule.":
 		"那一天不行——要么这个习惯当天本来就到期，要么已经被另一次改期占用。",
 	"{count} missed habits": "{count} 个错过的习惯",
-	"The standalone Habits plugin is enabled. Task Genius shares its notes; automatic reminders and note syncing are handled by Habits to avoid duplicate writes.": "独立 Habits 插件仍在启用。Task Genius 共用其笔记；自动提醒和笔记同步由 Habits 处理，避免重复写入。",
 	"Interval schedule": "间隔排期方式",
 	"Fixed schedules follow the start date. Completion schedules stay due when missed and restart the interval after you complete the habit. Maximum limits keep a fixed schedule.": "固定排期从开始日期计算。按完成日期排期时，漏做的习惯会一直待办，完成后重新计算间隔。上限目标仍使用固定排期。",
 	"From start date": "从开始日期计算",

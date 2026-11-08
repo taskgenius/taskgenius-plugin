@@ -18,6 +18,9 @@ export function installObsidianDom(window) {
   proto.removeClass=function(...names){this.classList.remove(...names);};
   proto.toggleClass=function(name,enabled){this.classList.toggle(name,enabled);};
   proto.toggle=function(enabled){this.hidden=!enabled;};
+  proto.show=function(){this.style.display="";};
+  proto.hide=function(){this.style.display="none";};
+  proto.isShown=function(){return this.style.display!=="none";};
   proto.setText=function(value){this.textContent=value;};
   proto.setCssProps=function(values){for(const [key,value]of Object.entries(values))this.style.setProperty(key,value);};
   proto.setAttr=function(key,value){this.setAttribute(key,value);};

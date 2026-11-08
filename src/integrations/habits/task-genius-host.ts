@@ -2,7 +2,6 @@ import { PluginSettingTab, type PluginManifest } from "obsidian";
 import type TaskProgressBarPlugin from "@/index";
 import HabitsPlugin from "./main";
 import { HabitsSettingTab, type HabitsPluginSettings } from "./settings";
-import { t } from "./i18n";
 import "./scoped.css";
 import "./task-genius.css";
 
@@ -91,12 +90,4 @@ export class TaskGeniusHabits extends HabitsPlugin {
 		return !this.disposed && this.host.settings.habit.enableHabits && !plugins?.enabledPlugins?.has("habits");
 	}
 
-	showCompatibilityNotice(container: HTMLElement): void {
-		if ((this.app as any).plugins?.enabledPlugins?.has("habits")) {
-			container.createEl("p", {
-				cls: "setting-item-description",
-				text: t("The standalone Habits plugin is enabled. Task Genius shares its notes; automatic reminders and note syncing are handled by Habits to avoid duplicate writes."),
-			});
-		}
-	}
 }

@@ -94,6 +94,7 @@ export class CalendarComponent extends Component {
 	private currentDate: moment.Moment = moment();
 
 	private headerEl: HTMLElement;
+	private dateDisplayEl: HTMLElement | null = null;
 	private viewContainerEl: HTMLElement;
 
 	private app: App;
@@ -256,6 +257,7 @@ export class CalendarComponent extends Component {
 			} else {
 				this.tgCalendar.next();
 			}
+			this.updateDateHeader();
 		} else {
 			this.render();
 		}
@@ -266,6 +268,7 @@ export class CalendarComponent extends Component {
 
 		if (this.tgCalendar) {
 			this.tgCalendar.today();
+			this.updateDateHeader();
 		} else {
 			this.render();
 		}
@@ -322,6 +325,13 @@ export class CalendarComponent extends Component {
 		this.renderCurrentView();
 	}
 
+	private updateDateHeader = (date?: Date): void => {
+		if (date) this.currentDate = moment(date);
+		if (this.dateDisplayEl) this.dateDisplayEl.textContent = this.getCurrentDateDisplay();
+	};
+
+	public refreshConfiguration(): void { this.render(); }
+
 	private renderHeader() {
 		this.headerEl.empty();
 
@@ -345,7 +355,8 @@ export class CalendarComponent extends Component {
 
 		// Date display
 		const dateDisplay = this.headerEl.createSpan("calendar-current-date");
-		dateDisplay.textContent = this.getCurrentDateDisplay();
+		this.dateDisplayEl = dateDisplay;
+		this.updateDateHeader();
 
 		// View switcher - segmented control style
 		const viewGroup = this.headerEl.createDiv("calendar-view-switcher");
@@ -753,6 +764,7 @@ export class CalendarComponent extends Component {
 				this.handleTGEventDrop(event, newStart, newEnd),
 			onEventResize: (event: any, newStart: any, newEnd: any) =>
 				this.handleTGEventResize(event, newStart, newEnd),
+			onDateChange: this.updateDateHeader,
 			onDateClick: (date: Date) => this.handleDateClick(date),
 			onDateDoubleClick: (date: Date) => this.handleDateDoubleClick(date),
 			onDateContextMenu: (date: Date, x: number, y: number) =>
@@ -844,6 +856,7 @@ export class CalendarComponent extends Component {
 			onEventResize: (event: any, newStart: any, newEnd: any) =>
 				this.handleTGEventResize(event, newStart, newEnd),
 			// Date interactions (v0.6.0+) - match library's callback signatures
+			onDateChange: this.updateDateHeader,
 			onDateClick: (date: Date) => this.handleDateClick(date),
 			onDateDoubleClick: (date: Date) => this.handleDateDoubleClick(date),
 			onDateContextMenu: (date: Date, x: number, y: number) =>
@@ -1770,6 +1783,8 @@ export class CalendarComponent extends Component {
 			if (customConfig) {
 				// Use the base view type's unit
 				switch (customConfig.baseViewType) {
+					case "year": return "year";
+					case "agenda": return "week";
 					case "month":
 						return "month";
 					case "week":
@@ -1870,8 +1885,10 @@ export class CalendarComponent extends Component {
 				// Use the base view type's format, with custom view name prefix
 				const prefix = ``;
 				switch (customConfig.baseViewType) {
+					case "year": return this.currentDate.format("YYYY");
 					case "month":
 						return prefix + this.currentDate.format("MMMM/YYYY");
+					case "agenda":
 					case "week": {
 						// Use config-aware week start/end
 						const startOfWeek = this.getStartOfWeekWithConfig(

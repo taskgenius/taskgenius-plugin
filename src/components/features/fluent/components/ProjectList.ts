@@ -47,6 +47,8 @@ export class ProjectList extends Component {
 	private plugin: TaskProgressBarPlugin;
 	private projects: Project[] = [];
 	private activeProjectId: string | null = null;
+	private projectLoad = 0;
+	private disposed = false;
 	private onProjectSelect: (projectId: string) => void;
 	private currentPopover: ProjectPopover | null = null;
 	private currentSort: SortOption = "name-asc";
@@ -78,10 +80,13 @@ export class ProjectList extends Component {
 	}
 
 	async onload() {
+		this.disposed = false;
 		await this.loadSortPreference();
+		if (this.disposed) return;
 		await this.loadExpandedNodes();
+		if (this.disposed) return;
 		await this.loadProjects();
-		this.render();
+		if (this.disposed) return;
 
 		// Listen for workspace switches to refresh the project list
 		this.registerEvent(
@@ -125,6 +130,8 @@ export class ProjectList extends Component {
 	}
 
 	onunload() {
+		this.disposed = true;
+		this.projectLoad++;
 		// Clean up any pending refresh timeout
 		if (this.refreshTimeoutId) {
 			clearTimeout(this.refreshTimeoutId);
@@ -142,6 +149,8 @@ export class ProjectList extends Component {
 	}
 
 	private async loadProjects() {
+		if (this.disposed) return;
+		const request = ++this.projectLoad;
 		let tasks: Task[] = [];
 		if (this.plugin.dataflowOrchestrator) {
 			const queryAPI = this.plugin.dataflowOrchestrator.getQueryAPI();
@@ -149,6 +158,7 @@ export class ProjectList extends Component {
 		} else {
 			tasks = this.plugin.preloadedTasks || [];
 		}
+		if (this.disposed || request !== this.projectLoad) return;
 		const projectMap = new Map<string, Project>();
 
 		tasks.forEach((task: Task) => {
@@ -684,9 +694,8 @@ export class ProjectList extends Component {
 			});
 
 		if (projectId) {
-			const activeEl = this.containerEl.querySelector(
-				`[data-project-id="${projectId}"]`,
-			);
+			const activeEl = Array.from(this.containerEl.querySelectorAll<HTMLElement>("[data-project-id]"))
+				.find(el => el.dataset.projectId === projectId);
 			if (activeEl) {
 				activeEl.addClass("is-active");
 			}

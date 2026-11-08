@@ -449,6 +449,15 @@ export class FluentComponentManager extends Component {
 	/**
 	 * Switch to a specific view
 	 */
+	refreshConfiguration(): void {
+		this.calendarComponent?.refreshConfiguration();
+		for (const component of this.twoColumnViewComponents.values()) {
+			this.parentView.removeChild(component);
+			component.containerEl.remove();
+		}
+		this.twoColumnViewComponents.clear();
+	}
+
 	switchView(
 		viewId: string,
 		tasks: Task[],
@@ -641,6 +650,9 @@ export class FluentComponentManager extends Component {
 					`[FluentComponent] Setting view mode for ${viewId} to ${modeForComponent}`
 				);
 				targetComponent.setViewMode(modeForComponent as any, project);
+				if (targetComponent === this.contentComponent) {
+					this.contentComponent.setIsTreeView(viewMode === "tree");
+				}
 			}
 
 			// Set tasks on the component
@@ -1178,7 +1190,7 @@ export class FluentComponentManager extends Component {
 	/**
 	 * Check if view is content-based (supports multiple view modes)
 	 */
-	private isContentBasedView(viewId: string): boolean {
+	public isContentBasedView(viewId: string): boolean {
 		const contentBasedViews = [
 			"inbox",
 			"today",

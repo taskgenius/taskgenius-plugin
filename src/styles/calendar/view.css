@@ -879,3 +879,14 @@
 		min-width: 28px;
 	}
 }
+
+/* Keep the existing year grid; give its actual clipped container a scrollport. */
+.full-calendar-container,
+.full-calendar-container .calendar-view-container { min-height: 0; }
+.full-calendar-container .calendar-view-container { flex: 1 1 0%; }
+.full-calendar-container .calendar-view-container.view-year .tg-view-container,
+.full-calendar-container .tg-view-container.tg-year-view {
+	min-height: 0;
+	overflow-y: auto;
+	display: block;
+}

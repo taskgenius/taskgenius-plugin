@@ -37,7 +37,6 @@ export function renderHabitSettingsTab(
 	// Keep the settings navigation and layout owned by Task Genius.
 	void settingTab.plugin.ensureHabitsIntegration().then(integration => {
 		if (!habitContainer.isConnected) return;
-		integration.showCompatibilityNotice(habitContainer);
 		integration.renderSettings(habitContainer.createDiv());
 		if (settingTab.plugin.settings.habit.habits?.length) {
 			const legacy = habitContainer.createEl("details", {cls: "tg-habits-legacy"});

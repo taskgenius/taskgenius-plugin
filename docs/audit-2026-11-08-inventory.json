@@ -1,0 +1,5383 @@
+{
+  "purpose": "Repository-wide static review inventory. Signals are review prompts, not confirmed bugs.",
+  "roots": [
+    "src",
+    "packages/calendar/src",
+    "scripts",
+    "tests",
+    ".github/workflows"
+  ],
+  "totals": {
+    "files": 711,
+    "lines": 311764,
+    "testFiles": 126,
+    "typescriptFiles": 604
+  },
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "lines": 56,
+      "bytes": 1547,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": ".github/workflows/cla.yml",
+      "lines": 23,
+      "bytes": 959,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": ".github/workflows/release.yml",
+      "lines": 73,
+      "bytes": 2257,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/adapters/DateAdapter.ts",
+      "lines": 6,
+      "bytes": 175,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/adapters/DateFnsAdapter.ts",
+      "lines": 201,
+      "bytes": 5973,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/adapters/DayJsAdapter.ts",
+      "lines": 115,
+      "bytes": 3210,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/adapters/index.ts",
+      "lines": 9,
+      "bytes": 304,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/adapters/MomentAdapter.ts",
+      "lines": 173,
+      "bytes": 5073,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/adapters/NativeDateAdapter.ts",
+      "lines": 279,
+      "bytes": 8680,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/constants/formats.ts",
+      "lines": 38,
+      "bytes": 1147,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/constants/index.ts",
+      "lines": 5,
+      "bytes": 124,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/core/Calendar.ts",
+      "lines": 861,
+      "bytes": 26350,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/core/DragController.ts",
+      "lines": 843,
+      "bytes": 29048,
+      "test": false,
+      "signals": {
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "packages/calendar/src/core/EventManager.ts",
+      "lines": 109,
+      "bytes": 2159,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/core/index.ts",
+      "lines": 8,
+      "bytes": 240,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/core/InteractionController.ts",
+      "lines": 651,
+      "bytes": 18838,
+      "test": false,
+      "signals": {
+        "directDomListener": 8
+      }
+    },
+    {
+      "path": "packages/calendar/src/engines/index.ts",
+      "lines": 6,
+      "bytes": 126,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/engines/MonthEngine.ts",
+      "lines": 364,
+      "bytes": 11595,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/engines/TimeEngine.ts",
+      "lines": 746,
+      "bytes": 23232,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/index.ts",
+      "lines": 141,
+      "bytes": 3760,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/presets.ts",
+      "lines": 242,
+      "bytes": 7012,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/renderers/index.ts",
+      "lines": 6,
+      "bytes": 129,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/renderers/MonthRenderer.ts",
+      "lines": 710,
+      "bytes": 22593,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 4
+      }
+    },
+    {
+      "path": "packages/calendar/src/renderers/TimeRenderer.ts",
+      "lines": 892,
+      "bytes": 28520,
+      "test": false,
+      "signals": {
+        "timer": 3,
+        "directDomListener": 5
+      }
+    },
+    {
+      "path": "packages/calendar/src/styles/base.css",
+      "lines": 139,
+      "bytes": 2836,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/styles/events.css",
+      "lines": 273,
+      "bytes": 6637,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/styles/index.ts",
+      "lines": 42,
+      "bytes": 1419,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/styles/month.css",
+      "lines": 190,
+      "bytes": 3979,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/styles/styles.css",
+      "lines": 15,
+      "bytes": 355,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/styles/time.css",
+      "lines": 125,
+      "bytes": 2798,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/types/index.ts",
+      "lines": 769,
+      "bytes": 25316,
+      "test": false,
+      "signals": {
+        "htmlAssignment": 1
+      }
+    },
+    {
+      "path": "packages/calendar/src/utils/dom.ts",
+      "lines": 138,
+      "bytes": 3470,
+      "test": false,
+      "signals": {
+        "directDomListener": 1,
+        "htmlAssignment": 1
+      }
+    },
+    {
+      "path": "packages/calendar/src/utils/index.ts",
+      "lines": 5,
+      "bytes": 63,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/utils/presets.ts",
+      "lines": 291,
+      "bytes": 7082,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/views/BaseView.ts",
+      "lines": 233,
+      "bytes": 6591,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/views/index.ts",
+      "lines": 24,
+      "bytes": 568,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/views/MonthView.ts",
+      "lines": 108,
+      "bytes": 2747,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/views/TimeView.ts",
+      "lines": 162,
+      "bytes": 3974,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "packages/calendar/src/views/ViewRegistry.ts",
+      "lines": 238,
+      "bytes": 6208,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "scripts/audit-source-map.cjs",
+      "lines": 34,
+      "bytes": 1708,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "scripts/changelog-transformer.mjs",
+      "lines": 164,
+      "bytes": 4328,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "scripts/check-habits-i18n.cjs",
+      "lines": 41,
+      "bytes": 2090,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "scripts/check-release-version.cjs",
+      "lines": 9,
+      "bytes": 700,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "scripts/check-settings-i18n.cjs",
+      "lines": 34,
+      "bytes": 2157,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "scripts/custom-changelog.mjs",
+      "lines": 245,
+      "bytes": 6743,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "scripts/extract-translations.cjs",
+      "lines": 240,
+      "bytes": 5628,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "scripts/generate-locale-files.cjs",
+      "lines": 125,
+      "bytes": 3396,
+      "test": false,
+      "signals": {
+        "dynamicEvaluation": 1
+      }
+    },
+    {
+      "path": "scripts/ob-bumper.mjs",
+      "lines": 125,
+      "bytes": 4114,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "scripts/ob.esbuild.mjs",
+      "lines": 45,
+      "bytes": 1362,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "scripts/scope-habits-css.mjs",
+      "lines": 24,
+      "bytes": 1067,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "scripts/smart-beta-release.mjs",
+      "lines": 109,
+      "bytes": 3898,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "scripts/zip.mjs",
+      "lines": 30,
+      "bytes": 1005,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/__mocks__/codemirror-language.ts",
+      "lines": 6,
+      "bytes": 192,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/__mocks__/codemirror-search.ts",
+      "lines": 8,
+      "bytes": 179,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/__mocks__/codemirror-state.ts",
+      "lines": 296,
+      "bytes": 6445,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/__mocks__/codemirror-view.ts",
+      "lines": 100,
+      "bytes": 1644,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/__mocks__/dom-helpers.ts",
+      "lines": 2,
+      "bytes": 20,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/__mocks__/moment.js",
+      "lines": 132,
+      "bytes": 2885,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/__mocks__/obsidian.ts",
+      "lines": 510,
+      "bytes": 10552,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/__mocks__/ProjectData.worker.ts",
+      "lines": 48,
+      "bytes": 1052,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/__mocks__/styleMock.js",
+      "lines": 3,
+      "bytes": 46,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/ArchiveActionExecutor.canvas.test.ts",
+      "lines": 771,
+      "bytes": 23694,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/ArchiveActionExecutor.markdown.test.ts",
+      "lines": 366,
+      "bytes": 11676,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/autoCompleteParent.test.ts",
+      "lines": 823,
+      "bytes": 26297,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/autoDateManager.debug.test.ts",
+      "lines": 115,
+      "bytes": 4136,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/autoDateManager.final.test.ts",
+      "lines": 100,
+      "bytes": 3430,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/autoDateManager.improved.test.ts",
+      "lines": 215,
+      "bytes": 7156,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/autoDateManager.integration.test.ts",
+      "lines": 101,
+      "bytes": 2866,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/autoDateManager.pause-conflict.test.ts",
+      "lines": 147,
+      "bytes": 5161,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/autoDateManager.realworld.test.ts",
+      "lines": 101,
+      "bytes": 3473,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/autoDateManager.research.test.ts",
+      "lines": 156,
+      "bytes": 5654,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/autoDateManager.simple.test.ts",
+      "lines": 67,
+      "bytes": 2081,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/autoDateManager.test.ts",
+      "lines": 258,
+      "bytes": 9051,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/autoDateManager.tracing.test.ts",
+      "lines": 100,
+      "bytes": 4059,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/badge-date-comparison.test.ts",
+      "lines": 239,
+      "bytes": 8509,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/badge-date-parsing.test.ts",
+      "lines": 252,
+      "bytes": 7858,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/badge-debug-helper.test.ts",
+      "lines": 491,
+      "bytes": 13328,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/calendar-badge-rendering.test.ts",
+      "lines": 694,
+      "bytes": 18826,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/calendar-performance.test.ts",
+      "lines": 372,
+      "bytes": 11355,
+      "test": true,
+      "signals": {
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/__tests__/calendar-view-integration.test.ts",
+      "lines": 610,
+      "bytes": 16795,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/CanvasFileMonitoring.test.ts",
+      "lines": 279,
+      "bytes": 9661,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/CanvasIntegration.test.ts",
+      "lines": 332,
+      "bytes": 12591,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/CanvasParser.test.ts",
+      "lines": 281,
+      "bytes": 9962,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/CanvasTaskMatching.integration.test.ts",
+      "lines": 524,
+      "bytes": 14739,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/CanvasTaskOperationUtils.test.ts",
+      "lines": 501,
+      "bytes": 12311,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/CanvasTaskUpdater.test.ts",
+      "lines": 828,
+      "bytes": 34285,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/chinese-tag-performance.test.ts",
+      "lines": 198,
+      "bytes": 6586,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/CompleteActionExecutor.test.ts",
+      "lines": 503,
+      "bytes": 13424,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/cycleCompleteStatus.test.ts",
+      "lines": 1388,
+      "bytes": 44869,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/date-display-helper.test.ts",
+      "lines": 101,
+      "bytes": 3646,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/DateInheritanceIntegration.test.ts",
+      "lines": 394,
+      "bytes": 13032,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/DateInheritancePerformance.test.ts",
+      "lines": 370,
+      "bytes": 12370,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/DateInheritanceService.test.ts",
+      "lines": 594,
+      "bytes": 17895,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/dateTemplates.test.ts",
+      "lines": 98,
+      "bytes": 3220,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/dateUtil.test.ts",
+      "lines": 63,
+      "bytes": 2647,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/debug.test.ts",
+      "lines": 74,
+      "bytes": 2126,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/DeleteActionExecutor.canvas.test.ts",
+      "lines": 308,
+      "bytes": 7768,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/DeleteActionExecutor.test.ts",
+      "lines": 418,
+      "bytes": 11120,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/DuplicateActionExecutor.canvas.test.ts",
+      "lines": 451,
+      "bytes": 13089,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/edge-case-tests.js",
+      "lines": 214,
+      "bytes": 8240,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/EnhancedTimeParsingEdgeCases.test.ts",
+      "lines": 537,
+      "bytes": 19100,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/EnhancedTimeParsingIntegration.test.ts",
+      "lines": 796,
+      "bytes": 25649,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/EnhancedTimeParsingPerformance.test.ts",
+      "lines": 811,
+      "bytes": 27564,
+      "test": true,
+      "signals": {
+        "weakRandom": 3
+      }
+    },
+    {
+      "path": "src/__tests__/EnhancedTimeParsingService.test.ts",
+      "lines": 261,
+      "bytes": 9847,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/file-source/FileSource.basic.test.ts",
+      "lines": 439,
+      "bytes": 13771,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/file-source/FileSourceConfig.test.ts",
+      "lines": 318,
+      "bytes": 9814,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/file-source/status-mapping.test.ts",
+      "lines": 259,
+      "bytes": 9193,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/file-task-manager/frontmatter-title-protection.test.ts",
+      "lines": 274,
+      "bytes": 9248,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/FileFilterManager.test.ts",
+      "lines": 259,
+      "bytes": 8079,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/FileMetadataInheritance.test.ts",
+      "lines": 518,
+      "bytes": 17216,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/FileMetadataInheritanceDebug.test.ts",
+      "lines": 51,
+      "bytes": 1854,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/FileMetadataInheritanceSettings.test.ts",
+      "lines": 316,
+      "bytes": 10748,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/FileMetadataTaskParser.test.ts",
+      "lines": 509,
+      "bytes": 13144,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/FileTaskManagerTimeIntegration.test.ts",
+      "lines": 395,
+      "bytes": 12298,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/findContinuousTaskBlocks.test.ts",
+      "lines": 156,
+      "bytes": 4699,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/findParentWorkflow.test.ts",
+      "lines": 128,
+      "bytes": 3478,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/fluent-status-menu-regression.test.ts",
+      "lines": 56,
+      "bytes": 3567,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/forceReindex.integration.test.ts",
+      "lines": 235,
+      "bytes": 7353,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/ics-badge-integration.test.ts",
+      "lines": 270,
+      "bytes": 7757,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/ics-integration.test.ts",
+      "lines": 470,
+      "bytes": 14049,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/ics-manager.test.ts",
+      "lines": 672,
+      "bytes": 17891,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/ics-parser-performance.test.ts",
+      "lines": 179,
+      "bytes": 6125,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/ics-parser.test.ts",
+      "lines": 297,
+      "bytes": 8499,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/ics-timeout-fix.test.ts",
+      "lines": 206,
+      "bytes": 5801,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/IcsEventTimeHandling.integration.test.ts",
+      "lines": 261,
+      "bytes": 8154,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/IcsManagerTimeIntegration.test.ts",
+      "lines": 495,
+      "bytes": 15974,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/InlineTaskTimeIntegration.test.ts",
+      "lines": 257,
+      "bytes": 11276,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/integration-test.js",
+      "lines": 209,
+      "bytes": 7945,
+      "test": true,
+      "signals": {
+        "timer": 2
+      }
+    },
+    {
+      "path": "src/__tests__/integration/FileFilterIntegration.test.ts",
+      "lines": 316,
+      "bytes": 13519,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/legacy-settings-invalidation.test.ts",
+      "lines": 41,
+      "bytes": 2926,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/legacy-settings-language.test.ts",
+      "lines": 31,
+      "bytes": 1654,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/mockUtils.ts",
+      "lines": 730,
+      "bytes": 19830,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/MoveActionExecutor.canvas.test.ts",
+      "lines": 479,
+      "bytes": 13506,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/MoveActionExecutor.test.ts",
+      "lines": 851,
+      "bytes": 23743,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/onCompletion-boundary-fix.test.ts",
+      "lines": 112,
+      "bytes": 4324,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/onCompletion-integration.test.ts",
+      "lines": 768,
+      "bytes": 20695,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/OnCompletionManager.test.ts",
+      "lines": 667,
+      "bytes": 19042,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/ParentTaskDateInheritance.test.ts",
+      "lines": 495,
+      "bytes": 16489,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/priority-user-scenario.test.ts",
+      "lines": 299,
+      "bytes": 10188,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/ProjectConfigManager.cache.test.ts",
+      "lines": 261,
+      "bytes": 9041,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/ProjectConfigManager.test.ts",
+      "lines": 740,
+      "bytes": 19782,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/ProjectDataWorkerManager.test.ts",
+      "lines": 278,
+      "bytes": 8463,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/ProjectDetectionFixes.test.ts",
+      "lines": 419,
+      "bytes": 13122,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/ProjectSourceDisplay.test.ts",
+      "lines": 464,
+      "bytes": 12353,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/ProjectSourceWorkerFix.test.ts",
+      "lines": 318,
+      "bytes": 8886,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/projectTreeBuilder.test.ts",
+      "lines": 303,
+      "bytes": 8647,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/projectUtils.test.ts",
+      "lines": 644,
+      "bytes": 14659,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/QuickCaptureModal.integration.test.ts",
+      "lines": 494,
+      "bytes": 14665,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/removeBlankTasks.test.ts",
+      "lines": 31,
+      "bytes": 1822,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/SettingsMigration.test.ts",
+      "lines": 222,
+      "bytes": 10176,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/SettingsSearch.test.ts",
+      "lines": 308,
+      "bytes": 9527,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/sortTasks.test.ts",
+      "lines": 266,
+      "bytes": 7949,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/SuggestBackwardCompatibility.test.ts",
+      "lines": 303,
+      "bytes": 8556,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/SuggestPerformance.test.ts",
+      "lines": 281,
+      "bytes": 8003,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/TagParsingEdgeCases.test.ts",
+      "lines": 262,
+      "bytes": 9554,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/TagsInheritanceInvestigation.test.ts",
+      "lines": 67,
+      "bytes": 2564,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/TaskIndexer.mtime.test.ts",
+      "lines": 173,
+      "bytes": 4618,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/taskMarkCleanup.test.ts",
+      "lines": 111,
+      "bytes": 3810,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/TaskMetadataUtils.test.ts",
+      "lines": 348,
+      "bytes": 11306,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/TaskMigrationService.test.ts",
+      "lines": 394,
+      "bytes": 11453,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/taskParser.test.ts",
+      "lines": 986,
+      "bytes": 33273,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/TaskParsingService.integration.test.ts",
+      "lines": 1376,
+      "bytes": 39770,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/taskTimer.pause-fix.test.ts",
+      "lines": 105,
+      "bytes": 3650,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/TaskTimerSegments.test.ts",
+      "lines": 205,
+      "bytes": 5951,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/TaskWorkerManager.mtime.test.ts",
+      "lines": 270,
+      "bytes": 7784,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/test-tree-view-fix.js",
+      "lines": 140,
+      "bytes": 4578,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/TimelineCanvasIntegration.test.ts",
+      "lines": 325,
+      "bytes": 12161,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/TimelineEventEnhancement.test.ts",
+      "lines": 1023,
+      "bytes": 29383,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/TimelineSidebarView.test.ts",
+      "lines": 382,
+      "bytes": 14198,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/timeout-verification.test.ts",
+      "lines": 120,
+      "bytes": 3391,
+      "test": true,
+      "signals": {
+        "timer": 2
+      }
+    },
+    {
+      "path": "src/__tests__/TimeParsingService.test.ts",
+      "lines": 452,
+      "bytes": 15730,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/TimeParsingServiceDebug.test.ts",
+      "lines": 59,
+      "bytes": 1909,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/TimeParsingSettingsIntegration.test.ts",
+      "lines": 321,
+      "bytes": 9863,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/types.d.ts",
+      "lines": 9,
+      "bytes": 490,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/UniversalSuggest.test.ts",
+      "lines": 256,
+      "bytes": 7454,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/viewModeUtils.test.ts",
+      "lines": 168,
+      "bytes": 5702,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/webcal-integration.test.ts",
+      "lines": 355,
+      "bytes": 11960,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/worker-processing-control.test.ts",
+      "lines": 158,
+      "bytes": 5370,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/workflow.test.ts",
+      "lines": 1095,
+      "bytes": 32241,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/workflowDecorator.test.ts",
+      "lines": 743,
+      "bytes": 22673,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/workflowOptimization.test.ts",
+      "lines": 496,
+      "bytes": 12360,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/__tests__/writeapi-links-preserve.test.ts",
+      "lines": 213,
+      "bytes": 6389,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "src/cache/local-storage-cache.ts",
+      "lines": 393,
+      "bytes": 10264,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/cache/project-data-cache.ts",
+      "lines": 597,
+      "bytes": 15702,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/commands/completedTaskMover.ts",
+      "lines": 1778,
+      "bytes": 49867,
+      "test": false,
+      "signals": {
+        "directNoteWrite": 2
+      }
+    },
+    {
+      "path": "src/commands/sortTaskCommands.ts",
+      "lines": 958,
+      "bytes": 31671,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/commands/taskCycleCommands.ts",
+      "lines": 161,
+      "bytes": 4456,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/commands/taskMover.ts",
+      "lines": 586,
+      "bytes": 15721,
+      "test": false,
+      "signals": {
+        "directNoteWrite": 1
+      }
+    },
+    {
+      "path": "src/commands/workflowCommands.ts",
+      "lines": 375,
+      "bytes": 10005,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/common/default-symbol.ts",
+      "lines": 52,
+      "bytes": 1103,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/common/noise.ts",
+      "lines": 82,
+      "bytes": 2943,
+      "test": false,
+      "signals": {
+        "htmlAssignment": 1
+      }
+    },
+    {
+      "path": "src/common/regex-define.ts",
+      "lines": 146,
+      "bytes": 5386,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/common/setting-definition.ts",
+      "lines": 2020,
+      "bytes": 58791,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/common/settings-metadata.ts",
+      "lines": 895,
+      "bytes": 35802,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/common/task-parser-config.ts",
+      "lines": 125,
+      "bytes": 3425,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/common/task-status/AnuPpuccinThemeCollection.ts",
+      "lines": 43,
+      "bytes": 1539,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/common/task-status/AuraThemeCollection.ts",
+      "lines": 34,
+      "bytes": 1219,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/common/task-status/BorderThemeCollection.ts",
+      "lines": 34,
+      "bytes": 1197,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/common/task-status/EbullientworksThemeCollection.ts",
+      "lines": 22,
+      "bytes": 789,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/common/task-status/index.ts",
+      "lines": 23,
+      "bytes": 657,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/common/task-status/ITSThemeCollection.ts",
+      "lines": 53,
+      "bytes": 1824,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/common/task-status/LYTModeThemeCollection.ts",
+      "lines": 37,
+      "bytes": 1362,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/common/task-status/MinimalThemeCollection.ts",
+      "lines": 38,
+      "bytes": 1406,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/common/task-status/StatusCollections.d.ts",
+      "lines": 15,
+      "bytes": 662,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/common/task-status/ThingsThemeCollection.ts",
+      "lines": 39,
+      "bytes": 1400,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/calendar/algorithm.ts",
+      "lines": 54,
+      "bytes": 1991,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/calendar/index.ts",
+      "lines": 1997,
+      "bytes": 58665,
+      "test": false,
+      "signals": {
+        "timer": 5
+      }
+    },
+    {
+      "path": "src/components/features/calendar/rendering/event-renderer.ts",
+      "lines": 382,
+      "bytes": 10717,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/calendar/views/agenda-view.ts",
+      "lines": 157,
+      "bytes": 5421,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/calendar/views/base-view.ts",
+      "lines": 99,
+      "bytes": 3314,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/calendar/views/day-view.ts",
+      "lines": 127,
+      "bytes": 4209,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/calendar/views/month-view.ts",
+      "lines": 467,
+      "bytes": 16144,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/calendar/views/tg-agenda-view.ts",
+      "lines": 371,
+      "bytes": 10152,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/calendar/views/tg-year-view.ts",
+      "lines": 564,
+      "bytes": 14821,
+      "test": false,
+      "signals": {
+        "directDomListener": 4
+      }
+    },
+    {
+      "path": "src/components/features/calendar/views/week-view.ts",
+      "lines": 389,
+      "bytes": 13462,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/calendar/views/year-view.ts",
+      "lines": 360,
+      "bytes": 12338,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/changelog/ChangelogView.ts",
+      "lines": 161,
+      "bytes": 3412,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/fluent/components/FluentSidebar.ts",
+      "lines": 1039,
+      "bytes": 29610,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/features/fluent/components/FluentTopNavigation.ts",
+      "lines": 703,
+      "bytes": 18472,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/fluent/components/ProjectList.ts",
+      "lines": 1105,
+      "bytes": 28872,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/features/fluent/components/ProjectPopover.ts",
+      "lines": 985,
+      "bytes": 24718,
+      "test": false,
+      "signals": {
+        "timer": 8,
+        "directDomListener": 16,
+        "weakRandom": 2
+      }
+    },
+    {
+      "path": "src/components/features/fluent/components/WorkspaceSelector.ts",
+      "lines": 249,
+      "bytes": 6654,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/components/features/fluent/events/ui-event.ts",
+      "lines": 193,
+      "bytes": 5203,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/fluent/FluentIntegration.ts",
+      "lines": 245,
+      "bytes": 6956,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/fluent/managers/FluentActionHandlers.ts",
+      "lines": 1195,
+      "bytes": 31659,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/fluent/managers/FluentComponentManager.ts",
+      "lines": 1243,
+      "bytes": 36412,
+      "test": false,
+      "signals": {
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/features/fluent/managers/FluentDataManager.ts",
+      "lines": 584,
+      "bytes": 18494,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/fluent/managers/FluentGestureManager.ts",
+      "lines": 126,
+      "bytes": 3529,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/fluent/managers/FluentLayoutManager.ts",
+      "lines": 650,
+      "bytes": 17064,
+      "test": false,
+      "signals": {
+        "timer": 3,
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/components/features/fluent/managers/FluentWorkspaceStateManager.ts",
+      "lines": 402,
+      "bytes": 10683,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/fluent/managers/WorkspaceManager.ts",
+      "lines": 1078,
+      "bytes": 31640,
+      "test": false,
+      "signals": {
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/components/features/gantt/gantt.ts",
+      "lines": 1182,
+      "bytes": 37996,
+      "test": false,
+      "signals": {
+        "timer": 2
+      }
+    },
+    {
+      "path": "src/components/features/gantt/grid-background.ts",
+      "lines": 174,
+      "bytes": 4755,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/gantt/task-renderer.ts",
+      "lines": 344,
+      "bytes": 11067,
+      "test": false,
+      "signals": {
+        "directDomListener": 3
+      }
+    },
+    {
+      "path": "src/components/features/gantt/timeline-header.ts",
+      "lines": 290,
+      "bytes": 8166,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/habit/components/HabitEditDialog.ts",
+      "lines": 775,
+      "bytes": 19789,
+      "test": false,
+      "signals": {
+        "directDomListener": 3,
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/components/features/habit/components/HabitSettingList.ts",
+      "lines": 230,
+      "bytes": 5931,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/habit/habit.ts",
+      "lines": 306,
+      "bytes": 9616,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/habit/habitcard/counthabitcard.ts",
+      "lines": 89,
+      "bytes": 2649,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/habit/habitcard/dailyhabitcard.ts",
+      "lines": 95,
+      "bytes": 2948,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/habit/habitcard/habitcard.ts",
+      "lines": 327,
+      "bytes": 9891,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/habit/habitcard/index.ts",
+      "lines": 6,
+      "bytes": 262,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/habit/habitcard/mappinghabitcard.ts",
+      "lines": 130,
+      "bytes": 3888,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/habit/habitcard/scheduledhabitcard.ts",
+      "lines": 169,
+      "bytes": 5460,
+      "test": false,
+      "signals": {
+        "htmlAssignment": 1
+      }
+    },
+    {
+      "path": "src/components/features/habit/modals/HabitChartModal.ts",
+      "lines": 265,
+      "bytes": 8083,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/habit/modals/RewardModal.ts",
+      "lines": 98,
+      "bytes": 2600,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/kanban/kanban-card.ts",
+      "lines": 389,
+      "bytes": 11724,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/kanban/kanban-column.ts",
+      "lines": 314,
+      "bytes": 9050,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/kanban/kanban.ts",
+      "lines": 1989,
+      "bytes": 58681,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/on-completion/OnCompletionConfigurator.ts",
+      "lines": 702,
+      "bytes": 21191,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/on-completion/OnCompletionModal.ts",
+      "lines": 138,
+      "bytes": 3421,
+      "test": false,
+      "signals": {
+        "directDomListener": 3
+      }
+    },
+    {
+      "path": "src/components/features/on-completion/OnCompletionSuggesters.ts",
+      "lines": 245,
+      "bytes": 6256,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/modals/FileFilterRuleEditorModal.ts",
+      "lines": 309,
+      "bytes": 8184,
+      "test": false,
+      "signals": {
+        "directDomListener": 3
+      }
+    },
+    {
+      "path": "src/components/features/onboarding/OnboardingController.ts",
+      "lines": 461,
+      "bytes": 11101,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/OnboardingLayout.ts",
+      "lines": 210,
+      "bytes": 5256,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/OnboardingView.ts",
+      "lines": 445,
+      "bytes": 12199,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/onboarding/previews/ComponentPreviewFactory.ts",
+      "lines": 459,
+      "bytes": 13422,
+      "test": false,
+      "signals": {
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/features/onboarding/steps/CompleteStep.ts",
+      "lines": 199,
+      "bytes": 5691,
+      "test": false,
+      "signals": {
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/features/onboarding/steps/ConfigPreviewStep.ts",
+      "lines": 102,
+      "bytes": 2828,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/steps/FileFilterStep.ts",
+      "lines": 492,
+      "bytes": 13625,
+      "test": false,
+      "signals": {
+        "directDomListener": 7
+      }
+    },
+    {
+      "path": "src/components/features/onboarding/steps/FluentComponentsStep.ts",
+      "lines": 244,
+      "bytes": 6895,
+      "test": false,
+      "signals": {
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/components/features/onboarding/steps/FluentMainNavigationStep.ts",
+      "lines": 56,
+      "bytes": 1751,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/steps/FluentOtherViewsStep.ts",
+      "lines": 56,
+      "bytes": 1700,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/steps/FluentOverviewStep.ts",
+      "lines": 47,
+      "bytes": 1783,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/steps/FluentProjectSectionStep.ts",
+      "lines": 58,
+      "bytes": 1876,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/steps/FluentTopNavigationStep.ts",
+      "lines": 51,
+      "bytes": 1545,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/steps/FluentWorkspaceSelectorStep.ts",
+      "lines": 58,
+      "bytes": 1971,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/steps/guide/FormatExamples.ts",
+      "lines": 120,
+      "bytes": 3236,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/steps/guide/QuickCaptureDemo.ts",
+      "lines": 52,
+      "bytes": 1424,
+      "test": false,
+      "signals": {
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/components/features/onboarding/steps/intro/ConfigCheckTransition.ts",
+      "lines": 95,
+      "bytes": 2157,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/onboarding/steps/intro/TransitionMessage.ts",
+      "lines": 86,
+      "bytes": 2059,
+      "test": false,
+      "signals": {
+        "timer": 2
+      }
+    },
+    {
+      "path": "src/components/features/onboarding/steps/intro/TypingAnimation.ts",
+      "lines": 164,
+      "bytes": 3959,
+      "test": false,
+      "signals": {
+        "timer": 6,
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/components/features/onboarding/steps/IntroStep.ts",
+      "lines": 89,
+      "bytes": 2448,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/steps/ModeSelectionStep.ts",
+      "lines": 147,
+      "bytes": 3838,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/steps/PlacementStep.ts",
+      "lines": 199,
+      "bytes": 5491,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/steps/preview/ChangesPreview.ts",
+      "lines": 141,
+      "bytes": 3496,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/steps/preview/ConfigSummary.ts",
+      "lines": 40,
+      "bytes": 1101,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/steps/preview/SettingsList.ts",
+      "lines": 125,
+      "bytes": 2791,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/steps/preview/ViewsGrid.ts",
+      "lines": 28,
+      "bytes": 711,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/steps/SettingsCheckStep.ts",
+      "lines": 166,
+      "bytes": 5183,
+      "test": false,
+      "signals": {
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/features/onboarding/steps/TaskGuideStep.ts",
+      "lines": 37,
+      "bytes": 961,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/steps/UserLevelStep.ts",
+      "lines": 88,
+      "bytes": 2259,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/TaskCreationGuide.ts",
+      "lines": 274,
+      "bytes": 8791,
+      "test": false,
+      "signals": {
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/features/onboarding/ui/Alert.ts",
+      "lines": 72,
+      "bytes": 1521,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/ui/Badge.ts",
+      "lines": 31,
+      "bytes": 670,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/ui/FeatureList.ts",
+      "lines": 62,
+      "bytes": 1320,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/ui/ProgressDots.ts",
+      "lines": 99,
+      "bytes": 2178,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/onboarding/ui/SelectableCard.ts",
+      "lines": 189,
+      "bytes": 4400,
+      "test": false,
+      "signals": {
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/features/quadrant/quadrant-card.ts",
+      "lines": 542,
+      "bytes": 14729,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/quadrant/quadrant-column.ts",
+      "lines": 1031,
+      "bytes": 28365,
+      "test": false,
+      "signals": {
+        "timer": 9,
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/components/features/quadrant/quadrant.ts",
+      "lines": 1043,
+      "bytes": 30066,
+      "test": false,
+      "signals": {
+        "timer": 4
+      }
+    },
+    {
+      "path": "src/components/features/quick-capture/components/FileNameInput.ts",
+      "lines": 327,
+      "bytes": 8399,
+      "test": false,
+      "signals": {
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/components/features/quick-capture/modals/BaseQuickCaptureModal.ts",
+      "lines": 982,
+      "bytes": 27510,
+      "test": false,
+      "signals": {
+        "directDomListener": 4
+      }
+    },
+    {
+      "path": "src/components/features/quick-capture/modals/MinimalQuickCaptureModal.ts",
+      "lines": 898,
+      "bytes": 26590,
+      "test": false,
+      "signals": {
+        "timer": 2,
+        "directDomListener": 7
+      }
+    },
+    {
+      "path": "src/components/features/quick-capture/modals/MinimalQuickCaptureModalWithSwitch.ts",
+      "lines": 832,
+      "bytes": 24138,
+      "test": false,
+      "signals": {
+        "timer": 2,
+        "directDomListener": 6
+      }
+    },
+    {
+      "path": "src/components/features/quick-capture/modals/QuickCaptureModal.ts",
+      "lines": 1255,
+      "bytes": 36356,
+      "test": false,
+      "signals": {
+        "timer": 3,
+        "directDomListener": 4
+      }
+    },
+    {
+      "path": "src/components/features/quick-capture/modals/QuickCaptureModalWithSwitch.ts",
+      "lines": 1034,
+      "bytes": 29138,
+      "test": false,
+      "signals": {
+        "timer": 3
+      }
+    },
+    {
+      "path": "src/components/features/quick-capture/suggest/MinimalQuickCaptureSuggest.ts",
+      "lines": 264,
+      "bytes": 7738,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/read-mode/ReadModeProgressBarWidget.ts",
+      "lines": 1403,
+      "bytes": 41397,
+      "test": false,
+      "signals": {
+        "timer": 4
+      }
+    },
+    {
+      "path": "src/components/features/read-mode/ReadModeTextMark.ts",
+      "lines": 420,
+      "bytes": 12010,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/settings/components/FileSourceSettingsSection.ts",
+      "lines": 1078,
+      "bytes": 30558,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/settings/components/SettingsSearchComponent.ts",
+      "lines": 497,
+      "bytes": 13775,
+      "test": false,
+      "signals": {
+        "timer": 3
+      }
+    },
+    {
+      "path": "src/components/features/settings/components/WorkspaceSettingsSelector.ts",
+      "lines": 149,
+      "bytes": 4047,
+      "test": false,
+      "signals": {
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/components/features/settings/core/SettingsIndexer.ts",
+      "lines": 362,
+      "bytes": 9073,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/settings/index.ts",
+      "lines": 21,
+      "bytes": 1502,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/settings/tabs/AboutSettingsTab.ts",
+      "lines": 175,
+      "bytes": 4866,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/settings/tabs/BasesSettingsTab.ts",
+      "lines": 83,
+      "bytes": 2590,
+      "test": false,
+      "signals": {
+        "timer": 3
+      }
+    },
+    {
+      "path": "src/components/features/settings/tabs/BetaTestSettingsTab.ts",
+      "lines": 69,
+      "bytes": 1883,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/settings/tabs/CalendarViewSettingTab.ts",
+      "lines": 478,
+      "bytes": 12911,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/settings/tabs/DatePrioritySettingsTab.ts",
+      "lines": 90,
+      "bytes": 2619,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/settings/tabs/DesktopIntegrationSettingsTab.ts",
+      "lines": 207,
+      "bytes": 5868,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/settings/tabs/FileFilterSettingsTab.ts",
+      "lines": 384,
+      "bytes": 11165,
+      "test": false,
+      "signals": {
+        "timer": 2,
+        "directDomListener": 3
+      }
+    },
+    {
+      "path": "src/components/features/settings/tabs/HabitSettingsTab.ts",
+      "lines": 59,
+      "bytes": 2045,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/settings/tabs/IcsSettingsTab.ts",
+      "lines": 1577,
+      "bytes": 44285,
+      "test": false,
+      "signals": {
+        "timer": 3,
+        "weakRandom": 2
+      }
+    },
+    {
+      "path": "src/components/features/settings/tabs/IndexSettingsTab.ts",
+      "lines": 937,
+      "bytes": 29018,
+      "test": false,
+      "signals": {
+        "timer": 3,
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/features/settings/tabs/InterfaceSettingsTab.ts",
+      "lines": 277,
+      "bytes": 7956,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/settings/tabs/McpIntegrationSettingsTab.ts",
+      "lines": 1459,
+      "bytes": 43172,
+      "test": false,
+      "signals": {
+        "timer": 6
+      }
+    },
+    {
+      "path": "src/components/features/settings/tabs/ProgressSettingsTab.ts",
+      "lines": 764,
+      "bytes": 21531,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/components/features/settings/tabs/ProjectSettingsTab.ts",
+      "lines": 821,
+      "bytes": 22925,
+      "test": false,
+      "signals": {
+        "timer": 5
+      }
+    },
+    {
+      "path": "src/components/features/settings/tabs/QuickCaptureSettingsTab.ts",
+      "lines": 699,
+      "bytes": 20436,
+      "test": false,
+      "signals": {
+        "timer": 7
+      }
+    },
+    {
+      "path": "src/components/features/settings/tabs/RewardSettingsTab.ts",
+      "lines": 295,
+      "bytes": 8697,
+      "test": false,
+      "signals": {
+        "timer": 5,
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/components/features/settings/tabs/TaskFilterSettingsTab.ts",
+      "lines": 397,
+      "bytes": 11177,
+      "test": false,
+      "signals": {
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/features/settings/tabs/TaskHandlerSettingsTab.ts",
+      "lines": 802,
+      "bytes": 24031,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/settings/tabs/TaskStatusSettingsTab.ts",
+      "lines": 1253,
+      "bytes": 37462,
+      "test": false,
+      "signals": {
+        "timer": 17,
+        "directDomListener": 9
+      }
+    },
+    {
+      "path": "src/components/features/settings/tabs/TaskTimerSettingsTab.ts",
+      "lines": 253,
+      "bytes": 8348,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/settings/tabs/TimelineSidebarSettingsTab.ts",
+      "lines": 133,
+      "bytes": 3549,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/settings/tabs/TimeParsingSettingsTab.ts",
+      "lines": 361,
+      "bytes": 11363,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/settings/tabs/ViewSettingsTab.ts",
+      "lines": 677,
+      "bytes": 19443,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/settings/tabs/WorkflowSettingsTab.ts",
+      "lines": 404,
+      "bytes": 11257,
+      "test": false,
+      "signals": {
+        "timer": 3,
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/features/settings/tabs/WorkspaceSettingTab.ts",
+      "lines": 560,
+      "bytes": 14573,
+      "test": false,
+      "signals": {
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/features/table/index.ts",
+      "lines": 11,
+      "bytes": 379,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/table/TableEditor.ts",
+      "lines": 511,
+      "bytes": 12943,
+      "test": false,
+      "signals": {
+        "timer": 2
+      }
+    },
+    {
+      "path": "src/components/features/table/TableHeader.ts",
+      "lines": 271,
+      "bytes": 6619,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/table/TableRenderer.ts",
+      "lines": 1674,
+      "bytes": 47349,
+      "test": false,
+      "signals": {
+        "timer": 2,
+        "htmlAssignment": 1
+      }
+    },
+    {
+      "path": "src/components/features/table/TableTypes.ts",
+      "lines": 133,
+      "bytes": 2518,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/table/TableView.ts",
+      "lines": 1360,
+      "bytes": 36880,
+      "test": false,
+      "signals": {
+        "timer": 2
+      }
+    },
+    {
+      "path": "src/components/features/table/TableViewAdapter.ts",
+      "lines": 93,
+      "bytes": 2069,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/table/TreeManager.ts",
+      "lines": 527,
+      "bytes": 13563,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/table/VirtualScrollManager.ts",
+      "lines": 527,
+      "bytes": 13660,
+      "test": false,
+      "signals": {
+        "timer": 2
+      }
+    },
+    {
+      "path": "src/components/features/task/edit/MetadataEditor.ts",
+      "lines": 650,
+      "bytes": 17916,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/edit/TaskDetailsModal.ts",
+      "lines": 137,
+      "bytes": 3884,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/edit/TaskDetailsPopover.ts",
+      "lines": 279,
+      "bytes": 7527,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/features/task/filter/filter-metadata-extractor.ts",
+      "lines": 258,
+      "bytes": 6941,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/filter/FilterConfigModal.ts",
+      "lines": 376,
+      "bytes": 9499,
+      "test": false,
+      "signals": {
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/components/features/task/filter/in-view/custom/scroll-to-date-button.ts",
+      "lines": 27,
+      "bytes": 685,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/filter/in-view/filter-dropdown.ts",
+      "lines": 458,
+      "bytes": 13857,
+      "test": false,
+      "signals": {
+        "timer": 3
+      }
+    },
+    {
+      "path": "src/components/features/task/filter/in-view/filter-pill.ts",
+      "lines": 70,
+      "bytes": 1910,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/task/filter/in-view/filter-type.ts",
+      "lines": 34,
+      "bytes": 715,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/filter/in-view/filter.css",
+      "lines": 250,
+      "bytes": 5110,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/filter/in-view/filter.ts",
+      "lines": 412,
+      "bytes": 13037,
+      "test": false,
+      "signals": {
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/components/features/task/filter/index.ts",
+      "lines": 12,
+      "bytes": 375,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/filter/ViewTaskFilter.ts",
+      "lines": 1190,
+      "bytes": 30120,
+      "test": false,
+      "signals": {
+        "timer": 3,
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/components/features/task/filter/ViewTaskFilterModal.ts",
+      "lines": 65,
+      "bytes": 1538,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/filter/ViewTaskFilterPopover.ts",
+      "lines": 204,
+      "bytes": 5025,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/features/task/selection/LongPressDetector.ts",
+      "lines": 162,
+      "bytes": 3939,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/task/selection/TaskSelectionManager.ts",
+      "lines": 229,
+      "bytes": 5320,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/view/BulkOperationsMenu.ts",
+      "lines": 914,
+      "bytes": 21614,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/view/calendar.ts",
+      "lines": 444,
+      "bytes": 11789,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/view/content.ts",
+      "lines": 1714,
+      "bytes": 52091,
+      "test": false,
+      "signals": {
+        "timer": 3
+      }
+    },
+    {
+      "path": "src/components/features/task/view/details.ts",
+      "lines": 1158,
+      "bytes": 33135,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/task/view/forecast.ts",
+      "lines": 1313,
+      "bytes": 38678,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/task/view/InlineEditor.ts",
+      "lines": 1494,
+      "bytes": 39578,
+      "test": false,
+      "signals": {
+        "timer": 3
+      }
+    },
+    {
+      "path": "src/components/features/task/view/InlineEditorManager.ts",
+      "lines": 242,
+      "bytes": 6422,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/view/listItem.ts",
+      "lines": 1359,
+      "bytes": 37467,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/task/view/modals/ViewConfigModal.ts",
+      "lines": 2141,
+      "bytes": 61091,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/view/projects.ts",
+      "lines": 1593,
+      "bytes": 47447,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/task/view/ProjectTreeComponent.ts",
+      "lines": 305,
+      "bytes": 8064,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/view/ProjectViewComponent.ts",
+      "lines": 420,
+      "bytes": 11904,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/view/review.ts",
+      "lines": 1286,
+      "bytes": 38526,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 4
+      }
+    },
+    {
+      "path": "src/components/features/task/view/sidebar.ts",
+      "lines": 301,
+      "bytes": 8389,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/task/view/tags.ts",
+      "lines": 908,
+      "bytes": 26066,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/task/view/TagViewComponent.ts",
+      "lines": 531,
+      "bytes": 14738,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/view/TaskList.ts",
+      "lines": 355,
+      "bytes": 11373,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/view/TaskPropertyTwoColumnView.ts",
+      "lines": 376,
+      "bytes": 10846,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/view/TaskStatusIndicator.ts",
+      "lines": 543,
+      "bytes": 13412,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/features/task/view/TimerStatisticsPanel.ts",
+      "lines": 539,
+      "bytes": 14337,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/task/view/treeItem.ts",
+      "lines": 1748,
+      "bytes": 49083,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/task/view/TwoColumnViewBase.ts",
+      "lines": 489,
+      "bytes": 13810,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/features/timeline-sidebar/TimelineSidebarView.ts",
+      "lines": 1460,
+      "bytes": 45782,
+      "test": false,
+      "signals": {
+        "timer": 7
+      }
+    },
+    {
+      "path": "src/components/features/workflow/modals/QuickWorkflowModal.ts",
+      "lines": 328,
+      "bytes": 9854,
+      "test": false,
+      "signals": {
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/features/workflow/modals/StageEditModal.ts",
+      "lines": 497,
+      "bytes": 13115,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 6,
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/components/features/workflow/modals/WorkflowDefinitionModal.ts",
+      "lines": 396,
+      "bytes": 10609,
+      "test": false,
+      "signals": {
+        "directDomListener": 3,
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/components/features/workflow/widgets/WorkflowProgressIndicator.ts",
+      "lines": 270,
+      "bytes": 8268,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/base/ViewComponent.ts",
+      "lines": 45,
+      "bytes": 1762,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/behavior/DragManager.ts",
+      "lines": 483,
+      "bytes": 17712,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/behavior/index.ts",
+      "lines": 2,
+      "bytes": 71,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/behavior/ViewComponentManager.ts",
+      "lines": 358,
+      "bytes": 9438,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/date-picker/BulkDateOffsetModal.ts",
+      "lines": 126,
+      "bytes": 3450,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/date-picker/BulkDatePickerModal.ts",
+      "lines": 82,
+      "bytes": 1958,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/date-picker/DatePickerComponent.ts",
+      "lines": 306,
+      "bytes": 7919,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/date-picker/DatePickerModal.ts",
+      "lines": 57,
+      "bytes": 1297,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/date-picker/DatePickerPopover.ts",
+      "lines": 190,
+      "bytes": 4608,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/ui/date-picker/index.ts",
+      "lines": 6,
+      "bytes": 245,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/feedback/index.ts",
+      "lines": 1,
+      "bytes": 34,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/feedback/StatusIndicator.ts",
+      "lines": 192,
+      "bytes": 5373,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/index.ts",
+      "lines": 15,
+      "bytes": 602,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/inputs/AutoComplete.ts",
+      "lines": 586,
+      "bytes": 15307,
+      "test": false,
+      "signals": {
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/ui/inputs/index.ts",
+      "lines": 1,
+      "bytes": 31,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/menus/IconMenu.ts",
+      "lines": 238,
+      "bytes": 6610,
+      "test": false,
+      "signals": {
+        "timer": 4,
+        "directDomListener": 7
+      }
+    },
+    {
+      "path": "src/components/ui/menus/index.ts",
+      "lines": 1,
+      "bytes": 27,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/modals/CalendarViewConfigModal.ts",
+      "lines": 644,
+      "bytes": 17853,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/modals/ConfirmModal.ts",
+      "lines": 64,
+      "bytes": 1509,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/modals/IframeModal.ts",
+      "lines": 55,
+      "bytes": 1471,
+      "test": false,
+      "signals": {
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/components/ui/modals/index.ts",
+      "lines": 3,
+      "bytes": 95,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/modals/ListConfigModal.ts",
+      "lines": 148,
+      "bytes": 3760,
+      "test": false,
+      "signals": {
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/components/ui/modals/McpLogModal.ts",
+      "lines": 239,
+      "bytes": 6957,
+      "test": false,
+      "signals": {
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/components/ui/modals/TextPromptModal.ts",
+      "lines": 123,
+      "bytes": 3376,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/components/ui/modals/WorkspaceModals.ts",
+      "lines": 372,
+      "bytes": 8695,
+      "test": false,
+      "signals": {
+        "directDomListener": 6
+      }
+    },
+    {
+      "path": "src/components/ui/popovers/taskProgressPopover.ts",
+      "lines": 80,
+      "bytes": 1732,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/renderers/index.ts",
+      "lines": 1,
+      "bytes": 35,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/renderers/MarkdownRenderer.ts",
+      "lines": 547,
+      "bytes": 16284,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/components/ui/suggest/index.ts",
+      "lines": 15,
+      "bytes": 426,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/suggest/SpecialCharacterSuggests.ts",
+      "lines": 508,
+      "bytes": 16184,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/suggest/SuggestManager.ts",
+      "lines": 238,
+      "bytes": 6231,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/suggest/UniversalEditorSuggest.ts",
+      "lines": 207,
+      "bytes": 4851,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/tree/index.ts",
+      "lines": 2,
+      "bytes": 69,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/tree/TreeComponent.ts",
+      "lines": 462,
+      "bytes": 10503,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/components/ui/tree/TreeItemRenderer.ts",
+      "lines": 305,
+      "bytes": 7665,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/core/goal/edit-mode.ts",
+      "lines": 54,
+      "bytes": 1653,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/core/goal/read-mode.ts",
+      "lines": 81,
+      "bytes": 2634,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/core/goal/regex-goal.ts",
+      "lines": 2,
+      "bytes": 134,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/core/project-filter.ts",
+      "lines": 20,
+      "bytes": 882,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/core/project-tree-builder.ts",
+      "lines": 285,
+      "bytes": 7575,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/core/task-indexer.ts",
+      "lines": 1260,
+      "bytes": 35071,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/core/workflow-converter.ts",
+      "lines": 337,
+      "bytes": 8820,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/api/QueryAPI.ts",
+      "lines": 444,
+      "bytes": 11005,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/api/WriteAPI.ts",
+      "lines": 2996,
+      "bytes": 87069,
+      "test": false,
+      "signals": {
+        "directNoteWrite": 8
+      }
+    },
+    {
+      "path": "src/dataflow/augment/Augmentor.ts",
+      "lines": 696,
+      "bytes": 20203,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/augment/DateInheritanceAugmentor.ts",
+      "lines": 458,
+      "bytes": 13499,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/core/CanvasParser.ts",
+      "lines": 323,
+      "bytes": 8656,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/core/ConfigurableTaskParser.ts",
+      "lines": 2024,
+      "bytes": 57457,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/createDataflow.ts",
+      "lines": 56,
+      "bytes": 1713,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/events/Events.ts",
+      "lines": 72,
+      "bytes": 2444,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/indexer/Repository.ts",
+      "lines": 717,
+      "bytes": 20322,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/dataflow/Orchestrator.ts",
+      "lines": 1905,
+      "bytes": 58000,
+      "test": false,
+      "signals": {
+        "timer": 2
+      }
+    },
+    {
+      "path": "src/dataflow/parsers/FileMetaEntry.ts",
+      "lines": 32,
+      "bytes": 1111,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/parsers/MarkdownEntry.ts",
+      "lines": 31,
+      "bytes": 980,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/persistence/Storage.ts",
+      "lines": 542,
+      "bytes": 13343,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/project/Resolver.ts",
+      "lines": 133,
+      "bytes": 4123,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/settings-signature.ts",
+      "lines": 22,
+      "bytes": 999,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/sources/FileSource.ts",
+      "lines": 1474,
+      "bytes": 38898,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/dataflow/sources/FileSourceConfig.ts",
+      "lines": 652,
+      "bytes": 19738,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/sources/IcsSource.ts",
+      "lines": 181,
+      "bytes": 4735,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/dataflow/sources/ObsidianSource.ts",
+      "lines": 426,
+      "bytes": 10815,
+      "test": false,
+      "signals": {
+        "timer": 2
+      }
+    },
+    {
+      "path": "src/dataflow/workers/deferred-promise.ts",
+      "lines": 23,
+      "bytes": 571,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/workers/ProjectData.worker.ts",
+      "lines": 370,
+      "bytes": 9724,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/workers/ProjectDataWorkerManager.ts",
+      "lines": 715,
+      "bytes": 18034,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/dataflow/workers/task-index-message.ts",
+      "lines": 310,
+      "bytes": 7705,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/workers/TaskIndex.worker.ts",
+      "lines": 537,
+      "bytes": 14577,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/workers/TaskWorkerManager.ts",
+      "lines": 1035,
+      "bytes": 26870,
+      "test": false,
+      "signals": {
+        "timer": 2
+      }
+    },
+    {
+      "path": "src/dataflow/workers/worker.d.ts",
+      "lines": 12,
+      "bytes": 266,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/dataflow/workers/WorkerOrchestrator.ts",
+      "lines": 576,
+      "bytes": 15985,
+      "test": false,
+      "signals": {
+        "timer": 2
+      }
+    },
+    {
+      "path": "src/editor-extensions/autocomplete/parent-task-updater.ts",
+      "lines": 789,
+      "bytes": 22805,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/editor-extensions/autocomplete/task-metadata-suggest.ts",
+      "lines": 480,
+      "bytes": 13620,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/editor-extensions/core/extended-gutter.ts",
+      "lines": 694,
+      "bytes": 20379,
+      "test": false,
+      "signals": {
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/editor-extensions/core/markdown-editor.ts",
+      "lines": 358,
+      "bytes": 9344,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/editor-extensions/core/quick-capture-panel.ts",
+      "lines": 733,
+      "bytes": 21284,
+      "test": false,
+      "signals": {
+        "timer": 2,
+        "directDomListener": 8
+      }
+    },
+    {
+      "path": "src/editor-extensions/core/regex-cursor.ts",
+      "lines": 121,
+      "bytes": 3959,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/editor-extensions/core/task-filter-panel.ts",
+      "lines": 1437,
+      "bytes": 41495,
+      "test": false,
+      "signals": {
+        "timer": 2,
+        "directDomListener": 1,
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/editor-extensions/date-time/date-manager.ts",
+      "lines": 1071,
+      "bytes": 31251,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/editor-extensions/date-time/date-picker-utils.ts",
+      "lines": 391,
+      "bytes": 9937,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/editor-extensions/date-time/date-picker.ts",
+      "lines": 655,
+      "bytes": 15845,
+      "test": false,
+      "signals": {
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/editor-extensions/date-time/task-timer.ts",
+      "lines": 1312,
+      "bytes": 38656,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/editor-extensions/task-operations/completion-monitor.ts",
+      "lines": 327,
+      "bytes": 10382,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/editor-extensions/task-operations/gutter-marker.ts",
+      "lines": 242,
+      "bytes": 6347,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/editor-extensions/task-operations/mark-cleanup.ts",
+      "lines": 143,
+      "bytes": 4406,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/editor-extensions/task-operations/status-cycler.ts",
+      "lines": 908,
+      "bytes": 27474,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/editor-extensions/task-operations/status-switcher.ts",
+      "lines": 672,
+      "bytes": 17651,
+      "test": false,
+      "signals": {
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/editor-extensions/ui-widgets/priority-picker.ts",
+      "lines": 808,
+      "bytes": 20699,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/editor-extensions/ui-widgets/progress-bar-widget.ts",
+      "lines": 1607,
+      "bytes": 45305,
+      "test": false,
+      "signals": {
+        "dynamicEvaluation": 1
+      }
+    },
+    {
+      "path": "src/editor-extensions/ui-widgets/workflow-decorator.ts",
+      "lines": 514,
+      "bytes": 14287,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/editor-extensions/workflow/workflow-enter-handler.ts",
+      "lines": 721,
+      "bytes": 18854,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/editor-extensions/workflow/workflow-handler.ts",
+      "lines": 1621,
+      "bytes": 43546,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/executors/completion/archive-executor.ts",
+      "lines": 384,
+      "bytes": 11826,
+      "test": false,
+      "signals": {
+        "directNoteWrite": 3
+      }
+    },
+    {
+      "path": "src/executors/completion/base-executor.ts",
+      "lines": 124,
+      "bytes": 3632,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/executors/completion/canvas-operation-utils.ts",
+      "lines": 304,
+      "bytes": 7238,
+      "test": false,
+      "signals": {
+        "directNoteWrite": 1,
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/executors/completion/complete-executor.ts",
+      "lines": 140,
+      "bytes": 3984,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/executors/completion/delete-executor.ts",
+      "lines": 136,
+      "bytes": 3812,
+      "test": false,
+      "signals": {
+        "directNoteWrite": 1
+      }
+    },
+    {
+      "path": "src/executors/completion/duplicate-executor.ts",
+      "lines": 323,
+      "bytes": 9618,
+      "test": false,
+      "signals": {
+        "directNoteWrite": 3
+      }
+    },
+    {
+      "path": "src/executors/completion/keep-executor.ts",
+      "lines": 46,
+      "bytes": 1373,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/executors/completion/move-executor.ts",
+      "lines": 344,
+      "bytes": 10319,
+      "test": false,
+      "signals": {
+        "directNoteWrite": 3
+      }
+    },
+    {
+      "path": "src/icon.ts",
+      "lines": 43,
+      "bytes": 3802,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/index.ts",
+      "lines": 2285,
+      "bytes": 65194,
+      "test": false,
+      "signals": {
+        "timer": 4
+      }
+    },
+    {
+      "path": "src/integrations/habits/ai-summary.ts",
+      "lines": 276,
+      "bytes": 9263,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/comment-log.ts",
+      "lines": 158,
+      "bytes": 5071,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/comment-text.ts",
+      "lines": 205,
+      "bytes": 5967,
+      "test": false,
+      "signals": {
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/integrations/habits/compat.d.ts",
+      "lines": 5,
+      "bytes": 132,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/habit-store.ts",
+      "lines": 1434,
+      "bytes": 43545,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/i18n/de.ts",
+      "lines": 658,
+      "bytes": 39426,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/i18n/es.ts",
+      "lines": 653,
+      "bytes": 38273,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/i18n/fr.ts",
+      "lines": 657,
+      "bytes": 39761,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/i18n/index.ts",
+      "lines": 62,
+      "bytes": 1577,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/i18n/ja.ts",
+      "lines": 644,
+      "bytes": 41316,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/i18n/ko.ts",
+      "lines": 645,
+      "bytes": 38581,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/i18n/zh.ts",
+      "lines": 658,
+      "bytes": 37772,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/legacy-import.ts",
+      "lines": 97,
+      "bytes": 4576,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/main.ts",
+      "lines": 459,
+      "bytes": 12590,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/integrations/habits/note-habit.ts",
+      "lines": 376,
+      "bytes": 12377,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/reminders.ts",
+      "lines": 476,
+      "bytes": 15950,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/scoped.css",
+      "lines": 3227,
+      "bytes": 89699,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/settings.ts",
+      "lines": 1283,
+      "bytes": 41384,
+      "test": false,
+      "signals": {
+        "directDomListener": 5
+      }
+    },
+    {
+      "path": "src/integrations/habits/stats.ts",
+      "lines": 867,
+      "bytes": 28305,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/task-genius-host.ts",
+      "lines": 94,
+      "bytes": 3248,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/task-genius.css",
+      "lines": 18,
+      "bytes": 797,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/types.ts",
+      "lines": 346,
+      "bytes": 12990,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/ui/chart-setup.ts",
+      "lines": 33,
+      "bytes": 677,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/ui/color-utils.ts",
+      "lines": 61,
+      "bytes": 2484,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/ui/comment-suggest.ts",
+      "lines": 347,
+      "bytes": 10022,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/integrations/habits/ui/confirm-modal.ts",
+      "lines": 66,
+      "bytes": 1819,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/ui/dashboard.ts",
+      "lines": 2007,
+      "bytes": 61071,
+      "test": false,
+      "signals": {
+        "timer": 2,
+        "weakRandom": 5
+      }
+    },
+    {
+      "path": "src/integrations/habits/ui/day-status.ts",
+      "lines": 369,
+      "bytes": 10384,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/integrations/habits/ui/emoji-suggest-modal.ts",
+      "lines": 144,
+      "bytes": 8137,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/ui/export-modal.ts",
+      "lines": 1434,
+      "bytes": 38897,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 3
+      }
+    },
+    {
+      "path": "src/integrations/habits/ui/groups-modal.ts",
+      "lines": 501,
+      "bytes": 14928,
+      "test": false,
+      "signals": {
+        "directDomListener": 7
+      }
+    },
+    {
+      "path": "src/integrations/habits/ui/habit-metrics.ts",
+      "lines": 1764,
+      "bytes": 52404,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/ui/habit-modal.ts",
+      "lines": 1419,
+      "bytes": 44904,
+      "test": false,
+      "signals": {
+        "directDomListener": 9,
+        "weakRandom": 2
+      }
+    },
+    {
+      "path": "src/integrations/habits/ui/habits-block.ts",
+      "lines": 42,
+      "bytes": 1359,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/ui/habits-compact.ts",
+      "lines": 290,
+      "bytes": 14829,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/ui/habits-heatmap.ts",
+      "lines": 450,
+      "bytes": 12533,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/ui/habits-table.ts",
+      "lines": 562,
+      "bytes": 16087,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/ui/heatmap.ts",
+      "lines": 265,
+      "bytes": 7944,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/ui/icon-suggest-modal.ts",
+      "lines": 71,
+      "bytes": 1886,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/ui/metrics-suggest.ts",
+      "lines": 113,
+      "bytes": 3414,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/ui/missed-habits-modal.ts",
+      "lines": 195,
+      "bytes": 5381,
+      "test": false,
+      "signals": {
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/integrations/habits/ui/panel-view.ts",
+      "lines": 953,
+      "bytes": 26688,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/ui/stats-view.ts",
+      "lines": 513,
+      "bytes": 15312,
+      "test": false,
+      "signals": {
+        "directDomListener": 4
+      }
+    },
+    {
+      "path": "src/integrations/habits/ui/vault-suggest.ts",
+      "lines": 62,
+      "bytes": 1604,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/upstream.css",
+      "lines": 3226,
+      "bytes": 68363,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/integrations/habits/utils.ts",
+      "lines": 614,
+      "bytes": 18715,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/managers/changelog-manager.ts",
+      "lines": 196,
+      "bytes": 5470,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/managers/completion-manager.ts",
+      "lines": 309,
+      "bytes": 8352,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/managers/desktop-integration-manager.ts",
+      "lines": 1148,
+      "bytes": 33429,
+      "test": false,
+      "signals": {
+        "timer": 6
+      }
+    },
+    {
+      "path": "src/managers/electron-quick-capture.ts",
+      "lines": 1453,
+      "bytes": 41538,
+      "test": false,
+      "signals": {
+        "timer": 4,
+        "directDomListener": 8,
+        "htmlAssignment": 1
+      }
+    },
+    {
+      "path": "src/managers/file-filter-manager.ts",
+      "lines": 455,
+      "bytes": 11234,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/managers/file-task-manager.ts",
+      "lines": 1130,
+      "bytes": 31535,
+      "test": false,
+      "signals": {
+        "directNoteWrite": 1,
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/managers/habit-manager.ts",
+      "lines": 853,
+      "bytes": 24599,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/managers/icon-manager.ts",
+      "lines": 375,
+      "bytes": 10591,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/managers/ics-manager.ts",
+      "lines": 1304,
+      "bytes": 36562,
+      "test": false,
+      "signals": {
+        "timer": 2
+      }
+    },
+    {
+      "path": "src/managers/onboarding-manager.ts",
+      "lines": 499,
+      "bytes": 14917,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/managers/project-config-manager.ts",
+      "lines": 1101,
+      "bytes": 31611,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/managers/rebuild-progress-manager.ts",
+      "lines": 133,
+      "bytes": 3335,
+      "test": false,
+      "signals": {
+        "timer": 2
+      }
+    },
+    {
+      "path": "src/managers/reward-manager.ts",
+      "lines": 248,
+      "bytes": 8236,
+      "test": false,
+      "signals": {
+        "weakRandom": 2
+      }
+    },
+    {
+      "path": "src/managers/timer-manager.ts",
+      "lines": 745,
+      "bytes": 19621,
+      "test": false,
+      "signals": {
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/managers/tray-menu.ts",
+      "lines": 182,
+      "bytes": 4848,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/managers/version-manager.ts",
+      "lines": 362,
+      "bytes": 9774,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/mcp/auth/AuthMiddleware.ts",
+      "lines": 121,
+      "bytes": 3061,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/mcp/bridge/DataflowBridge.ts",
+      "lines": 471,
+      "bytes": 11559,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/mcp/McpServer.ts",
+      "lines": 1997,
+      "bytes": 51214,
+      "test": false,
+      "signals": {
+        "timer": 2,
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/mcp/McpServerManager.ts",
+      "lines": 253,
+      "bytes": 6583,
+      "test": false,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "src/mcp/types/mcp.d.ts",
+      "lines": 147,
+      "bytes": 2931,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/pages/bases/index.ts",
+      "lines": 118,
+      "bytes": 3813,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/pages/bases/registerBasesViews.ts",
+      "lines": 165,
+      "bytes": 4403,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/pages/bases/TaskBasesView.ts",
+      "lines": 2321,
+      "bytes": 65298,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/pages/FluentTaskView.ts",
+      "lines": 1332,
+      "bytes": 40471,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/pages/LeftSidebarView.ts",
+      "lines": 79,
+      "bytes": 2378,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/pages/RightDetailView.ts",
+      "lines": 112,
+      "bytes": 2907,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/pages/TaskSpecificView.ts",
+      "lines": 1586,
+      "bytes": 47134,
+      "test": false,
+      "signals": {
+        "timer": 2
+      }
+    },
+    {
+      "path": "src/pages/TaskView.ts",
+      "lines": 2023,
+      "bytes": 59198,
+      "test": false,
+      "signals": {
+        "timer": 2
+      }
+    },
+    {
+      "path": "src/parsers/canvas-task-updater.ts",
+      "lines": 1143,
+      "bytes": 30075,
+      "test": false,
+      "signals": {
+        "directNoteWrite": 3,
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/parsers/context-detector.ts",
+      "lines": 267,
+      "bytes": 7281,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/parsers/file-metadata-parser.ts",
+      "lines": 546,
+      "bytes": 15051,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/parsers/file-metadata-updater.ts",
+      "lines": 355,
+      "bytes": 8813,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/parsers/holiday-detector.ts",
+      "lines": 343,
+      "bytes": 8731,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/parsers/ics-parser.ts",
+      "lines": 529,
+      "bytes": 15923,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/parsers/ics-status-mapper.ts",
+      "lines": 427,
+      "bytes": 11043,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/parsers/webcal-converter.ts",
+      "lines": 192,
+      "bytes": 5201,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/patches/workspace-dnd-patch.ts",
+      "lines": 123,
+      "bytes": 3620,
+      "test": false,
+      "signals": {
+        "directDomListener": 2
+      }
+    },
+    {
+      "path": "src/services/date-inheritance-service.ts",
+      "lines": 1140,
+      "bytes": 33879,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/services/settings-change-detector.ts",
+      "lines": 217,
+      "bytes": 7625,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/services/task-migration-service.ts",
+      "lines": 326,
+      "bytes": 10029,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/services/task-parsing-service.ts",
+      "lines": 747,
+      "bytes": 21275,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/services/time-parsing-service.ts",
+      "lines": 1335,
+      "bytes": 38182,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/services/timer-export-service.ts",
+      "lines": 550,
+      "bytes": 14821,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/services/timer-format-service.ts",
+      "lines": 259,
+      "bytes": 7995,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/services/timer-metadata-service.ts",
+      "lines": 117,
+      "bytes": 3297,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/services/view-settings-signature.ts",
+      "lines": 10,
+      "bytes": 294,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/setting.ts",
+      "lines": 929,
+      "bytes": 26372,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "src/styles/base-view.css",
+      "lines": 230,
+      "bytes": 4801,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/beta-warning.css",
+      "lines": 36,
+      "bytes": 601,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/calendar-view-settings.css",
+      "lines": 385,
+      "bytes": 8013,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/calendar.css",
+      "lines": 162,
+      "bytes": 4237,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/calendar/badge.css",
+      "lines": 27,
+      "bytes": 504,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/calendar/event.css",
+      "lines": 20,
+      "bytes": 467,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/calendar/view.css",
+      "lines": 893,
+      "bytes": 25039,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/changelog.css",
+      "lines": 114,
+      "bytes": 2385,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/date-picker.css",
+      "lines": 230,
+      "bytes": 5860,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/file-filter-settings.css",
+      "lines": 256,
+      "bytes": 5449,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/fluent/fluent-content-header.css",
+      "lines": 150,
+      "bytes": 3299,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/fluent/fluent-main.css",
+      "lines": 1019,
+      "bytes": 20195,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/fluent/fluent-modern.css",
+      "lines": 179,
+      "bytes": 4331,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/fluent/fluent-project-popover.css",
+      "lines": 355,
+      "bytes": 7215,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/fluent/fluent-secondary.css",
+      "lines": 801,
+      "bytes": 16848,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/forecast.css",
+      "lines": 376,
+      "bytes": 7326,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/gantt/gantt.css",
+      "lines": 510,
+      "bytes": 10170,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/global-filter.css",
+      "lines": 524,
+      "bytes": 14426,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/global.css",
+      "lines": 72,
+      "bytes": 3011,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/group-by.css",
+      "lines": 207,
+      "bytes": 5072,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/habit-edit-dialog.css",
+      "lines": 249,
+      "bytes": 5273,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/habit-list.css",
+      "lines": 188,
+      "bytes": 3654,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/habit.css",
+      "lines": 573,
+      "bytes": 14549,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/ics-settings.css",
+      "lines": 551,
+      "bytes": 11063,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/index.css",
+      "lines": 251,
+      "bytes": 6782,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/inline-editor.css",
+      "lines": 340,
+      "bytes": 7749,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/kanban/kanban.css",
+      "lines": 452,
+      "bytes": 12345,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/layout-placement.css",
+      "lines": 104,
+      "bytes": 1797,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/mcp-integration.css",
+      "lines": 722,
+      "bytes": 14220,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/modal.css",
+      "lines": 310,
+      "bytes": 6464,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/modern.css",
+      "lines": 24,
+      "bytes": 551,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/noise.css",
+      "lines": 31,
+      "bytes": 1875,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/onboarding-components.css",
+      "lines": 331,
+      "bytes": 7282,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/onboarding.css",
+      "lines": 2087,
+      "bytes": 46133,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/onCompletion.css",
+      "lines": 302,
+      "bytes": 6088,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/progressbar.css",
+      "lines": 161,
+      "bytes": 3362,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/project-tree.css",
+      "lines": 289,
+      "bytes": 6497,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/project-view.css",
+      "lines": 357,
+      "bytes": 7234,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/property-view.css",
+      "lines": 211,
+      "bytes": 4265,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/quadrant/quadrant.css",
+      "lines": 983,
+      "bytes": 20556,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/quick-capture.css",
+      "lines": 639,
+      "bytes": 13656,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/review-view.css",
+      "lines": 413,
+      "bytes": 8179,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/reward.css",
+      "lines": 45,
+      "bytes": 1107,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/setting-v2.css",
+      "lines": 446,
+      "bytes": 10119,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/setting.css",
+      "lines": 1953,
+      "bytes": 42372,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/settings-migration.css",
+      "lines": 91,
+      "bytes": 2047,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/settings-search.css",
+      "lines": 285,
+      "bytes": 7178,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/table.css",
+      "lines": 990,
+      "bytes": 19509,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/tag-view.css",
+      "lines": 250,
+      "bytes": 4751,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/task-details.css",
+      "lines": 583,
+      "bytes": 11646,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/task-filter.css",
+      "lines": 134,
+      "bytes": 2495,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/task-gutter.css",
+      "lines": 170,
+      "bytes": 3825,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/task-list.css",
+      "lines": 377,
+      "bytes": 7607,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/task-selection.css",
+      "lines": 255,
+      "bytes": 5664,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/task-status-indicator.css",
+      "lines": 45,
+      "bytes": 992,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/task-status.css",
+      "lines": 166,
+      "bytes": 3579,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/task-timer.css",
+      "lines": 23,
+      "bytes": 454,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/taskgenius-calendar.css",
+      "lines": 684,
+      "bytes": 14991,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/timeline-sidebar.css",
+      "lines": 839,
+      "bytes": 22494,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/timer-statistics.css",
+      "lines": 336,
+      "bytes": 6870,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/tree-view.css",
+      "lines": 273,
+      "bytes": 5467,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/universal-suggest.css",
+      "lines": 93,
+      "bytes": 2015,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/view-config.css",
+      "lines": 142,
+      "bytes": 4011,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/view-setting-tab.css",
+      "lines": 145,
+      "bytes": 2673,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/view-two-column-base.css",
+      "lines": 232,
+      "bytes": 4772,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/view.css",
+      "lines": 708,
+      "bytes": 13304,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/workflow.css",
+      "lines": 50,
+      "bytes": 1155,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/workspace-icons.css",
+      "lines": 92,
+      "bytes": 1997,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/styles/workspace-settings-selector.css",
+      "lines": 137,
+      "bytes": 3039,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/test-setup.ts",
+      "lines": 31,
+      "bytes": 573,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/translations/helper.ts",
+      "lines": 14,
+      "bytes": 475,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/translations/locale/en-gb.ts",
+      "lines": 1930,
+      "bytes": 135200,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/translations/locale/en.ts",
+      "lines": 3183,
+      "bytes": 186700,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/translations/locale/ja.ts",
+      "lines": 2434,
+      "bytes": 161259,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/translations/locale/pt-br.ts",
+      "lines": 1930,
+      "bytes": 142845,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/translations/locale/ru.ts",
+      "lines": 1930,
+      "bytes": 156149,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/translations/locale/uk.ts",
+      "lines": 1930,
+      "bytes": 167891,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/translations/locale/zh-cn.ts",
+      "lines": 3000,
+      "bytes": 179926,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/translations/locale/zh-tw.ts",
+      "lines": 2317,
+      "bytes": 130358,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/translations/manager.ts",
+      "lines": 179,
+      "bytes": 4935,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/translations/types.ts",
+      "lines": 36,
+      "bytes": 793,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/bases.d.ts",
+      "lines": 319,
+      "bytes": 6944,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/canvas.ts",
+      "lines": 130,
+      "bytes": 3937,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/file-source.d.ts",
+      "lines": 229,
+      "bytes": 7115,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/file-task.d.ts",
+      "lines": 138,
+      "bytes": 3823,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/fluent-types.ts",
+      "lines": 40,
+      "bytes": 1021,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/groupBy.d.ts",
+      "lines": 71,
+      "bytes": 1710,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/habit-card.d.ts",
+      "lines": 105,
+      "bytes": 2859,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/ics.ts",
+      "lines": 418,
+      "bytes": 11681,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/obsidian-ex.d.ts",
+      "lines": 767,
+      "bytes": 16472,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/onCompletion.ts",
+      "lines": 75,
+      "bytes": 1676,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/selection.d.ts",
+      "lines": 110,
+      "bytes": 2582,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/SettingsSearch.ts",
+      "lines": 22,
+      "bytes": 856,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/task.d.ts",
+      "lines": 299,
+      "bytes": 8229,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/TaskParserConfig.ts",
+      "lines": 195,
+      "bytes": 5362,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/time-parsing.ts",
+      "lines": 125,
+      "bytes": 3550,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/tree.d.ts",
+      "lines": 87,
+      "bytes": 2085,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/types/workspace.ts",
+      "lines": 168,
+      "bytes": 4095,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils.ts",
+      "lines": 234,
+      "bytes": 6099,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/adapters/TaskCalendarAdapter.ts",
+      "lines": 313,
+      "bytes": 9582,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/changelog-cache.ts",
+      "lines": 194,
+      "bytes": 4072,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/date/date-display-helper.ts",
+      "lines": 71,
+      "bytes": 2350,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/date/date-formatter.ts",
+      "lines": 202,
+      "bytes": 6110,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/date/date-helper.ts",
+      "lines": 65,
+      "bytes": 2242,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/date/date-utils.ts",
+      "lines": 62,
+      "bytes": 1569,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/dateOperations.ts",
+      "lines": 67,
+      "bytes": 1843,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/file/file-operations.ts",
+      "lines": 371,
+      "bytes": 11235,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/file/file-type-detector.ts",
+      "lines": 119,
+      "bytes": 2848,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/grouping/groupByStorage.ts",
+      "lines": 131,
+      "bytes": 3384,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/grouping/taskGrouping.ts",
+      "lines": 784,
+      "bytes": 20420,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/id-generator.ts",
+      "lines": 4,
+      "bytes": 123,
+      "test": false,
+      "signals": {
+        "weakRandom": 1
+      }
+    },
+    {
+      "path": "src/utils/ObsidianUriHandler.ts",
+      "lines": 434,
+      "bytes": 11960,
+      "test": false,
+      "signals": {
+        "timer": 4
+      }
+    },
+    {
+      "path": "src/utils/settings-migration.ts",
+      "lines": 164,
+      "bytes": 4507,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/SettingsMigration.ts",
+      "lines": 341,
+      "bytes": 11730,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/SettingsMigrationManager.ts",
+      "lines": 167,
+      "bytes": 4645,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/status-cycle-resolver.ts",
+      "lines": 451,
+      "bytes": 12713,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/task-metadata-utils.ts",
+      "lines": 247,
+      "bytes": 8646,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/task/curosr-priority-utils.ts",
+      "lines": 77,
+      "bytes": 2320,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/task/filter-compatibility.ts",
+      "lines": 58,
+      "bytes": 2374,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/task/priority-utils.ts",
+      "lines": 49,
+      "bytes": 1866,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/task/removeBlankTasks.ts",
+      "lines": 24,
+      "bytes": 1123,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/task/task-filter-utils.ts",
+      "lines": 880,
+      "bytes": 25996,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/task/task-migration.ts",
+      "lines": 131,
+      "bytes": 3247,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/task/task-operations.ts",
+      "lines": 652,
+      "bytes": 20271,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/ui/tree-view-utils.ts",
+      "lines": 68,
+      "bytes": 1861,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "src/utils/ui/view-mode-utils.ts",
+      "lines": 63,
+      "bytes": 2031,
+      "test": false,
+      "signals": {}
+    },
+    {
+      "path": "tests/habits/compact.test.mjs",
+      "lines": 354,
+      "bytes": 22768,
+      "test": true,
+      "signals": {
+        "timer": 1
+      }
+    },
+    {
+      "path": "tests/habits/dom-fixture.mjs",
+      "lines": 29,
+      "bytes": 1816,
+      "test": false,
+      "signals": {
+        "directDomListener": 1
+      }
+    },
+    {
+      "path": "tests/habits/integration.test.mjs",
+      "lines": 262,
+      "bytes": 18963,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "tests/habits/limit-frequency.test.mjs",
+      "lines": 71,
+      "bytes": 4743,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "tests/habits/obsidian-fixture.mjs",
+      "lines": 120,
+      "bytes": 7576,
+      "test": false,
+      "signals": {
+        "directDomListener": 3
+      }
+    },
+    {
+      "path": "tests/habits/styles.test.mjs",
+      "lines": 30,
+      "bytes": 1357,
+      "test": true,
+      "signals": {}
+    },
+    {
+      "path": "tests/ui-audit/fixture.mjs",
+      "lines": 53,
+      "bytes": 2574,
+      "test": false,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 3
+      }
+    },
+    {
+      "path": "tests/ui-audit/regressions.test.mjs",
+      "lines": 206,
+      "bytes": 18956,
+      "test": true,
+      "signals": {
+        "timer": 1,
+        "directDomListener": 1
+      }
+    }
+  ]
+}

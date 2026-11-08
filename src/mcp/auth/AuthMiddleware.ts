@@ -106,8 +106,15 @@ export class AuthMiddleware {
 		const chars =
 			"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 		let token = "";
-		for (let i = 0; i < 32; i++) {
-			token += chars.charAt(Math.floor(Math.random() * chars.length));
+		const bytes = new Uint8Array(64);
+		while (token.length < 32) {
+			globalThis.crypto.getRandomValues(bytes);
+			for (const byte of bytes) {
+				// Reject the short final bucket rather than biasing modulo 62.
+				if (byte >= 248) continue;
+				token += chars.charAt(byte % chars.length);
+				if (token.length === 32) break;
+			}
 		}
 		return token;
 	}

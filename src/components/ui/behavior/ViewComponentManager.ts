@@ -186,6 +186,7 @@ class ViewComponentFactory {
 
 // 统一的视图组件管理器
 export class ViewComponentManager extends Component {
+	private configurationSignatures = new Map<string, string>();
 	private components: Map<string, ViewComponentInterface> = new Map();
 	private parentComponent: Component;
 	private app: App;
@@ -212,13 +213,22 @@ export class ViewComponentManager extends Component {
 	 * 获取或创建指定视图的组件
 	 */
 	getOrCreateComponent(viewId: string): ViewComponentInterface | null {
-		// 如果组件已存在，直接返回
-		if (this.components.has(viewId)) {
-			return this.components.get(viewId)!;
-		}
-
-		// 获取视图配置
 		const viewConfig = getViewSettingOrDefault(this.plugin, viewId);
+		const signature = JSON.stringify(viewConfig.specificConfig ?? null);
+		const existing = this.components.get(viewId);
+		if (existing && this.configurationSignatures.get(viewId) === signature) return existing;
+		if (existing && typeof (existing as any).refreshConfiguration === "function" &&
+			JSON.parse(this.configurationSignatures.get(viewId) || "null")?.viewType === viewConfig.specificConfig?.viewType) {
+			(existing as any).refreshConfiguration();
+			this.configurationSignatures.set(viewId, signature);
+			return existing;
+		}
+		if (existing) {
+			if (existing instanceof Component) this.parentComponent.removeChild(existing);
+			else existing.unload?.();
+			existing.containerEl.remove();
+			this.components.delete(viewId);
+		}
 		const specificViewType = viewConfig.specificConfig?.viewType;
 
 		// 确定视图类型
@@ -268,6 +278,7 @@ export class ViewComponentManager extends Component {
 
 			// 缓存组件
 			this.components.set(viewId, component);
+			this.configurationSignatures.set(viewId, signature);
 		}
 
 		return component;
@@ -325,11 +336,12 @@ export class ViewComponentManager extends Component {
 			if (component instanceof Component) {
 				this.parentComponent.removeChild(component);
 			}
-			if (component.unload) {
+			else if (component.unload) {
 				component.unload();
 			}
 		});
 		this.components.clear();
+		this.configurationSignatures.clear();
 	}
 
 	/**

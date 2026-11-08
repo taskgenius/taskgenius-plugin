@@ -1,3 +1,4 @@
+import { snapshotViewSettings } from "./services/view-settings-signature";
 import { TaskGeniusHabits } from "./integrations/habits/task-genius-host";
 import {
 	addIcon,
@@ -158,6 +159,7 @@ export default class TaskProgressBarPlugin extends Plugin {
 
 	habitManager: HabitManager;
 	habitsIntegration?: TaskGeniusHabits;
+	private viewSettingsSignature = "";
 	async ensureHabitsIntegration(): Promise<TaskGeniusHabits> {
 		if (this.settings.habit.enableHabits && !this.habitManager) {
 			this.habitManager = this.addChild(new HabitManager(this));
@@ -1940,6 +1942,7 @@ export default class TaskProgressBarPlugin extends Plugin {
 
 		// Migrate old inheritance settings to new structure
 		this.migrateInheritanceSettings(savedData);
+		this.viewSettingsSignature = snapshotViewSettings(this.settings);
 	}
 
 	private migrateInheritanceSettings(savedData: any) {
@@ -1980,6 +1983,11 @@ export default class TaskProgressBarPlugin extends Plugin {
 			);
 		} catch {}
 		await this.saveData(this.settings);
+		const viewSignature = snapshotViewSettings(this.settings);
+		if (viewSignature !== this.viewSettingsSignature) {
+			this.viewSettingsSignature = viewSignature;
+			this.app.workspace.trigger("task-genius:view-config-changed", {reason:"settings-saved"});
+		}
 	}
 
 	async loadViews() {
@@ -2114,8 +2122,8 @@ export default class TaskProgressBarPlugin extends Plugin {
 		}
 		for (const leaf of this.app.workspace.getLeavesOfType("fluent-task-genius-view")) {
 			const view = leaf.view as any;
-			view.layoutManager?.sidebar?.render();
-			await view.dataManager?.loadTasks(false);
+			if (typeof view.refreshSettings === "function") await view.refreshSettings();
+			else { view.layoutManager?.sidebar?.render(); await view.dataManager?.loadTasks(false); }
 		}
 	}
 
