@@ -48,9 +48,10 @@ export class FluentSidebar extends Component {
 		today: { icon: "calendar-days", label: () => t("Today") },
 		upcoming: { icon: "calendar", label: () => t("Upcoming") },
 		flagged: { icon: "flag", label: () => t("Flagged") },
-		points: { icon: "sparkles", label: () => t("Points and rewards") },
+		points: { icon: "sparkles", label: () => t("Points") },
+		rewards: { icon: "gift", label: () => t("Rewards") },
 		projects: { icon: "folder-kanban", label: () => t("Projects") },
-		gantt: { icon: "gantt-chart", label: () => t("Project plans") },
+		gantt: { icon: "gantt-chart", label: () => t("Project Gantt") },
 	};
 
 	private otherItems: FluentTaskNavigationItem[] = [];

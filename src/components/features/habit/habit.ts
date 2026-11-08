@@ -1,6 +1,7 @@
 import { importLegacyHabits, planLegacyHabits } from "@/integrations/habits/legacy-import";
 import { ConfirmModal } from "@/integrations/habits/ui/confirm-modal";
 import { HabitsBlock } from "@/integrations/habits/ui/habits-block";
+import { NativeHabitCards } from "@/integrations/habits/ui/native-cards";
 import { HabitModal } from "@/integrations/habits/ui/habit-modal";
 import { t as ht } from "@/integrations/habits/i18n";
 import { t as settingsText } from "@/translations/helper";
@@ -34,11 +35,11 @@ import { HabitEditDialog } from "@/components/features/habit/components/HabitEdi
 
 export class Habit extends Component {
 	containerEl: HTMLElement;
-	private block?: HabitsBlock;
+	private block?: HabitsBlock | NativeHabitCards;
 	private query = "";
 	setSearchQuery(query: string): void { this.query = query; this.block?.setSearchQuery(query); }
 	private disposed = false;
-	constructor(readonly plugin: TaskProgressBarPlugin, parentEl: HTMLElement) {
+	constructor(readonly plugin: TaskProgressBarPlugin, parentEl: HTMLElement, private externalSearch = false) {
 		super();
 		this.containerEl = parentEl.createDiv({cls: "tg-habit-component-container tg-habits-surface"});
 	}
@@ -48,13 +49,22 @@ export class Habit extends Component {
 			if (this.disposed) return;
 			const toolbar = this.containerEl.createDiv({cls: "tg-habits-toolbar"});
 			toolbar.createEl("h2", {text: ht("Habits")});
-			new SearchComponent(toolbar).setPlaceholder(settingsText("Search habits")).setValue(this.query).onChange(value => this.setSearchQuery(value));
-			new ButtonComponent(toolbar).setButtonText(ht("Create habit")).setCta().onClick(() => {
-				new HabitModal(this.plugin.app, integration.store, () => {}, null, integration.settings.experimental.noteHabits).open();
-			});
+			if (!this.externalSearch) new SearchComponent(toolbar).setPlaceholder(settingsText("Search habits")).setValue(this.query).onChange(value => this.setSearchQuery(value));
+			const layout = toolbar.createEl("select", { attr: { "aria-label": settingsText("Habit layout") } });
+			layout.createEl("option", { value: "cards", text: settingsText("Task Genius cards") });
+			layout.createEl("option", { value: "dashboard", text: settingsText("Dashboard layout") });
+			layout.value = this.plugin.app.loadLocalStorage("task-genius:habit-layout") === "dashboard" ? "dashboard" : "cards";
 			const root = this.containerEl.createDiv();
-			this.block = this.addChild(new HabitsBlock(this.plugin.app, integration.store, () => integration.settings, integration.events, "", root));
-			this.block.setSearchQuery(this.query);
+			const renderLayout = () => {
+				if (this.block) this.removeChild(this.block);
+				root.empty(); const content = root.createDiv();
+				this.block = layout.value === "cards"
+					? this.addChild(new NativeHabitCards(this.plugin.app, integration.store, integration.settings, integration.events, content))
+					: this.addChild(new HabitsBlock(this.plugin.app, integration.store, () => integration.settings, integration.events, "", content));
+				this.block.setSearchQuery(this.query);
+			};
+			this.registerDomEvent(layout, "change", () => { this.plugin.app.saveLocalStorage("task-genius:habit-layout", layout.value); renderLayout(); });
+			renderLayout();
 			if (this.plugin.settings.habit.habits?.length) {
 				const legacy = this.containerEl.createEl("details", {cls: "tg-habits-legacy"});
 				legacy.createEl("summary", {text: ht("Existing Task Genius habits")});

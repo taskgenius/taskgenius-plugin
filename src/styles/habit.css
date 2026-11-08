@@ -570,3 +570,23 @@
 	max-height: 60vh;
 	overflow: auto;
 }
+
+.tg-habit-component-container.tg-habits-surface { border: 0; box-shadow: none; border-radius: 0; background: var(--background-primary); }
+.tg-habits-surface .habits-dashboard, .tg-habits-surface .habits-compact { border: 0; box-shadow: none; border-radius: 0; background: transparent; }
+.tg-native-habits { max-width: 960px; margin: 0 auto; padding: 12px; }
+.tg-native-habit-nav { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 16px; }
+.tg-native-habit-card { margin: 0 0 16px; padding: 16px; border: 1px solid var(--background-modifier-border); border-radius: var(--radius-m); }
+.tg-native-habit-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.tg-native-habit-heading strong { flex: 1; }
+.tg-native-habit-body { display: flex; align-items: center; gap: 24px; }
+.tg-native-habit-grid { display: grid; grid-template-columns: repeat(10, minmax(12px, 20px)); gap: 6px; flex: 1; }
+.tg-native-habit-cell { width: 20px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: var(--background-modifier-border); box-shadow: none; }
+.tg-native-habit-cell.is-complete { background: var(--habit-accent, var(--interactive-accent)); }
+.tg-native-habit-cell.is-rest { opacity: .45; }
+.tg-native-habit-controls { display: flex; align-items: center; gap: 8px; }
+.tg-native-habit-controls .is-complete { color: var(--habit-accent, var(--interactive-accent)); }
+.tg-native-habit-period { color: var(--text-muted); font-size: var(--font-ui-small); margin-top: 10px; }
+@media(max-width: 550px) { .tg-native-habit-body { flex-wrap: wrap; gap: 12px; } .tg-native-habit-grid { grid-template-columns: repeat(10, minmax(8px, 1fr)); } .tg-native-habit-cell { width: 100%; max-width: 20px; } }
+
+.tg-dependency-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tg-dependency-chip { display: flex; align-items: center; gap: 6px; border-radius: var(--radius-s); padding: 4px 8px; background: var(--background-secondary); }

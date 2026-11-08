@@ -1,3 +1,4 @@
+import { renderTaskDependencies } from "@/components/features/task/edit/TaskDependencyPicker";
 import { t as settingsText } from "@/translations/helper";
 import { App, Component, debounce, setIcon, Menu } from "obsidian";
 import { StandardTaskMetadata, Task } from "@/types/task";
@@ -750,51 +751,12 @@ export class InlineEditor extends Component {
 		modal.open();
 	}
 
-	private createDependsOnEditor(
-		container: HTMLElement,
-		currentValue?: string
-	): void {
-		const input = container.createEl("input", {
-			type: "text",
-			cls: "inline-dependson-input",
-			value:
-				currentValue ||
-				(this.task.metadata.dependsOn
-					? this.task.metadata.dependsOn.join(", ")
-					: ""),
-			placeholder: "Task IDs separated by commas",
+	private createDependsOnEditor(container: HTMLElement, currentValue?: string): void {
+		renderTaskDependencies(this.app, this.plugin, container, this.task, ids => {
+			this.task.metadata.dependsOn = ids;
+			const target = container.closest(".inline-metadata-editor")?.parentElement as HTMLElement;
+			if (target) void this.finishMetadataEdit(target, "dependsOn");
 		});
-
-		this.activeInput = input;
-
-		// Prevent event bubbling on input element
-		this.registerDomEvent(
-			input,
-			"click",
-			this.boundHandlers.stopPropagation
-		);
-		this.registerDomEvent(
-			input,
-			"mousedown",
-			this.boundHandlers.stopPropagation
-		);
-
-		const updateDependsOn = (value: string) => {
-			if (value.trim()) {
-				this.task.metadata.dependsOn = value
-					.split(",")
-					.map((id) => id.trim())
-					.filter((id) => id.length > 0);
-			} else {
-				this.task.metadata.dependsOn = undefined;
-			}
-		};
-
-		this.setupInputEvents(input, updateDependsOn, "dependsOn");
-
-		// Focus and select
-		input.focus();
-		input.select();
 	}
 
 	private createIdEditor(
@@ -1005,10 +967,8 @@ export class InlineEditor extends Component {
 			{ key: "cancelledDate", label: "Cancelled Date", icon: "x" },
 			{ key: "completedDate", label: "Completed Date", icon: "check" },
 			{ key: "priority", label: settingsText("Priority"), icon: "alert-triangle" },
-			{ key: "recurrence", label: settingsText("Recurrence"), icon: "repeat" },
 			{ key: "onCompletion", label: settingsText("On Completion"), icon: "flag" },
 			{ key: "dependsOn", label: "Depends On", icon: "link" },
-			{ key: "id", label: "Task ID", icon: "hash" },
 		];
 
 		// Filter out fields that already have values

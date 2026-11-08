@@ -464,16 +464,6 @@ export class QuickCaptureModal extends Modal {
 				});
 		});
 
-		// Recurrence
-		new Setting(configPanel).setName(t("Recurrence")).addText((text) => {
-			text.setPlaceholder(t("e.g., every day, every week"))
-				.setValue(this.taskMetadata.recurrence || "")
-				.onChange((value) => {
-					this.taskMetadata.recurrence = value || undefined;
-					this.updatePreview();
-				});
-		});
-
 		// Create editor container in the right panel
 		const editorContainer = editorPanel.createDiv({
 			cls: "quick-capture-modal-editor",

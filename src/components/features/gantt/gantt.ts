@@ -5,6 +5,8 @@ import {
 	MarkdownRenderer as ObsidianMarkdownRenderer,
 	TFile,
 	Menu,
+	ButtonComponent,
+	Notice,
 } from "obsidian";
 import { type Task } from "@/types/task";
 import "@/styles/gantt/gantt.css";
@@ -27,6 +29,8 @@ import { GanttSpecificConfig } from "@/common/setting-definition";
 import { buildProjectPlan } from "@/managers/project-plan";
 import { ProjectFileManager, ProjectEditModal } from "@/managers/project-file-manager";
 import { t } from "@/translations/helper";
+import { projectDateChange, ProjectDateEdge } from "@/managers/project-dates";
+import { registerGanttPan } from "./drag-pan";
 
 // Define the PRIORITY_MAP here as well, or import it if moved to a shared location
 // This is needed to convert filter value (icon/text) back to number for comparison
@@ -267,6 +271,11 @@ export class GanttComponent extends Component {
 		this.registerDomEvent(this.containerEl, "wheel", this.handleWheel, {
 			passive: false,
 		});
+		registerGanttPan(this, this.scrollContainerEl);
+		const controls = this.filterContainerEl.createDiv({ cls: "gantt-project-controls" });
+		new ButtonComponent(controls).setButtonText(t("Zoom out")).onClick(() => this.zoomBy(0.8));
+		new ButtonComponent(controls).setButtonText(t("Zoom in")).onClick(() => this.zoomBy(1.25));
+		new ButtonComponent(controls).setButtonText(t("Today")).onClick(() => this.scrollToDate(new Date()));
 			this.applyEffectiveConfig();
 
 		// Initial render is triggered by updateTasks or refresh
@@ -551,7 +560,7 @@ export class GanttComponent extends Component {
 				// Optional: end bar at completion date if no due date
 			}
 
-			if (
+			if (!task.metadata.projectPlan && (
 				(taskDue && !taskStart) ||
 				(taskStart &&
 					taskDue &&
@@ -559,7 +568,7 @@ export class GanttComponent extends Component {
 						new Date(taskStart),
 						new Date(taskDue)
 					) === 0)
-			) {
+			)) {
 				const milestoneDate = taskDue
 					? new Date(taskDue)
 					: taskStart
@@ -827,6 +836,8 @@ export class GanttComponent extends Component {
 
 		// 3. Update Tasks - Pass only visible tasks
 		this.taskRendererComponent.updateParams({
+			dayWidth: this.dayWidth,
+			onDateChange: (task, days, edge) => void this.changeProjectDates(task, days, edge),
 			app: this.app,
 			taskGroupEl: this.taskGroupEl!, // Assert non-null as checked above
 			preparedTasks: visibleTasks, // Pass filtered list
@@ -1064,6 +1075,23 @@ export class GanttComponent extends Component {
 	private handleTaskClick(task: Task) {
 		if (task.metadata.projectPlan) { void this.app.workspace.openLinkText(task.filePath, "", false); return; }
 		this.params.onTaskSelected?.(task);
+	}
+
+	private zoomBy(factor: number): void {
+		const center = this.startDate ? this.dateHelper.xToDate(this.scrollContainerEl.scrollLeft + this.scrollContainerEl.clientWidth / 2, this.startDate, this.dayWidth) : new Date();
+		this.dayWidth = Math.max(MIN_DAY_WIDTH, Math.min(MAX_DAY_WIDTH, this.dayWidth * factor));
+		this.prepareTasksForRender(); this.renderInternal(); this.scrollToDate(center || new Date());
+	}
+
+	private async changeProjectDates(task: Task, days: number, edge: ProjectDateEdge): Promise<void> {
+		if (!task.metadata.projectPlan || !task.metadata.startDate || !task.metadata.dueDate) return;
+		try {
+			const dates = projectDateChange(task.metadata.startDate, task.metadata.dueDate, days, edge);
+			if (!await new ProjectFileManager(this.app).update(task.metadata.project || task.content, dates)) throw new Error(t("Project not found"));
+			const local = (value: string) => { const [year, month, day] = value.split("-").map(Number); return new Date(year, month - 1, day).getTime(); };
+			for (const item of this.tasks) if (item.id === task.id) item.metadata = { ...item.metadata, startDate: local(dates.startDate), dueDate: local(dates.dueDate) };
+			this.calculateDateRange(true); this.prepareTasksForRender(); this.renderInternal();
+		} catch (error) { new Notice(String(error)); this.renderInternal(); }
 	}
 
 	private handleTaskContextMenu(event: MouseEvent, task: Task) {

@@ -980,3 +980,9 @@
 	background: linear-gradient(to top, var(--background-primary), transparent);
 	z-index: 1;
 }
+
+.tg-quadrant-card-header { display: flex; align-items: flex-start; gap: 8px; }
+.tg-quadrant-card-header .tg-quadrant-card-checkbox { flex: 0 0 auto; padding-top: 2px; }
+.tg-quadrant-card-header .tg-quadrant-card-content { flex: 1; min-width: 0; margin: 0; padding: 0; }
+.tg-quadrant-card-title p { margin: 0; }
+.tg-quadrant-card-header .tg-quadrant-card-actions { flex: 0 0 auto; }

@@ -1048,10 +1048,10 @@ export class FluentActionHandlers extends Component {
 	/**
 	 * Handle navigation to a view or create new task
 	 */
-	handleNavigate(viewId: string): void {
+	handleNavigate(viewId: string, project?: string | null): void {
 		if (viewId === "review") viewId = "projects";
 		if (viewId === "new-task") {
-			new QuickCaptureModal(this.app, this.plugin).open();
+			new QuickCaptureModal(this.app, this.plugin, project ? { project } : undefined).open();
 		} else {
 			console.log(`[FluentAction] handleNavigate to ${viewId}`);
 			this.onNavigateToView?.(viewId);

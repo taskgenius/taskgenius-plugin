@@ -391,7 +391,6 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 		this.createContextInput(container);
 
 		// Recurrence input
-		this.createRecurrenceInput(container);
 	}
 
 	/**

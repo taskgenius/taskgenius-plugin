@@ -667,4 +667,10 @@ export const zh: Record<string, string> = {
 	"Restart cycle on": "从指定日期重新开始循环",
 	"Choose a new cycle start date. Existing records and earlier schedules are preserved.": "选择新循环的开始日期，已有记录和此前的排期都会保留。",
 	"{active} active days / {days}-day cycle": "每 {days} 天循环，前 {active} 天签到",
+	"Date": "日期",
+	"More actions": "更多操作",
+	"Check in": "签到",
+	"Decrease": "减少",
+	"Increase": "增加",
+	"Period progress": "本周期进度",
 };

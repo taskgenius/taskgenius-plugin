@@ -148,6 +148,7 @@ export class FluentDataManager extends Component {
 		// Build filter options
 		const filterOptions: any = {
 			textQuery: structuredQuery ? "" : query,
+			includeClosedTasks: !!filterState.activeTaskPreset,
 		};
 
 		// Always enable v2Filters for Working-on so the special filter runs
@@ -240,6 +241,7 @@ export class FluentDataManager extends Component {
 					: abandoned.includes(mark) ? "abandoned"
 					: inProgress.includes(mark) ? "in-progress"
 					: planned.includes(mark) ? "planned"
+					: ["~", "="].includes(mark) || (this.plugin.settings.statusCycles || []).some(cycle => Object.entries(cycle.marks).some(([name, symbol]) => symbol === task.status && /pause|暂停/i.test(name))) ? "paused"
 					: "not-started";
 				return evaluateFilterNode(presetTree, { ...task, statusName });
 			};

@@ -217,6 +217,8 @@ export class CalendarComponent extends Component {
 	//  Public API
 	// ============================================
 
+	public onShown(): void { this.tgCalendar?.refresh(); }
+
 	public updateTasks(newTasks: Task[]) {
 		this.tasks = newTasks;
 		this.badgeEventsCache.clear();

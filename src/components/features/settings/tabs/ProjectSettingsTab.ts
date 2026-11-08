@@ -11,5 +11,4 @@ export function renderProjectSettingsTab(tab: TaskProgressBarSettingTab, contain
 		.addButton(button => button.setButtonText(t("New project")).onClick(() => new ProjectCreateModal(tab.app, manager, () => void tab.plugin.triggerViewUpdate()).open()));
 	new Setting(container).setName(t("Archived projects")).setDesc(t("Archive finished projects and restore them when needed. Notes and task history stay available."))
 		.addButton(button => button.setButtonText(t("Manage archives")).onClick(() => new ProjectArchiveModal(tab.app, manager, () => void tab.plugin.triggerViewUpdate()).open()));
-	new Setting(container).setName(t("Existing project tags")).setDesc(t("Existing tags can still be read. Use Create project note and move tasks to consolidate a legacy project into its note."));
 }

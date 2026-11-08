@@ -90,6 +90,7 @@ export class ContentComponent extends Component {
 	private selectedProjectForView: string | null = null; // Keep track if a specific project is filtered (for project view)
 	private focusFilter: string | null = null; // Keep focus filter if needed
 	private isTreeView: boolean = false;
+	private externallyFiltered = false;
 	private isRendering: boolean = false; // Guard against concurrent renders
 	private pendingForceRefresh: boolean = false; // Track if a force refresh is pending
 	private pendingVisibilityRetry: boolean = false; // Queue a retry when container becomes visible
@@ -252,6 +253,7 @@ export class ContentComponent extends Component {
 	public setIsTreeView(isTree: boolean) {
 		if (this.isTreeView !== isTree) {
 			this.isTreeView = isTree;
+			this.pendingForceRefresh = true;
 			const viewToggleBtn = this.headerEl?.querySelector(
 				".view-toggle-btn"
 			) as HTMLElement;
@@ -568,8 +570,10 @@ export class ContentComponent extends Component {
 	public setTasks(
 		tasks: Task[],
 		notFilteredTasks: Task[],
-		forceRefresh: boolean = false
+		forceRefresh: boolean = false,
+		externallyFiltered: boolean = false
 	) {
+		this.externallyFiltered = externallyFiltered;
 		const updateSignatures = () => {
 			this.lastAllTasksSignature = this.computeTaskSignature(tasks);
 			this.lastNotFilteredTasksSignature =
@@ -836,7 +840,7 @@ export class ContentComponent extends Component {
 
 	private applyFilters() {
 		// Call the centralized filter utility
-		this.filteredTasks = filterTasks(
+		this.filteredTasks = this.externallyFiltered ? [...this.allTasks] : filterTasks(
 			this.allTasks,
 			this.currentViewId,
 			this.plugin,

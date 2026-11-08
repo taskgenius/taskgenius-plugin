@@ -26,22 +26,22 @@ export class PointsDashboard extends Component {
 	private disposed = false;
 	private refreshTimer?: number;
 
-	constructor(private app: App, private plugin: TaskProgressBarPlugin, parent: HTMLElement, settingsMode = false) {
+	constructor(private app: App, private plugin: TaskProgressBarPlugin, parent: HTMLElement, private settingsMode = false, private page: "points" | "rewards" = "points") {
 		super();
-		this.activeTab = settingsMode ? "actions" : "daily";
+		this.activeTab = "actions";
 		this.containerEl = parent.createDiv({ cls: "tg-points-page" });
 	}
 	onload(): void {
 		this.disposed = false;
 		const header = this.containerEl.createDiv({ cls: "tg-points-header" });
 		const heading = header.createDiv();
-		heading.createEl("h2", { text: t("Points and rewards") });
-		heading.createDiv({ cls: "tg-points-subtitle", text: t("Check in, earn points, and choose your rewards.") });
-		this.button(header, t("Add points"), () => this.editRecord(), true);
+		heading.createEl("h2", { text: t(this.page === "rewards" ? "Rewards" : "Points") });
+		heading.createDiv({ cls: "tg-points-subtitle", text: t(this.page === "rewards" ? "Choose a reward and redeem it with your points." : "Manage points, bonuses and history.") });
+		if (this.page === "points") this.button(header, t("Add points"), () => this.editRecord(), true);
 		this.summaryEl = this.containerEl.createDiv({ cls: "tg-points-summary" });
 		this.tabsEl = this.containerEl.createDiv({ cls: "tg-points-tabs", attr: { role: "tablist" } });
 		const tools = this.containerEl.createDiv({ cls: "tg-points-tools" });
-		new SearchComponent(tools).setPlaceholder(t("Search habits, rewards, and records"))
+		if (this.settingsMode) new SearchComponent(tools).setPlaceholder(t(this.page === "rewards" ? "Search rewards" : "Search bonuses and records"))
 			.onChange(value => { this.query = value.toLocaleLowerCase().trim(); this.renderBody(); });
 		const filter = tools.createEl("select", { attr: { "aria-label": t("Filter") } });
 		for (const [value, label] of [["all", "All"], ["today", "Today"], ["positive", "Points earned"], ["negative", "Points spent"]]) filter.createEl("option", { value, text: t(label) });
@@ -77,6 +77,7 @@ export class PointsDashboard extends Component {
 				[t("Today's points"), numberText(snapshot.todayPoints), false],
 				[t("Habits / check-ins"), `${snapshot.habitCount} / ${snapshot.recordCount}`, false],
 			] as const) {
+				if (this.page === "rewards" && !primary) continue;
 				const card = this.summaryEl.createDiv({ cls: `tg-points-card${primary ? " is-primary" : ""}` });
 				card.createDiv({ cls: "tg-points-label", text: label });
 				card.createDiv({ cls: "tg-points-balance", text: value });
@@ -87,7 +88,8 @@ export class PointsDashboard extends Component {
 	private renderTabs() {
 		(this.containerEl.querySelector(".tg-points-tools select") as HTMLElement | null)?.toggle(this.activeTab === "history");
 		this.tabsEl.empty();
-		for (const [id, label] of [["daily", "Daily check-in"], ["actions", "Bonuses and rewards"], ["history", "Points history"], ["rules", "Points rules"]] as const) {
+		const tabs: Array<[PointsTab, string]> = this.page === "rewards" ? [["actions", "Reward shop"]] : [["actions", "Bonus actions"], ["history", "Points history"], ["rules", "Points rules"]];
+		for (const [id, label] of tabs) {
 			const button = this.tabsEl.createEl("button", { text: t(label), attr: { role: "tab", "aria-selected": String(id === this.activeTab) } });
 			button.toggleClass("is-active", id === this.activeTab);
 			button.addEventListener("click", () => { this.activeTab = id; this.renderTabs(); this.clearBody(); this.renderBody(); });
@@ -128,12 +130,15 @@ export class PointsDashboard extends Component {
 	}
 	private renderActions() {
 		const snapshot = this.snapshot!;
+		if (this.page === "points") {
 		const bonuses = this.panel(t("Bonus actions"));
 		this.button(bonuses, t("Edit bonus actions"), () => this.editList("examplePropertyLeft"));
 		for (const item of snapshot.bonuses.filter(item => this.matches(item.text))) {
 			const row = bonuses.createDiv({ cls: "tg-reward-card" });
 			row.createDiv({ text: item.text });
 			this.button(row, t("Record points"), () => this.editRecord(item.text, item.amount ?? 1));
+		}
+		return;
 		}
 		const shop = this.panel(t("Reward shop"));
 		this.button(shop, t("Edit reward wishes"), () => this.editList("examplePropertyRight"));

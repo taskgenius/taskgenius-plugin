@@ -29,4 +29,21 @@ describe("advanced task filters", () => {
 		expect(evaluateFilterNode(parseAdvancedFilterQuery("due:none"), { metadata: {} })).toBe(true);
 		expect(evaluateFilterNode(parseAdvancedFilterQuery("status:completed"), { completed: true, metadata: {} })).toBe(true);
 	});
+	test("any-date emptiness means all date fields are empty", () => {
+		const match = (query: string, metadata: any) => evaluateFilterNode(parseAdvancedFilterQuery(query), { metadata });
+		expect(match("date:none", {})).toBe(true);
+		expect(match("date:none", { dueDate: Date.now() })).toBe(false);
+		expect(match("date:!=none", { startDate: Date.now() })).toBe(true);
+	});
+	test("tag equality checks membership and ignores the leading hash", () => {
+		expect(matches("tag:=work")).toBe(true);
+		expect(matches("tag:=#work")).toBe(true);
+		expect(matches("tag:!=work")).toBe(false);
+		expect(evaluateFilterNode(parseAdvancedFilterQuery("tag:=work"), { metadata: { tags: ["personal", "work"] } })).toBe(true);
+	});
+	test("dropdown-generated project queries support numeric names and escaped quotes", () => {
+		for (const name of ["123", 'Writing "weekly" reports', "A (new) project"]) {
+			expect(evaluateFilterNode(parseAdvancedFilterQuery(`project:=${JSON.stringify(name)}`), { metadata: { project: name } })).toBe(true);
+		}
+	});
 });

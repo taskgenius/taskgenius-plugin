@@ -1,6 +1,7 @@
 import { App, Component } from "obsidian";
 import { Task } from "@/types/task";
 import TaskProgressBarPlugin from "@/index";
+import type { TableSpecificConfig } from "@/common/setting-definition";
 import {
 	ViewMode,
 	getViewSettingOrDefault,
@@ -19,6 +20,7 @@ interface ViewComponentInterface {
 	setTasks?: (tasks: Task[], allTasks?: Task[]) => void;
 	updateTasks?: (tasks: Task[]) => void;
 	setViewMode?: (viewId: ViewMode, project?: string | null) => void;
+	onShown?: () => void;
 	load?: () => void;
 	unload?: () => void;
 }
@@ -111,12 +113,12 @@ class ViewComponentFactory {
 				});
 
 			case "table":
-				if (viewConfig.specificConfig?.viewType === "table") {
+				{
 					return new TableViewAdapter(
 						app,
 						plugin,
 						parentEl,
-						viewConfig.specificConfig,
+						viewConfig.specificConfig as TableSpecificConfig,
 						{
 							onTaskSelected: handlers.onTaskSelected,
 							onTaskCompleted: handlers.onTaskCompleted,
@@ -300,6 +302,7 @@ export class ViewComponentManager extends Component {
 		const component = this.getOrCreateComponent(viewId);
 		if (component) {
 			component.containerEl.show();
+			requestAnimationFrame(() => { if (this.components.get(viewId) === component && component.containerEl.isShown()) component.onShown?.(); });
 		}
 		return component;
 	}
@@ -315,14 +318,14 @@ export class ViewComponentManager extends Component {
 			"isSpecialView",
 			viewId,
 			specificViewType,
-			["calendar", "kanban", "gantt", "forecast", "table"].includes(
+			["calendar", "kanban", "gantt", "forecast", "table", "quadrant"].includes(
 				viewId,
 			),
 		);
 
 		return !!(
 			specificViewType ||
-			["calendar", "kanban", "gantt", "forecast", "table"].includes(
+			["calendar", "kanban", "gantt", "forecast", "table", "quadrant"].includes(
 				viewId,
 			)
 		);

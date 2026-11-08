@@ -12,6 +12,7 @@ import {
 	TextAreaComponent,
 } from "obsidian";
 import { Task } from "@/types/task";
+import { renderTaskDependencies } from "./TaskDependencyPicker";
 import TaskProgressBarPlugin from "@/index";
 import { t } from "@/translations/helper";
 import {
@@ -179,7 +180,6 @@ export class TaskMetadataEditor extends Component {
 			"cancelledDate",
 			this.getDateString(this.task.metadata.cancelledDate)
 		);
-		this.createRecurrenceEditor(pane);
 	}
 
 	private populateDetailsTabContent(pane: HTMLElement): void {
@@ -189,7 +189,6 @@ export class TaskMetadataEditor extends Component {
 		this.createContextEditor(pane);
 		this.createOnCompletionEditor(pane);
 		this.createDependsOnEditor(pane);
-		this.createIdEditor(pane);
 	}
 
 	/**
@@ -247,12 +246,10 @@ export class TaskMetadataEditor extends Component {
 		);
 
 		// Recurrence rule editor
-		this.createRecurrenceEditor(metadataContainer);
 
 		// New fields
 		this.createOnCompletionEditor(metadataContainer);
 		this.createDependsOnEditor(metadataContainer);
-		this.createIdEditor(metadataContainer);
 	}
 
 	private createPointsEditor(container: HTMLElement): void {
@@ -600,28 +597,10 @@ export class TaskMetadataEditor extends Component {
 	 * Creates a dependsOn editor.
 	 */
 	private createDependsOnEditor(container: HTMLElement): void {
-		const fieldContainer = container.createDiv({
-			cls: "field-container dependson-container",
-		});
-		const fieldLabel = fieldContainer.createDiv({ cls: "field-label" });
-		fieldLabel.setText(t("Depends On"));
-
-		const dependsOnInput = new TextComponent(fieldContainer)
-			.setPlaceholder(t("Task IDs separated by commas"))
-			.setValue(
-				Array.isArray(this.task.metadata.dependsOn)
-					? this.task.metadata.dependsOn.join(", ")
-					: ""
-			);
-
-		this.registerDomEvent(dependsOnInput.inputEl, "blur", () => {
-			const dependsOnValue = dependsOnInput.inputEl.value;
-			const dependsOnArray = dependsOnValue
-				.split(",")
-				.map((id) => id.trim())
-				.filter((id) => id.length > 0);
-			this.notifyMetadataChange("dependsOn", dependsOnArray);
-		});
+		const task = this.task;
+		const root = container.createDiv({ cls: "field-container dependson-container" });
+		root.createDiv({ cls: "field-label", text: t("Depends On") });
+		renderTaskDependencies(this.app, this.plugin, root, task, ids => { if (this.task === task) this.notifyMetadataChange("dependsOn", ids); });
 	}
 
 	/**

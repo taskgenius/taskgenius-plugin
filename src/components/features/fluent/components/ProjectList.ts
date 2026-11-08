@@ -10,10 +10,11 @@ import { Events, on } from "@/dataflow/events/Events";
 import {
 	ProjectFileManager,
 	ProjectCreateModal,
-	ProjectTaskModal,
+	ProjectDeleteModal,
 	ProjectEditModal,
 	ProjectArchiveModal,
 } from "@/managers/project-file-manager";
+import { QuickCaptureModal } from "@/components/features/quick-capture/modals/QuickCaptureModalWithSwitch";
 
 export interface Project {
 	id: string;
@@ -940,12 +941,9 @@ export class ProjectList extends Component {
 			menu.addItem((item) => item
 				.setTitle(t("Add task to project"))
 				.setIcon("plus")
-				.onClick(() => new ProjectTaskModal(
-					this.plugin.app,
-					projectFiles,
-					project.name,
-					() => this.loadProjects(),
-				).open()));
+				.onClick(() => new QuickCaptureModal(this.plugin.app, this.plugin, { project: project.name }, true).open()));
+			menu.addItem(item => item.setTitle(t("Delete project")).setIcon("trash").onClick(() =>
+				new ProjectDeleteModal(this.plugin.app, projectFiles, projectFile, () => this.loadProjects()).open()));
 			menu.showAtMouseEvent(event);
 			return;
 		}

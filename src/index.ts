@@ -100,6 +100,7 @@ import { TaskGeniusIconManager } from "./managers/icon-manager";
 import { monitorTaskCompletedExtension } from "./editor-extensions/task-operations/completion-monitor";
 import { sortTasksInDocument } from "./commands/sortTaskCommands";
 import { taskGutterExtension } from "./editor-extensions/task-operations/gutter-marker";
+import { MarkdownStatusSync } from "./services/markdown-status-sync";
 import { autoDateManagerExtension } from "./editor-extensions/date-time/date-manager";
 import { taskMarkCleanupExtension } from "./editor-extensions/task-operations/mark-cleanup";
 import { IcsManager } from "./managers/ics-manager";
@@ -245,6 +246,7 @@ export default class TaskProgressBarPlugin extends Plugin {
 	async onload() {
 		console.time("[Task Genius] onload");
 		await this.loadSettings();
+		this.addChild(new MarkdownStatusSync(this));
 
 		// Initialize version manager first
 		this.versionManager = new VersionManager(this.app, this);
@@ -1936,9 +1938,23 @@ export default class TaskProgressBarPlugin extends Plugin {
 
 		// Migrate settings to new formats
 		migrateSettings(this.settings);
+		this.settings.enableIndexer = true;
+		if (this.settings.fileFilter?.scopeControls) this.settings.fileFilter.scopeControls.inlineTasksEnabled = true;
+		if ((this.settings.interfaceRevision || 0) < 9134) {
+			for (const view of this.settings.viewConfiguration || []) {
+				if (view.specificConfig?.viewType !== "table") continue;
+				const widths = view.specificConfig.columnWidths;
+				if (!widths) continue;
+				if (widths.status === 80) widths.status = 64;
+				if (widths.content === 300) widths.content = 420;
+				if (widths.priority === 100) widths.priority = 72;
+			}
+			this.settings.interfaceRevision = 9134;
+		}
 		for (const view of this.settings.viewConfiguration || []) {
 			if (view.id === "review") view.visible = false;
-			if (view.id === "gantt" && ["计划", "Gantt", "Gantt Chart", "Planning"].includes(view.name)) view.name = t("Project plans");
+			if (view.id === "points" && ["Points and rewards", "积分与奖励"].includes(view.name)) view.name = t("Points");
+			if (view.id === "gantt" && ["计划", "Gantt", "Gantt Chart", "Planning", "Project plans", "项目计划"].includes(view.name)) view.name = t("Project Gantt");
 		}
 
 		// Repair and validate status cycles

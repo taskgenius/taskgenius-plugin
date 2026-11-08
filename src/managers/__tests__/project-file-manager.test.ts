@@ -4,6 +4,16 @@ import { buildProjectPlan } from "../project-plan";
 import { saveCapture } from "@/utils/file/file-operations";
 import { filterTasks } from "@/utils/task/task-filter-utils";
 
+test("deleting a project trashes only its canonical note and preserves other notes", async () => {
+	const { app, files, addFile } = createVaultHarness();
+	addFile("Projects/Research.md", "- [ ] Research", { project: "Research" });
+	addFile("Inbox.md", "- [ ] Unrelated");
+	app.fileManager.trashFile = jest.fn(async (file: TFile) => { files.delete(file.path); });
+	expect(await new ProjectFileManager(app).remove("Research")).toBe(true);
+	expect(app.fileManager.trashFile).toHaveBeenCalledWith(expect.objectContaining({ path: "Projects/Research.md" }));
+	expect(files.get("Inbox.md")?.text).toBe("- [ ] Unrelated");
+});
+
 function createVaultHarness() {
 	const app = new App() as any;
 	const files = new Map<string, { file: TFile; text: string; fm?: Record<string, unknown> }>();

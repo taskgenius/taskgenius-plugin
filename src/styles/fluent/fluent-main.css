@@ -621,7 +621,7 @@ button.fluent-new-task-btn:hover {
 
 .bases-view .tg-kanban-filters,
 .tg-fluent-content .content-header,
-.tg-fluent-main-container:has(.fluent-top-navigation:not(.other-view))
+.workspace-leaf-content:has(.view-header .fluent-top-navigation:not(.other-view)) .tg-fluent-main-container
 	.tg-fluent-content
 	.tg-kanban-filters {
 	display: none;
@@ -1016,3 +1016,17 @@ button.fluent-new-task-btn:hover {
 	border-radius: 4px;
 	z-index: 1000;
 }
+
+/* Keep navigation inside Obsidian's existing title bar. */
+.view-header:has(.tg-fluent-top-nav) { height: auto; min-height: 48px; flex-wrap: wrap; }
+.view-header:has(.tg-fluent-top-nav) .view-header-title-container { flex: 1; min-width: 0; padding: 0; overflow: visible; }
+.view-header .tg-fluent-top-nav { width: 100%; min-width: 0; border: 0; background: transparent; }
+.view-header .fluent-top-navigation { height: auto; min-height: 42px; padding: 4px 8px; gap: 12px; flex-wrap: wrap; -webkit-app-region: no-drag; }
+.view-header .fluent-nav-left { flex: 1 1 220px; min-width: 140px; }
+.view-header .fluent-search-container { max-width: none; }
+.view-header .fluent-nav-center, .view-header .fluent-nav-right { flex-shrink: 0; }
+.view-header .fluent-view-tabs { display: flex; }
+.view-header .fluent-nav-center { display: flex; }
+
+.view-header .tg-fluent-top-nav { pointer-events: auto; }
+.tg-saved-filter-select { max-width: 180px; min-width: 92px; }

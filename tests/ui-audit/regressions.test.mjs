@@ -25,12 +25,16 @@ const owned=[
   'pages/FluentTaskView.ts', 'integrations/habits/ui/habit-modal.ts',
   'mcp/auth/AuthMiddleware.ts', 'services/view-settings-signature.ts', 'dataflow/events/Events.ts', 'utils/ui/view-mode-utils.ts',
   'utils/ui/tree-view-utils.ts',
-	'utils/task/filter-compatibility.ts',
+	'components/features/gantt/drag-pan.ts', 'components/features/gantt/task-renderer.ts', 'utils/task/priority-utils.ts', 'services/markdown-status-sync.ts', 'utils/task/filter-compatibility.ts', 'utils/task/saved-task-filters.ts', 'components/features/fluent/components/SavedTaskFilterModal.ts',
 	'components/features/rewards/PointsDashboard.ts', 'managers/points-service.ts', 'managers/daily-points.ts',
 ].map(file=>path.resolve('src',file));
 await build({stdin:{contents:`
  export {ContentComponent} from './src/components/features/task/view/content';
+ export {TaskRendererComponent} from './src/components/features/gantt/task-renderer';
+ export {MarkdownStatusSync} from './src/services/markdown-status-sync';
+ export {registerGanttPan} from './src/components/features/gantt/drag-pan';
  export {TopNavigation} from './src/components/features/fluent/components/FluentTopNavigation';
+ export {SavedTaskFilterModal} from './src/components/features/fluent/components/SavedTaskFilterModal';
  export {FluentDataManager} from './src/components/features/fluent/managers/FluentDataManager';
  export {FluentComponentManager} from './src/components/features/fluent/managers/FluentComponentManager';
  export {CalendarComponent} from './src/components/features/calendar';
@@ -66,7 +70,7 @@ await build({stdin:{contents:`
    });
  }}],
 });
-const {ContentComponent,TopNavigation,FluentDataManager,FluentComponentManager,CalendarComponent,ViewComponentManager,FluentTaskView,HabitModal,PointsDashboard,snapshotViewSettings,AuthMiddleware,ProjectList,vaultFixture,moment}=await import(pathToFileURL(path.join(directory,'ui.mjs')));
+const {registerGanttPan,MarkdownStatusSync,TaskRendererComponent,SavedTaskFilterModal,ContentComponent,TopNavigation,FluentDataManager,FluentComponentManager,CalendarComponent,ViewComponentManager,FluentTaskView,HabitModal,PointsDashboard,snapshotViewSettings,AuthMiddleware,ProjectList,vaultFixture,moment}=await import(pathToFileURL(path.join(directory,'ui.mjs')));
 function environment(){
  const dom=new JSDOM('<body></body>',{url:'https://obsidian.invalid',pretendToBeVisual:true});installObsidianDom(dom.window);
  globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.HTMLElement=dom.window.HTMLElement;
@@ -90,7 +94,7 @@ test('search stays available in specialized task views and retains its text acro
  const input=root.querySelector('input'); input.value='project:Writing'; input.dispatchEvent(new window.Event('input'));
  nav.updateContext('gantt');nav.updateAvailableModes([]);
  assert.notEqual(root.style.display,'none');assert.equal(input.value,'project:Writing');assert.deepEqual(queries,['project:Writing']);
- nav.updateContext('points');assert.equal(root.style.display,'none');nav.updateContext('tags');assert.notEqual(root.style.display,'none');e.close();
+ nav.updateContext('points');assert.notEqual(root.style.display,'none');nav.updateContext('tags');assert.notEqual(root.style.display,'none');e.close();
 });
 test('structured searches and saved filters apply the same include and exclude rules',()=>{
  const e=environment();e.plugin.settings.taskStatuses={completed:'x',inProgress:'/',planned:'?',abandoned:'-',notStarted:' '};
@@ -109,12 +113,14 @@ test('table views receive the filtered task list rather than rebuilding from all
  const all=[task('one'),task('two')];manager.switchView('table',all,[all[1]],null,'list');
  assert.deepEqual(received.map(item=>item.id),['two']);e.close();
 });
-test('the native points page renders the original bonus list, reward wishes and manual history',async()=>{
+test('points and rewards are separate pages sharing the original balance and records',async()=>{
  const e=environment();e.plugin.settings.rewards={rewardItems:[],pointsLedger:[]};
  await e.app.vault.createFolder('99_System/01_Data');
  await e.app.vault.create('99_System/01_Data/积分系统数据.md','---\n'+JSON.stringify({manualPointRecords:[{id:'old',date:'2026-11-01',text:'Original reward history',points:30}],examplePropertyLeft:['Read a book + 50'],examplePropertyRight:['A trip - 5000']})+'\n---\n');
  const root=document.body.createDiv(),page=new PointsDashboard(e.app,e.plugin,root,true);page.onload();await new Promise(resolve=>setTimeout(resolve,0));
- assert.match(root.textContent,/Read a book \+ 50/);assert.match(root.textContent,/A trip - 5000/);assert.match(root.textContent,/30/);
+ assert.match(root.textContent,/Read a book \+ 50/);assert.doesNotMatch(root.textContent,/A trip - 5000/);assert.match(root.textContent,/30/);
+ const rewardRoot=document.body.createDiv(),rewards=new PointsDashboard(e.app,e.plugin,rewardRoot,false,"rewards");rewards.onload();await new Promise(resolve=>setTimeout(resolve,0));
+ assert.match(rewardRoot.textContent,/A trip - 5000/);assert.doesNotMatch(rewardRoot.textContent,/Read a book/);assert.match(rewardRoot.textContent,/30/);rewards.unload();
  const history=[...root.querySelectorAll('[role="tab"]')].find(button=>button.textContent==='Points history');history.click();assert.match(root.textContent,/Original reward history/);
  const input=root.querySelector('.tg-points-tools input');input.value='no match';input.dispatchEvent(new window.Event('input'));assert.doesNotMatch(root.querySelector('.tg-points-body').textContent,/Original reward history/);
  page.unload();e.close();
@@ -245,4 +251,74 @@ test('a removed sidebar project list cannot render after its pending query compl
 test('custom year and agenda views use their base period for navigation and header labels',()=>{
  const e=environment();e.plugin.settings.customCalendarViews=[{id:'custom-year',enabled:true,baseViewType:'year'},{id:'custom-agenda',enabled:true,baseViewType:'agenda'}];const calendar=new CalendarComponent(e.app,e.plugin,document.body.createDiv());calendar.currentDate=moment('2026-11-08');
  calendar.currentViewMode='custom-year';assert.equal(calendar.getViewUnit(),'year');assert.equal(calendar.getCurrentDateDisplay(),'2026');calendar.currentViewMode='custom-agenda';assert.equal(calendar.getViewUnit(),'week');assert.ok(calendar.getCurrentDateDisplay().includes('2026'));e.close();
+});
+
+test('saved filters have ready-to-select status and month presets',()=>{
+ const e=environment(),root=document.body.createDiv(),applied=[];
+ const nav=new TopNavigation(root,e.plugin,()=>{},()=>{},id=>applied.push(id),()=>{},()=>{});
+ const select=root.querySelector('.tg-saved-filter-select');
+ assert.deepEqual([...select.options].map(option=>option.value),['','builtin-todo','builtin-completed','builtin-abandoned','builtin-month']);
+ select.value='builtin-completed';select.dispatchEvent(new window.Event('change'));
+ assert.deepEqual(applied,['builtin-completed']);nav.unload();e.close();
+});
+test('the saved-filter editor provides status choices instead of a handwritten status field',()=>{
+ const e=environment();e.plugin.settings.taskFilter={presetTaskFilters:[]};
+ const modal=new SavedTaskFilterModal(e.app,e.plugin,'',()=>{});modal.onOpen();
+ const selects=[...modal.contentEl.querySelectorAll('select')];
+ assert.ok(selects.some(select=>[...select.options].some(option=>option.value==='completed')));
+ assert.ok(selects.some(select=>[...select.options].some(option=>option.value==='date')));
+ assert.equal([...modal.contentEl.querySelectorAll('input')].filter(input=>input.type==='text').length,1);
+ modal.close();e.close();
+});
+test('switching pages hides both points and rewards so neither can cover a task view',()=>{
+ const e=environment(),root=document.body.createDiv(),manager=new FluentComponentManager(e.app,e.plugin,root,{addChild:child=>child},{});
+ for(const key of ['contentComponent','pointsComponent','rewardsComponent','calendarComponent'])manager[key]={containerEl:root.createDiv()};
+ manager.hideAllComponents(true);
+ for(const key of ['contentComponent','pointsComponent','rewardsComponent','calendarComponent'])assert.equal(manager[key].containerEl.style.display,'none');
+ e.close();
+});
+
+test('project Gantt bar drags and resize handles dispatch date changes instead of opening the note',()=>{
+ const e=environment(),svg=document.createElementNS('http://www.w3.org/2000/svg','svg');document.body.append(svg);
+ const group=svg.createSvg('g'),renderer=new TaskRendererComponent(e.app,group),changes=[];let opened=0;
+ const project={...task('project'),metadata:{projectPlan:true,startDate:new Date(2026,10,8).getTime(),dueDate:new Date(2026,10,10).getTime()}};
+ const params={app:e.app,taskGroupEl:group,dayWidth:50,preparedTasks:[{task:project,y:20,startX:100,width:150,isMilestone:false,level:0}],showTaskLabels:false,useMarkdownRenderer:false,parentComponent:renderer,handleTaskClick:()=>opened++,handleTaskContextMenu(){},onDateChange:(task,days,edge)=>changes.push({days,edge})};
+ renderer.updateParams(params);
+ const pointer=(type,x)=>new window.MouseEvent(type,{bubbles:true,button:0,clientX:x});
+ group.querySelector('.gantt-task-bar').dispatchEvent(pointer('pointerdown',100));document.dispatchEvent(pointer('pointermove',200));document.dispatchEvent(pointer('pointerup',200));
+ assert.deepEqual(changes,[{days:2,edge:'move'}]);assert.equal(opened,0);
+ renderer.updateParams(params);
+ group.querySelector('[data-edge="end"]').dispatchEvent(pointer('pointerdown',250));document.dispatchEvent(pointer('pointermove',300));document.dispatchEvent(pointer('pointerup',300));
+ assert.deepEqual(changes[1],{days:1,edge:'end'});renderer.unload();e.close();
+});
+
+test('reading-view file changes add and remove completion dates through the vault API',async()=>{
+ const e=environment(),file=await e.app.vault.create('Tasks.md','- [ ] Exercise');
+ e.app.workspace.getActiveFile=()=>file;e.plugin.settings.taskStatuses={completed:'x|X'};e.plugin.settings.preferMetadataFormat='tasks';
+ const sync=new MarkdownStatusSync(e.plugin);sync.onload();await new Promise(resolve=>setTimeout(resolve,0));
+ e.text.set(file.path,'- [x] Exercise');e.app.vault.trigger('modify',file);await new Promise(resolve=>setTimeout(resolve,0));
+ assert.match(e.text.get(file.path),/^- \[x\] Exercise ✅ \d{4}-\d{2}-\d{2}$/);
+ e.text.set(file.path,e.text.get(file.path).replace('[x]','[ ]'));e.app.vault.trigger('modify',file);await new Promise(resolve=>setTimeout(resolve,0));
+ assert.equal(e.text.get(file.path),'- [ ] Exercise');sync.unload();e.close();
+});
+test('list and tree buttons actually change the rendered content on consecutive clicks',()=>{
+ const e=environment(),c=contentFixture(e),root=document.body.createDiv();
+ const manager=new FluentComponentManager(e.app,e.plugin,root,{addChild:child=>child},{});
+ manager.contentComponent=c;manager.viewComponentManager={isSpecialView:()=>false,hideAllComponents(){}};
+ const rows=[task('parent'),{...task('child'),metadata:{parent:'parent'}}];rows[0].metadata.children=['child'];
+ const nav=new TopNavigation(root,e.plugin,()=>{},mode=>manager.switchView('inbox',rows,rows,null,mode),()=>{},()=>{},()=>{});c.topNavigation=nav;
+ manager.switchView('inbox',rows,rows,null,'list');e.tick();
+ for(const mode of ['tree','list','tree','list']){root.querySelector(`[data-mode="${mode}"]`).click();e.tick();assert.equal(c.isTreeView,mode==='tree');assert.equal(c.isRendering,false);assert.equal(c.filteredTasks.length,2);}
+ c.onunload();nav.unload();e.close();
+});
+
+test('Gantt background dragging pans the chart without stealing bar resize gestures',()=>{
+ const e=environment(),root=document.body.createDiv();let cleanup;
+ registerGanttPan({register:fn=>cleanup=fn,registerDomEvent:(element,type,handler)=>element.addEventListener(type,handler)},root);
+ root.scrollLeft=100;root.scrollTop=30;
+ const pointer=(type,x,y)=>new window.MouseEvent(type,{bubbles:true,button:0,clientX:x,clientY:y});
+ root.dispatchEvent(pointer('pointerdown',100,80));document.dispatchEvent(pointer('pointermove',70,60));document.dispatchEvent(pointer('pointerup',70,60));
+ assert.equal(root.scrollLeft,130);assert.equal(root.scrollTop,50);assert.equal(root.classList.contains('is-panning'),false);
+ const bar=root.createDiv({cls:'gantt-task-item'});bar.dispatchEvent(pointer('pointerdown',100,80));document.dispatchEvent(pointer('pointermove',60,60));
+ assert.equal(root.scrollLeft,130);cleanup();e.close();
 });

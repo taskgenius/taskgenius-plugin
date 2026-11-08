@@ -970,10 +970,8 @@ export class TaskListItemComponent extends Component {
 			{ key: "cancelledDate", label: "Cancelled Date", icon: "x" },
 			{ key: "completedDate", label: "Completed Date", icon: "check" },
 			{ key: "priority", label: settingsText("Priority"), icon: "alert-triangle" },
-			{ key: "recurrence", label: settingsText("Recurrence"), icon: "repeat" },
 			{ key: "onCompletion", label: settingsText("On Completion"), icon: "flag" },
 			{ key: "dependsOn", label: "Depends On", icon: "link" },
-			{ key: "id", label: "Task ID", icon: "hash" },
 		];
 
 		// Filter out fields that already have values

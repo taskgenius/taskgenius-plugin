@@ -1,3 +1,4 @@
+import { renderTaskDependencies } from "@/components/features/task/edit/TaskDependencyPicker";
 import {
 	Component,
 	ExtraButtonComponent,
@@ -355,7 +356,7 @@ export class TaskDetailsComponent extends Component {
 
 		// Get effective project and readonly status
 		const effectiveProject = getEffectiveProject(task);
-		const isReadonly = isProjectReadonly(task);
+		const isReadonly = isProjectReadonly(task) && task.metadata?.sourceType !== "file";
 
 		const projectInput = new TextComponent(projectField);
 		projectInput.setValue(effectiveProject || "");
@@ -759,24 +760,8 @@ export class TaskDetailsComponent extends Component {
 			// onCompletion is now handled by OnCompletionConfigurator
 
 			// Update dependencies
-			const dependsOnValue = dependsOnInput.getValue();
-			metadata.dependsOn = dependsOnValue
-				? dependsOnValue
-						.split(",")
-						.map((id) => id.trim())
-						.filter((id) => id)
-				: undefined;
+			metadata.dependsOn = dependencyPicker.getValue();
 
-			const onCompletionValue = onCompletionConfigurator.getValue();
-			metadata.onCompletion = onCompletionValue || undefined;
-
-			// Update task ID
-			const taskIdValue = taskIdInput.getValue();
-			metadata.id = taskIdValue || undefined;
-
-			// Update recurrence
-			const recurrenceValue = recurrenceInput.getValue();
-			metadata.recurrence = recurrenceValue || undefined;
 
 			// Assign updated metadata back to task
 			updatedTask.metadata = metadata;
@@ -850,41 +835,9 @@ export class TaskDetailsComponent extends Component {
 
 		this.addChild(onCompletionConfigurator);
 
-		// Dependencies
-		const dependsOnField = this.createFormField(
-			this.editFormEl,
-			t("Depends On")
-		);
-		const dependsOnInput = new TextComponent(dependsOnField);
-		dependsOnInput.setValue(
-			Array.isArray(task.metadata.dependsOn)
-				? task.metadata.dependsOn.join(", ")
-				: task.metadata.dependsOn || ""
-		);
-		dependsOnField
-			.createSpan({ cls: "field-description" })
-			.setText(
-				t("Comma-separated list of task IDs this task depends on")
-			);
-
-		// Task ID
-		const taskIdField = this.createFormField(this.editFormEl, t("Task ID"));
-		const taskIdInput = new TextComponent(taskIdField);
-		taskIdInput.setValue(task.metadata.id || "");
-		taskIdField
-			.createSpan({ cls: "field-description" })
-			.setText(t("Unique identifier for this task"));
-
-		// Recurrence pattern
-		const recurrenceField = this.createFormField(
-			this.editFormEl,
-			t("Recurrence")
-		);
-		const recurrenceInput = new TextComponent(recurrenceField);
-		recurrenceInput.setValue(task.metadata.recurrence || "");
-		recurrenceField
-			.createSpan({ cls: "field-description" })
-			.setText(t("e.g. every day, every 2 weeks"));
+		// Dependencies are selected by task title; identifiers are managed internally.
+		const dependsOnField = this.createFormField(this.editFormEl, t("Depends On"));
+		const dependencyPicker = renderTaskDependencies(this.app, this.plugin, dependsOnField, task, () => saveTask());
 
 		// Register blur events for all input elements
 		const registerBlurEvent = (
@@ -913,9 +866,6 @@ export class TaskDetailsComponent extends Component {
 		// registerBlurEvent(startDateInput);
 		// registerBlurEvent(scheduledDateInput);
 		// onCompletion input is now handled by OnCompletionConfigurator or in fallback
-		registerBlurEvent(dependsOnInput.inputEl);
-		registerBlurEvent(taskIdInput.inputEl);
-		registerBlurEvent(recurrenceInput.inputEl);
 
 		// Register change events for date inputs
 		registerDateChangeEvent(dueDateInput);

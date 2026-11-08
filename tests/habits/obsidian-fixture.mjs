@@ -50,13 +50,17 @@ export class Setting {
   setDesc(value) { this.descEl.textContent=value; return this; }
   setHeading() { this.settingEl.classList.add('setting-item-heading'); return this; }
   addControl(type, callback) {
-    const element=this.controlEl.createEl(type==='dropdown'?'select':type==='button'?'button':'input');
+    const element=this.controlEl.createEl(type==='dropdown'?'select':type==='button'?'button':type==='textarea'?'textarea':'input');
     if (type==='toggle') element.type='checkbox';
     const component={inputEl:element,buttonEl:element,selectEl:element,
       setValue(value) { if(type==='toggle') element.checked=value; else element.value=value; return this; },
       setPlaceholder(value) {element.placeholder=value;return this;},
       setButtonText(value) {element.textContent=value;return this;},
       setCta() {return this;},
+      setDisabled(value) {element.disabled=value;return this;},
+      setWarning() {return this;},
+      setTooltip(value) {element.title=value;return this;},
+      setIcon(value) {element.dataset.icon=value;return this;},
       onChange(fn) {element.addEventListener(type==='text'?'input':'change',()=>{ const promise=fn(type==='toggle'?element.checked:element.value); globalThis.lastSettingSave=promise; });return this;},
       onClick(fn) {element.addEventListener('click',fn);return this;},
       addOption(value,label) {const option=element.createEl('option',{text:label});option.value=value;return this;},
@@ -66,6 +70,8 @@ export class Setting {
   addText(callback) {return this.addControl('text',callback);}
   addToggle(callback) {return this.addControl('toggle',callback);}
   addDropdown(callback) {return this.addControl('dropdown',callback);}
+  addTextArea(callback) {return this.addControl('textarea',callback);}
+  addExtraButton(callback) {return this.addControl('button',callback);}
   addButton(callback) {return this.addControl('button',callback);}
 }
 export class Notice { constructor(text) { globalThis.lastNotice = text; } }

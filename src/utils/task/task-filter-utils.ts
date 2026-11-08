@@ -16,6 +16,7 @@ import { hasProject, getEffectiveProject } from "./task-operations";
 // 从ViewTaskFilter.ts导入相关接口
 
 interface FilterOptions {
+	includeClosedTasks?: boolean;
 	textQuery?: string;
 	selectedDate?: Date; // For forecast-like filtering
 	// Add other potential options needed by specific views later
@@ -538,7 +539,7 @@ export function filterTasks(
 	// 注意：这些是基础过滤条件，始终应用
 	if (viewConfig.hideCompletedAndAbandonedTasks) {
 		filtered = filtered.filter((task) =>
-			isNotCompleted(plugin, task, viewId),
+			options.includeClosedTasks || isNotCompleted(plugin, task, viewId),
 		);
 	}
 
@@ -584,7 +585,7 @@ export function filterTasks(
 		// 如果有实时高级过滤器，应用基本规则后直接返回
 		// 应用 isNotCompleted 过滤器（基于视图配置的 hideCompletedAndAbandonedTasks）
 		filtered = filtered.filter((task) =>
-			isNotCompleted(plugin, task, viewId),
+			options.includeClosedTasks || isNotCompleted(plugin, task, viewId),
 		);
 
 		// 应用 isBlank 过滤器（基于视图配置的 filterBlanks）
@@ -796,7 +797,7 @@ export function filterTasks(
 
 	// --- Apply `isNotCompleted` Filter ---
 	// This uses the hideCompletedAndAbandonedTasks setting from the viewConfig
-	filtered = filtered.filter((task) => isNotCompleted(plugin, task, viewId));
+	filtered = filtered.filter((task) => options.includeClosedTasks || isNotCompleted(plugin, task, viewId));
 
 	// --- Apply `isBlank` Filter ---
 	// This uses the filterBlanks setting from the viewConfig

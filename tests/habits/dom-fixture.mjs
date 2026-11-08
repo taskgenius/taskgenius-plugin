@@ -1,12 +1,17 @@
 /** Minimal Obsidian DOM extensions on a real jsdom document. */
 export function installObsidianDom(window) {
   const proto=window.HTMLElement.prototype;
+  window.Element.prototype.createSvg=function(tag,options={}){const child=this.ownerDocument.createElementNS('http://www.w3.org/2000/svg',tag);if(options.cls)child.setAttribute('class',options.cls);for(const[key,value]of Object.entries(options.attr||{}))child.setAttribute(key,value);this.append(child);return child;};
+  window.SVGElement.prototype.empty=function(){this.replaceChildren();};
+
   Object.defineProperties(proto,{doc:{get(){return this.ownerDocument;}},win:{get(){return this.ownerDocument.defaultView;}}});
   proto.createEl=function(tag,options={}) {
     if(typeof options==='string') options={cls:options};
     const child=this.ownerDocument.createElement(tag);
     if(options.cls) child.className=Array.isArray(options.cls)?options.cls.join(' '):options.cls;
     if(options.text!==undefined) child.textContent=options.text;
+    if(options.value!==undefined) child.value=options.value;
+    if(options.type!==undefined) child.type=options.type;
     for(const [key,value] of Object.entries(options.attr??{})) child.setAttribute(key,value);
     this.append(child); return child;
   };

@@ -14,6 +14,7 @@ after(() => rm(directory, {recursive: true, force: true}));
 await build({
   stdin: {contents: `export {TaskGeniusHabits} from './src/integrations/habits/task-genius-host';
     export {HabitStore} from './src/integrations/habits/habit-store';
+    export {NativeHabitCards} from './src/integrations/habits/ui/native-cards';
     export {DEFAULT_SETTINGS, DEFAULT_FRONTMATTER_KEYS} from './src/integrations/habits/settings';
     export {planLegacyHabits, importLegacyHabits} from './src/integrations/habits/legacy-import';
     export {isDue, isActive, isComplete, isDailyComplete, habitStats} from './src/integrations/habits/stats';
@@ -31,7 +32,7 @@ await build({
     builder.onResolve({filter: /^obsidian$/}, () => ({path: path.resolve('tests/habits/obsidian-fixture.mjs')}));
   }}],
 });
-const {TaskGeniusHabits, HabitStore, DEFAULT_SETTINGS, DEFAULT_FRONTMATTER_KEYS,
+const {TaskGeniusHabits, HabitStore, NativeHabitCards, Events, DEFAULT_SETTINGS, DEFAULT_FRONTMATTER_KEYS,
   planLegacyHabits, importLegacyHabits, isDue, isActive, isComplete, isDailyComplete, habitStats, t, vaultFixture,
   ReminderSync, NoteHabitSync, computeNoteValue, applyCommentLog, parseCommentLog, generateSummary, ExportModal, resolveTaskPoints, taskCompletionTransactionId} = await import(pathToFileURL(path.join(directory, 'integration.mjs')));
 const settings = extra => ({...structuredClone(DEFAULT_SETTINGS), ...extra});
@@ -317,4 +318,20 @@ test('AI summary cache separates endpoints even when model and statistics are id
  assert.equal(await generateSummary(first,'weekly','rolling','endpoint-digest'),'https://first.invalid/chat/completions');
  assert.equal(await generateSummary(second,'weekly','rolling','endpoint-digest'),'https://second.invalid/chat/completions');assert.equal(requests,2);
  }finally{delete globalThis.mockHabitRequest;}
+});
+
+test('native habit cards show existing Markdown records and save catch-up without replacing history',async()=>{
+ globalThis.testLanguage='en';
+ const dom=new JSDOM('<body></body>');installObsidianDom(dom.window);globalThis.document=dom.window.document;globalThis.window=dom.window;
+ const fixture=vaultFixture(),config=settings();await fixture.app.vault.createFolder('Habits');
+ await fixture.app.vault.create('Habits/Exercise.md','---\n'+JSON.stringify({habit:true,type:'binary',startDate:'2026-11-01',frequency:'daily',records:{'2026-11-07':1}})+'\n---\n');
+ const store=new HabitStore(fixture.app,()=>config,async()=>{}),root=document.body.createDiv();
+ const cards=new NativeHabitCards(fixture.app,store,config,new Events(),root);
+ cards.selectedDate=date('2026-11-08');cards.onload();
+ assert.equal(root.querySelectorAll('.tg-native-habit-cell').length,30);assert.equal(root.querySelectorAll('.is-complete').length,1);
+ root.querySelector('[aria-label="Check in"]').click();await new Promise(resolve=>setTimeout(resolve,0));
+ assert.deepEqual(fixture.metadata.get('Habits/Exercise.md').frontmatter.records,{'2026-11-07':1,'2026-11-08':1});
+ assert.equal(fixture.metadata.get('Habits/Exercise.md').frontmatter.startDate,'2026-11-01');
+ cards.setSearchQuery('missing');assert.equal(root.querySelectorAll('.tg-native-habit-card').length,0);
+ cards.unload();dom.window.close();delete globalThis.document;delete globalThis.window;
 });

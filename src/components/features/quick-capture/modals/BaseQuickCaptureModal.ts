@@ -143,6 +143,7 @@ export abstract class BaseQuickCaptureModal extends Modal {
 		}
 
 		// If FileSource is disabled, force mode to checkbox
+		if (this.taskMetadata.project) { this.inlineModeAvailable = true; this.fileModeAvailable = false; this.currentMode = "checkbox"; }
 		if (this.currentMode === "file" && !this.fileModeAvailable) {
 			this.currentMode = "checkbox";
 		} else if (

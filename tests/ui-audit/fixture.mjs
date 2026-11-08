@@ -48,5 +48,7 @@ export class StubComponent extends Component {
 
 export class Modal extends Component {
   constructor(app){super();this.app=app;this.containerEl=document.body.createDiv({cls:'modal-container'});this.modalEl=this.containerEl.createDiv({cls:'modal'});this.modalEl.createDiv({cls:'modal-header-button'});this.contentEl=this.modalEl.createDiv({cls:'modal-content'});}
+  setTitle(value){this.titleEl ||= this.modalEl.createEl("h2");this.titleEl.textContent=value;return this;}
+  open(){this.onOpen?.();return this;}
   close(){this.onClose?.();this.containerEl.remove();}
 }

@@ -46,7 +46,7 @@ export class ProjectFileManager {
 		const slug = clean.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "-");
 		const path = `${this.folder}/${slug}.md`;
 		if (this.app.vault.getAbstractFileByPath(path)) { new Notice(t("A project file already exists at that path.")); return null; }
-		const body = `---\nproject: ${JSON.stringify(clean)}\nstatus: active\narchived: false\ndescription: ${JSON.stringify(description)}\n---\n\n# ${clean}\n\n## ${t("Project plans")}\n\n## ${t("Tasks")}\n\n`;
+		const body = `---\nproject: ${JSON.stringify(clean)}\nstatus: active\narchived: false\ndescription: ${JSON.stringify(description)}\n---\n\n# ${clean}\n\n## ${t("Project Gantt")}\n\n## ${t("Tasks")}\n\n`;
 		const file = await this.app.vault.create(path, body);
 		return { name: clean, file, archived: false, description };
 	}
@@ -83,6 +83,13 @@ export class ProjectFileManager {
 	async addTask(name: string, content: string): Promise<boolean> {
 		const project = this.find(name); if (!project || !content.trim()) return false;
 		await this.app.vault.process(project.file, text => `${text.replace(/\s*$/, "")}\n- [ ] ${content.trim()}\n`);
+		return true;
+	}
+
+	async remove(name: string): Promise<boolean> {
+		const project = this.find(name);
+		if (!project) return false;
+		await this.app.fileManager.trashFile(project.file);
 		return true;
 	}
 
@@ -255,13 +262,33 @@ export class ProjectEditModal extends Modal {
 		let startDate = String(this.app.metadataCache.getFileCache(this.project.file)?.frontmatter?.startDate || "");
 		new Setting(this.contentEl).setName(t("Start date")).addText(text => { text.inputEl.type = "date"; text.setValue(startDate).onChange(value => startDate = value); });
 		new Setting(this.contentEl).setName(t("Description")).addText(text => text.setValue(description).onChange(value => description = value));
-		new Setting(this.contentEl).setName(t("Due date")).addText(text => text.setPlaceholder("YYYY-MM-DD").setValue(dueDate).onChange(value => dueDate = value));
+		new Setting(this.contentEl).setName(t("Due date")).addText(text => { text.inputEl.type = "date"; text.setValue(dueDate).onChange(value => dueDate = value); });
 		new Setting(this.contentEl).addButton(button => button.setButtonText(t("Save")).setCta().onClick(async () => {
 			button.setDisabled(true);
 			try { if (await this.manager.update(this.project.name, { name, description, dueDate, startDate })) { this.onSave(); this.close(); } }
 			catch (error) { new Notice(String(error)); }
 			finally { button.setDisabled(false); }
 		}));
+		new Setting(this.contentEl).setName(t("Delete project")).setDesc(t("Move the project note and its tasks to the trash."))
+			.addButton(button => button.setButtonText(t("Delete project")).setWarning().onClick(() => {
+				new ProjectDeleteModal(this.app, this.manager, this.project, () => { this.onSave(); this.close(); }).open();
+			}));
+	}
+}
+
+export class ProjectDeleteModal extends Modal {
+	constructor(app: App, private manager: ProjectFileManager, private project: ProjectFileInfo, private onDeleted: () => void) { super(app); }
+	onOpen(): void {
+		this.setTitle(t("Delete project"));
+		this.contentEl.createEl("p", { text: this.project.name });
+		this.contentEl.createEl("p", { text: t("Move the project note and its tasks to the trash.") });
+		this.contentEl.createEl("p", { text: this.project.file.path });
+		new Setting(this.contentEl).addButton(button => button.setButtonText(t("Cancel")).onClick(() => this.close()))
+			.addButton(button => button.setButtonText(t("Delete")).setWarning().onClick(async () => {
+				button.setDisabled(true);
+				try { if (await this.manager.remove(this.project.name)) { this.onDeleted(); this.close(); } }
+				catch (error) { new Notice(String(error)); button.setDisabled(false); }
+			}));
 	}
 }
 
@@ -273,6 +300,7 @@ export class ProjectArchiveModal extends Modal {
 		if (!archived.length) this.contentEl.createDiv({ text: t("No archived projects") });
 		for (const project of archived) new Setting(this.contentEl).setName(project.name).setDesc(project.file.path)
 			.addButton(button => button.setButtonText(t("Open")).onClick(() => void this.app.workspace.openLinkText(project.file.path, "", false)))
-			.addButton(button => button.setButtonText(t("Restore project")).onClick(async () => { await this.manager.setArchived(project.name, false); this.onChange(); this.onOpen(); }));
+			.addButton(button => button.setButtonText(t("Restore project")).onClick(async () => { await this.manager.setArchived(project.name, false); this.onChange(); this.onOpen(); }))
+			.addButton(button => button.setButtonText(t("Delete project")).setWarning().onClick(() => new ProjectDeleteModal(this.app, this.manager, project, () => { this.onChange(); this.onOpen(); }).open()));
 	}
 }

@@ -32,6 +32,7 @@ import { FluentActionHandlers } from "@/components/features/fluent/managers/Flue
 import { TaskSelectionManager } from "@/components/features/task/selection/TaskSelectionManager";
 import { getViewSettingOrDefault } from "@/common/setting-definition";
 import { PresetTaskFilter } from "@/common/setting-definition";
+import { savedTaskFilters } from "@/utils/task/saved-task-filters";
 
 export const FLUENT_TASK_VIEW = "fluent-task-genius-view";
 
@@ -94,6 +95,7 @@ export class FluentTaskView extends ItemView {
 	private currentFilterState: RootFilterState | null = null;
 	private liveFilterState: RootFilterState | null = null;
 	private activeTaskPreset: PresetTaskFilter["options"] | null = null;
+	private activeTaskPresetId: string | null = null;
 
 	// Selection state
 	private selectedTask: Task | null = null;
@@ -477,7 +479,7 @@ export class FluentTaskView extends ItemView {
 				selectedProject: this.viewState.selectedProject || undefined,
 				searchQuery: this.viewState.searchQuery || "",
 				filterInputValue: this.viewState.filterInputValue || "",
-				activeTaskPreset: this.activeTaskPreset,
+				activeTaskPreset: this.activeTaskPresetId ? savedTaskFilters(this.plugin.settings.taskFilter?.presetTaskFilters).find(preset => preset.id === this.activeTaskPresetId)?.options || null : this.activeTaskPreset,
 			}),
 			() => this.isInitializing
 		);
@@ -814,6 +816,11 @@ export class FluentTaskView extends ItemView {
 		const topNavEl = mainContainer.createDiv({
 			cls: "tg-fluent-top-nav",
 		});
+		// Use the host view's title bar so every control stays in one place.
+		const headerTitle = this.headerEl?.querySelector(".view-header-title-container");
+		if (headerTitle) headerTitle.replaceChildren(topNavEl);
+		this.registerDomEvent(topNavEl, "pointerdown", event => event.stopPropagation());
+		this.register(() => topNavEl.remove());
 
 		// Content wrapper (IMPORTANT: this was missing!)
 		const contentWrapper = mainContainer.createDiv({
@@ -840,7 +847,7 @@ export class FluentTaskView extends ItemView {
 			() => this.filteredTasks.length
 		);
 		this.layoutManager.setOnSidebarNavigate((viewId) => {
-			this.actionHandlers.handleNavigate(viewId);
+			this.actionHandlers.handleNavigate(viewId, this.viewState.selectedProject);
 		});
 		this.layoutManager.setOnProjectSelect((projectId) => {
 			this.actionHandlers.handleProjectSelect(projectId);
@@ -886,8 +893,13 @@ export class FluentTaskView extends ItemView {
 			(query: string) => this.actionHandlers.handleSearch(query),
 			(mode: ViewMode) => this.actionHandlers.handleViewModeChange(mode),
 			(presetId) => {
+				this.activeTaskPresetId = presetId;
+				this.liveFilterState = null;
+				this.currentFilterState = null;
+				this.viewState.filters = {};
+				this.app.saveLocalStorage("task-genius-view-filter", null);
 				this.activeTaskPreset = presetId
-					? this.plugin.settings.taskFilter?.presetTaskFilters?.find(preset => preset.id === presetId)?.options || null
+					? savedTaskFilters(this.plugin.settings.taskFilter?.presetTaskFilters).find(preset => preset.id === presetId)?.options || null
 					: null;
 				this.filteredTasks = this.dataManager.applyFilters(this.tasks);
 				this.updateView();

@@ -13,6 +13,7 @@ import { Task } from "@/types/task";
 import { t } from "@/translations/helper";
 import { Events, on } from "@/dataflow/events/Events";
 import { SavedTaskFilterModal } from "./SavedTaskFilterModal";
+import { savedTaskFilters } from "@/utils/task/saved-task-filters";
 
 export type ViewMode = "list" | "kanban" | "tree" | "calendar";
 
@@ -49,10 +50,15 @@ export class TopNavigation extends Component {
 	private contextViewId = "inbox";
 	private searchQuery = "";
 	private activePresetId: string | null = null;
+	private refreshPresets?: () => void;
 	public updateContext(viewId: string): void {
 		this.contextViewId = viewId;
-		if (["points", "habit"].includes(viewId)) this.containerEl.hide();
-		else this.containerEl.show();
+		this.refreshPresets?.();
+		this.containerEl.show();
+		const taskContext = !["points", "rewards", "habit"].includes(viewId);
+		(this.containerEl.querySelector(".tg-saved-filter-select") as HTMLElement | null)?.toggle(taskContext);
+		(this.containerEl.querySelector(".tg-quick-filter-button") as HTMLElement | null)?.toggle(taskContext);
+		if (this.searchInput) this.searchInput.placeholder = t(viewId === "habit" ? "Search habits" : viewId === "rewards" ? "Search rewards" : viewId === "points" ? "Search bonuses and records" : "Search tasks, projects ...");
 	}
 	private availableModes: ViewMode[] = ["list", "kanban", "tree", "calendar"];
 	private viewTabsContainer: HTMLElement | null = null;
@@ -203,6 +209,14 @@ export class TopNavigation extends Component {
 				this.searchQuery = value;
 				this.onSearch(value);
 			});
+		this.searchInput = searchContainer.querySelector("input")!;
+		const presetsSelect = leftSection.createEl("select", { cls: "tg-saved-filter-select", attr: { "aria-label": t("Saved filters") } });
+		const updatePresets = () => {
+			presetsSelect.empty(); presetsSelect.createEl("option", { value: "", text: t("All tasks") });
+			for (const preset of savedTaskFilters(this.plugin.settings.taskFilter?.presetTaskFilters)) presetsSelect.createEl("option", { value: preset.id, text: preset.name });
+			presetsSelect.value = this.activePresetId || "";
+		}; this.refreshPresets = updatePresets; updatePresets();
+		this.registerDomEvent(presetsSelect, "change", () => { this.activePresetId = presetsSelect.value || null; this.onFilterClick(this.activePresetId); });
 		const filterButton = searchContainer.createEl("button", {
 			cls: "fluent-nav-icon-button tg-quick-filter-button",
 			attr: { "aria-label": t("Quick filters") },
@@ -211,8 +225,8 @@ export class TopNavigation extends Component {
 		filterButton.toggleClass("is-active", !!this.activePresetId);
 		this.registerDomEvent(filterButton, "click", (event) => {
 			const menu = new Menu();
-			const presets = this.plugin.settings.taskFilter?.presetTaskFilters || [];
-			const apply = (id: string | null) => { this.activePresetId = id; filterButton.toggleClass("is-active", !!id); this.onFilterClick(id); };
+			const presets = savedTaskFilters(this.plugin.settings.taskFilter?.presetTaskFilters);
+			const apply = (id: string | null) => { this.activePresetId = id; updatePresets(); filterButton.toggleClass("is-active", !!id); this.onFilterClick(id); };
 			menu.addItem(item => item.setTitle(t("New saved filter")).setIcon("plus").onClick(() => new SavedTaskFilterModal(this.plugin.app, this.plugin, this.searchQuery, apply).open()));
 			if (!presets.length) {
 				menu.addItem(item => item.setTitle(t("No saved filters")).setDisabled(true));
@@ -438,7 +452,7 @@ export class TopNavigation extends Component {
 					this.viewTabsContainer,
 					mode,
 					config.icon,
-					config.label,
+				t(config.label),
 				);
 			}
 		}
@@ -451,8 +465,7 @@ export class TopNavigation extends Component {
 
 		// Hide entire navigation if no modes available
 		if (modes.length === 0) {
-			if (["points", "habit"].includes(this.contextViewId)) this.containerEl.hide();
-			else this.containerEl.show();
+			this.containerEl.show();
 			(this.containerEl.querySelector(".fluent-nav-center") as HTMLElement | null)?.hide();
 			this.containerEl.toggleClass("other-view", true);
 			return;
@@ -472,8 +485,7 @@ export class TopNavigation extends Component {
 		// If current mode is no longer available, switch to first available mode
 		if (!modes.includes(this.currentViewMode)) {
 			this.currentViewMode = modes[0];
-			// Notify about the mode change
-			this.onViewModeChange(this.currentViewMode);
+			// The owner resolves the mode after updating the available tabs.
 		}
 
 		// Update center section visibility (this should always be visible now since we handle empty modes above)

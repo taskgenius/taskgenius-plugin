@@ -8,7 +8,7 @@ export function buildProjectPlan(app: App, tasks: Task[]): Task[] {
 	return new ProjectFileManager(app).list().filter(project => !project.archived).map(project => {
 		const members = tasks.filter(task => getEffectiveProject(task) === project.name);
 		const fm = app.metadataCache.getFileCache(project.file)?.frontmatter || {};
-		const date = (value: unknown) => { const parsed = value ? new Date(value as string).getTime() : NaN; return Number.isFinite(parsed) ? parsed : undefined; };
+		const date = (value: unknown) => { const parsed = value ? (/^\d{4}-\d{2}-\d{2}$/.test(String(value)) ? new Date(Number(String(value).slice(0, 4)), Number(String(value).slice(5, 7)) - 1, Number(String(value).slice(8, 10))) : new Date(value as string)).getTime() : NaN; return Number.isFinite(parsed) ? parsed : undefined; };
 		const starts = members.map(task => task.metadata.startDate || task.metadata.scheduledDate).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
 		const ends = members.map(task => task.metadata.dueDate).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
 		const start = date(fm.startDate) ?? (starts.length ? Math.min(...starts) : project.file.stat?.ctime || Date.now());

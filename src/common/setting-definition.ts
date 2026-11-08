@@ -311,6 +311,8 @@ export interface PresetTaskFilter {
 	name: string;
 	options: {
 		// TaskFilterOptions structure is embedded here
+		conditions?: Array<{ field: string; operator: string; value: string }>;
+		relation?: "AND" | "OR";
 		includeCompleted: boolean;
 		includeInProgress: boolean;
 		includeAbandoned: boolean;
@@ -816,6 +818,7 @@ export interface ChangelogSettings {
 }
 
 export interface TaskProgressBarSettings {
+	interfaceRevision?: number;
 	// General Settings (Example)
 	progressBarDisplayMode: "none" | "graphical" | "text" | "both";
 	supportHoverToShowProgressInfo: boolean;
@@ -1416,7 +1419,7 @@ export const DEFAULT_SETTINGS: TaskProgressBarSettings = {
 		},
 		{
 			id: "projects",
-			name: t("Project plans"),
+			name: t("Project Gantt"),
 			icon: "folders",
 			type: "default",
 			visible: true,

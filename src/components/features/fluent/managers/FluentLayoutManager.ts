@@ -546,60 +546,7 @@ export class FluentLayoutManager extends Component {
 
 		// Capture button
 		this.view.addAction("notebook-pen", t("Capture"), () => {
-			const modal = new QuickCaptureModal(
-				this.app,
-				this.plugin,
-				{},
-				true,
-			);
-			modal.open();
-		});
-
-		// Filter button
-		this.view.addAction("filter", t("Filter"), (e: MouseEvent) => {
-			if (Platform.isDesktop) {
-				const popover = new ViewTaskFilterPopover(
-					this.app,
-					undefined,
-					this.plugin,
-				);
-
-				// Set onClose callback for consistency (realtime event listeners handle the actual updates)
-				popover.onClose = (filterState) => {
-					// Realtime event listeners already handle filter changes
-					// This callback is kept for potential future extensions
-				};
-
-				// Load current filter state after popover is shown
-				setTimeout(() => {
-					const liveFilterState = this.getLiveFilterState?.();
-					if (liveFilterState && popover.taskFilterComponent) {
-						popover.taskFilterComponent.loadFilterState(
-							liveFilterState,
-						);
-					}
-				}, 100);
-
-				popover.showAtPosition({ x: e.clientX, y: e.clientY });
-			} else {
-				const modal = new ViewTaskFilterModal(
-					this.app,
-					this.leaf.id,
-					this.plugin,
-				);
-
-				modal.open();
-
-				// Load current filter state after modal is opened
-				setTimeout(() => {
-					const liveFilterState = this.getLiveFilterState?.();
-					if (liveFilterState && modal.taskFilterComponent) {
-						modal.taskFilterComponent.loadFilterState(
-							liveFilterState,
-						);
-					}
-				}, 100);
-			}
+			this.onSidebarNavigate?.("new-task");
 		});
 
 		// Update action buttons visibility

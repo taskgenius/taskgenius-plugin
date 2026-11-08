@@ -51,6 +51,8 @@ export class TableViewAdapter extends Component {
 	/**
 	 * Update tasks in the table view
 	 */
+	public onShown(): void { this.tableView.onShown(); }
+
 	public updateTasks(tasks: Task[]) {
 		this.tableView.updateTasks(tasks);
 	}

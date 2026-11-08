@@ -8,6 +8,7 @@ import { GanttTaskItem, PlacedGanttTaskItem, Timescale } from './gantt'; // 添�
 import { Task } from "@/types/task";
 import { MarkdownRendererComponent } from "@/components/ui/renderers/MarkdownRenderer";
 import { sanitizePriorityForClass } from "@/utils/task/priority-utils";
+import type { ProjectDateEdge } from "@/managers/project-dates";
 
 // Constants from GanttComponent (consider moving to a shared config/constants file)
 const ROW_HEIGHT = 24;
@@ -17,6 +18,8 @@ const TASK_LABEL_PADDING = 5;
 
 // Interface for parameters needed by the task renderer
 interface TaskRendererParams {
+	dayWidth?: number;
+	onDateChange?: (task: Task, days: number, edge: ProjectDateEdge) => void;
 	app: App;
 	taskGroupEl: SVGGElement; // The <g> element to draw tasks into
 	preparedTasks: PlacedGanttTaskItem[]; // 使用PlacedGanttTaskItem替代GanttTaskItem
@@ -37,6 +40,8 @@ export class TaskRendererComponent extends Component {
 	private taskGroupEl: SVGGElement;
 	private params: TaskRendererParams | null = null;
 	private eventListeners: Array<{ element: Element; type: string; handler: EventListener }> = [];
+	private cancelDrag?: () => void;
+	private ignoreClickUntil = 0;
 
 	constructor(app: App, taskGroupEl: SVGGElement) {
 		super();
@@ -62,6 +67,7 @@ export class TaskRendererComponent extends Component {
 	}
 
 	private cleanupEventListeners() {
+		this.cancelDrag?.();
 		for (const { element, type, handler } of this.eventListeners) {
 			element.removeEventListener(type, handler);
 		}
@@ -133,7 +139,7 @@ export class TaskRendererComponent extends Component {
 		});
 		group.setAttribute("data-task-id", task.id);
 		// Add listener for clicking task (using our tracked addEventListener)
-		const clickHandler = () => handleTaskClick(task);
+		const clickHandler = () => { if (Date.now() > this.ignoreClickUntil) handleTaskClick(task); };
 		const contextMenuHandler = (event: Event) => handleTaskContextMenu(event as MouseEvent, task);
 		this.addEventListener(group, "click", clickHandler);
 		this.addEventListener(group, "contextmenu", contextMenuHandler);
@@ -335,6 +341,36 @@ export class TaskRendererComponent extends Component {
 		}
 
 		// Apply status class to the group for potential styling overrides
+		if (task.metadata.projectPlan && this.params.onDateChange) {
+			for (const edge of ["start", "end"] as const) group.createSvg("rect", { attr: {
+				x: preparedTask.startX + (edge === "end" ? (preparedTask.width || 0) - 5 : -1),
+				y: barY - 3, width: 6, height: barHeight + 6, class: "gantt-resize-handle", "data-edge": edge,
+			} });
+			this.addEventListener(group, "pointerdown", ((event: PointerEvent) => {
+				if (event.button !== 0) return;
+				event.preventDefault(); event.stopPropagation();
+				const edge = ((event.target as Element).getAttribute("data-edge") || "move") as ProjectDateEdge;
+				const start = event.clientX, dayWidth = this.params?.dayWidth || 50;
+				const doc = group.ownerDocument;
+				let days = 0;
+				const move = (next: PointerEvent) => {
+					days = Math.round((next.clientX - start) / dayWidth);
+					if (edge === "move") group.setAttribute("transform", `translate(${days * dayWidth},0)`);
+					else {
+						const rect = group.querySelector(".gantt-task-bar");
+						const width = preparedTask.width || dayWidth;
+						const delta = edge === "start" ? Math.min(days * dayWidth, width - dayWidth) : Math.max(days * dayWidth, dayWidth - width);
+						rect?.setAttribute("x", String(preparedTask.startX + (edge === "start" ? delta : 0)));
+						rect?.setAttribute("width", String(width + (edge === "start" ? -delta : delta)));
+					}
+				};
+				const cleanup = () => { doc.removeEventListener("pointermove", move); doc.removeEventListener("pointerup", up); doc.removeEventListener("pointercancel", cancel); this.cancelDrag = undefined; };
+				const cancel = () => { cleanup(); group.removeAttribute("transform"); this.render(); };
+				const up = () => { cleanup(); group.removeAttribute("transform"); if (days) { this.ignoreClickUntil = Date.now() + 400; this.params?.onDateChange?.(task, days, edge); } };
+				this.cancelDrag = cleanup;
+				doc.addEventListener("pointermove", move); doc.addEventListener("pointerup", up); doc.addEventListener("pointercancel", cancel);
+			}) as EventListener);
+		}
 		if (taskElement) {
 			// group.classList.add(`status-${task.status}`); // Removed this redundant/potentially problematic class add
 			// Status is already applied to the taskElement (bar or milestone) directly

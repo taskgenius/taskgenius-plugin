@@ -14,7 +14,7 @@ import { FileSourceConfiguration } from "@/types/file-source";
 
 /**
  * Renders the Index Settings tab that consolidates all indexing-related settings
- * including Inline Tasks, File Tasks, and Project detection
+ * including Inline Tasks, Whole-note tasks, and Project detection
  */
 export function renderIndexSettingsTab(
 	settingTab: TaskProgressBarSettingTab,
@@ -22,10 +22,10 @@ export function renderIndexSettingsTab(
 ) {
 	// Main heading
 	new Setting(containerEl)
-		.setName(t("Index & Task Source Configuration"))
+		.setName(t("Where tasks come from"))
 		.setDesc(
 			t(
-				"Configure how Task Genius discovers and indexes tasks from various sources including inline tasks, file metadata, and projects.",
+				"Task Genius reads checkboxes in your notes. You can also use an entire note as a task.",
 			),
 		)
 		.setHeading();
@@ -33,24 +33,6 @@ export function renderIndexSettingsTab(
 	// ========================================
 	// SECTION 0: Core Architecture Configuration
 	// ========================================
-	new Setting(containerEl)
-		.setName(t("Enable Indexer"))
-		.addToggle((toggle) => {
-			toggle.setValue(settingTab.plugin.settings.enableIndexer ?? true);
-			toggle.onChange(async (value) => {
-				settingTab.plugin.settings.enableIndexer = value;
-				settingTab.applySettingsUpdate();
-				settingTab.display(); // Refresh settings display
-
-				// Show restart notice
-				new Notice(
-					t(
-						"Please restart Obsidian for the Indexer change to take effect.",
-					),
-					8000,
-				);
-			});
-		});
 
 	// ========================================
 	// SECTION 1: Task Source Configuration
@@ -72,7 +54,7 @@ export function renderIndexSettingsTab(
 	setIcon(inlineTabIcon, "check-square");
 	inlineSwitcherButton
 		.createSpan({ cls: "fluent-view-tab-label" })
-		.setText(t("Checkbox Tasks"));
+		.setText(t("Tasks in notes"));
 
 	const fileSwitcherButton = switcherRow.createEl("button", {
 		cls: "fluent-view-tab clickable-icon",
@@ -83,7 +65,7 @@ export function renderIndexSettingsTab(
 	setIcon(fileTabIcon, "file-text");
 	fileSwitcherButton
 		.createSpan({ cls: "fluent-view-tab-label" })
-		.setText(t("File Tasks"));
+		.setText(t("Whole-note tasks"));
 
 	const sourcePanels = taskSourceWrapper.createDiv({
 		cls: "tg-index-task-source-panels",
@@ -98,60 +80,25 @@ export function renderIndexSettingsTab(
 	// Inline task configuration content is rendered into inlineContainer
 	(() => {
 		let containerEl: HTMLElement = inlineContainer;
-		const inlineContentEnabled = scopeControls.inlineTasksEnabled !== false;
-
-		new Setting(containerEl)
-			.setName(t("Enable checkbox tasks"))
-			.setDesc(
-				t(
-					"Index markdown checkbox tasks. Disable this if you only want to use file-based or external task sources.",
-				),
-			)
-			.addToggle((toggle) => {
-				toggle.setValue(inlineContentEnabled);
-				toggle.onChange((value) => {
-					const controls = ensureScopeControls(
-						settingTab.plugin.settings,
-					);
-					controls.inlineTasksEnabled = value;
-					settingTab.applySettingsUpdate();
-					if (!value) {
-						new Notice(
-							t(
-								"Checkbox task indexing disabled. The index will prune inline tasks shortly.",
-							),
-							6000,
-						);
-					}
-					updateInlineBodyState(value);
-				});
-			});
-
-		const inlineBodyEl = containerEl.createDiv({
-			cls: "tg-source-settings-body",
-		});
-		const updateInlineBodyState = (enabled: boolean) => {
-			inlineBodyEl.classList.toggle("tg-source-disabled", !enabled);
-		};
-		updateInlineBodyState(inlineContentEnabled);
+		const inlineBodyEl = containerEl.createDiv({ cls: "tg-source-settings-body" });
 		containerEl = inlineBodyEl;
 
 		new Setting(containerEl)
-			.setName(t("Inline task parsing"))
-			.setDesc(t("Configure how tasks are parsed from markdown content."))
+			.setName(t("Task writing format"))
+			.setDesc(t("Existing task dates and priorities are read automatically."))
 			.setHeading();
 
 		new Setting(containerEl)
-			.setName(t("Prefer metadata format of task"))
+			.setName(t("Save dates and priorities as"))
 			.setDesc(
 				t(
-					"You can choose dataview format or tasks format, that will influence both index and save format.",
+					"Choose how new dates and priorities appear in your notes. Existing tasks do not need conversion.",
 				),
 			)
 			.addDropdown((dropdown) => {
 				dropdown
-					.addOption("dataview", "Dataview")
-					.addOption("tasks", settingsText("Tasks"))
+					.addOption("dataview", t("Inline properties"))
+					.addOption("tasks", t("Task icons (recommended)"))
 					.setValue(settingTab.plugin.settings.preferMetadataFormat)
 					.onChange(async (value) => {
 						settingTab.plugin.settings.preferMetadataFormat =
@@ -164,177 +111,11 @@ export function renderIndexSettingsTab(
 					});
 			});
 
-		// Date Format Configuration
 		new Setting(containerEl)
-			.setName(t("Enable custom date formats"))
+			.setName(t("Exclude tasks in these sections"))
 			.setDesc(
 				t(
-					"Enable custom date format patterns for parsing dates. When enabled, the parser will try your custom formats before falling back to default formats.",
-				),
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(
-						settingTab.plugin.settings.enableCustomDateFormats ??
-							false,
-					)
-					.onChange((value) => {
-						settingTab.plugin.settings.enableCustomDateFormats =
-							value;
-						settingTab.applySettingsUpdate();
-						settingTab.display(); // Refresh to show/hide custom formats settings
-					});
-			});
-
-		if (settingTab.plugin.settings.enableCustomDateFormats) {
-			new Setting(containerEl)
-				.setName(t("Custom date formats"))
-				.setDesc(t("Configure custom date format patterns."))
-				.addButton((button) => {
-					const getCustomFormats = () => {
-						return (
-							settingTab.plugin.settings.customDateFormats ?? []
-						);
-					};
-
-					const updateButtonText = () => {
-						const formats = getCustomFormats();
-						if (formats.length === 0) {
-							button.setButtonText(t("Configure Date Formats"));
-						} else {
-							button.setButtonText(
-								t("{{count}} format(s) configured", {
-									interpolation: {
-										count: formats.length.toString(),
-									},
-								}),
-							);
-						}
-					};
-
-					updateButtonText();
-					button.onClick(() => {
-						new ListConfigModal(settingTab.plugin, {
-							title: t("Configure Custom Date Formats"),
-							description: t(
-								"Add custom date format patterns. Date patterns: yyyy (4-digit year), yy (2-digit year), MM (2-digit month), M (1-2 digit month), dd (2-digit day), d (1-2 digit day), MMM (short month name), MMMM (full month name). Time patterns: HH (2-digit hour), mm (2-digit minute), ss (2-digit second). Use single quotes for literals (e.g., 'T' for ISO format).",
-							),
-							placeholder: t(
-								"Enter date format (e.g., yyyy-MM-dd or yyyyMMdd_HHmmss)",
-							),
-							values: getCustomFormats(),
-							onSave: (values) => {
-								settingTab.plugin.settings.customDateFormats =
-									values;
-								settingTab.applySettingsUpdate();
-								updateButtonText();
-								new Notice(
-									t(
-										"Date formats updated. The parser will now recognize these custom formats.",
-									),
-									6000,
-								);
-							},
-						}).open();
-					});
-				});
-
-			// Add example dates section
-			const examplesContainer = containerEl.createDiv({
-				cls: "task-genius-date-examples",
-			});
-
-			examplesContainer.createEl("h4", {
-				text: t("Format Examples:"),
-				cls: "task-genius-examples-header",
-			});
-
-			const exampleFormats = [
-				{ format: "yyyy-MM-dd", example: "2025-08-16" },
-				{ format: "dd/MM/yyyy", example: "16/08/2025" },
-				{ format: "MM-dd-yyyy", example: "08-16-2025" },
-				{ format: "yyyy.MM.dd", example: "2025.08.16" },
-				{ format: "yyyyMMdd", example: "20250816" },
-				{ format: "yyyyMMdd_HHmmss", example: "20250816_144403" },
-				{ format: "yyyyMMddHHmmss", example: "20250816144403" },
-				{ format: "yyyy-MM-dd'T'HH:mm", example: "2025-08-16T14:44" },
-				{ format: "dd MMM yyyy", example: "16 Aug 2025" },
-				{ format: "MMM dd, yyyy", example: "Aug 16, 2025" },
-				{ format: "yyyy年MM月dd日", example: "2025年08月16日" },
-			];
-
-			const table = examplesContainer.createEl("table", {
-				cls: "task-genius-date-examples-table",
-			});
-
-			const headerRow = table.createEl("tr");
-			headerRow.createEl("th", { text: t("Format Pattern") });
-			headerRow.createEl("th", { text: t("Example") });
-
-			exampleFormats.forEach(({ format, example }) => {
-				const row = table.createEl("tr");
-				row.createEl("td", { text: format });
-				row.createEl("td", { text: example });
-			});
-		}
-
-		// Get current metadata format to show appropriate settings
-		const isDataviewFormat =
-			settingTab.plugin.settings.preferMetadataFormat === "dataview";
-
-		// Keep this only as a reader setting for existing project markers.
-		new Setting(containerEl)
-			.setName(t("Legacy project marker prefix"))
-			.setDesc(
-				t("Used only to recognize existing project markers while migrating old tasks. New project assignments use project notes.")
-			)
-			.addText((text) => {
-				text.setPlaceholder("project")
-					.setValue(
-						settingTab.plugin.settings.projectTagPrefix[
-							settingTab.plugin.settings.preferMetadataFormat
-						],
-					)
-					.onChange(async (value) => {
-						settingTab.plugin.settings.projectTagPrefix[
-							settingTab.plugin.settings.preferMetadataFormat
-						] = value || "project";
-						settingTab.applySettingsUpdate();
-					});
-			});
-
-		// Context tag prefix with special handling
-		new Setting(containerEl)
-			.setName(t("Context tag prefix"))
-			.setDesc(
-				isDataviewFormat
-					? t(
-							"Customize the prefix used for context tags in dataview format (e.g., 'context' for [context:: home]). Changes require reindexing.",
-						)
-					: t(
-							"Customize the prefix used for context tags (e.g., '@home' for @home). Changes require reindexing.",
-						),
-			)
-			.addText((text) => {
-				text.setPlaceholder("context")
-					.setValue(
-						settingTab.plugin.settings.contextTagPrefix[
-							settingTab.plugin.settings.preferMetadataFormat
-						],
-					)
-					.onChange(async (value) => {
-						settingTab.plugin.settings.contextTagPrefix[
-							settingTab.plugin.settings.preferMetadataFormat
-						] = value || (isDataviewFormat ? "context" : "@");
-						settingTab.applySettingsUpdate();
-					});
-			});
-
-		new Setting(containerEl)
-			.setName(t("Ignore all tasks behind heading"))
-			.setDesc(
-				t(
-					"Configure headings to ignore. Tasks under these headings will be excluded from indexing.",
+					"For example, exclude tasks below an Archive heading. Leave blank to include all sections.",
 				),
 			)
 			.addButton((button) => {
@@ -388,10 +169,10 @@ export function renderIndexSettingsTab(
 			});
 
 		new Setting(containerEl)
-			.setName(t("Focus all tasks behind heading"))
+			.setName(t("Only include tasks in these sections"))
 			.setDesc(
 				t(
-					"Configure headings to focus on. Only tasks under these headings will be included in indexing.",
+					"Optional: only read tasks below the selected headings. Leave blank to include all sections.",
 				),
 			)
 			.addButton((button) => {
@@ -444,10 +225,10 @@ export function renderIndexSettingsTab(
 			});
 
 		new Setting(containerEl)
-			.setName(t("Use daily note path as date"))
+			.setName(t("Use the journal date for tasks"))
 			.setDesc(
 				t(
-					"If enabled, the daily note path will be used as the date for tasks.",
+					"Use the date in the journal filename when arranging its tasks.",
 				),
 			)
 			.addToggle((toggle) => {
@@ -803,61 +584,6 @@ export function renderIndexSettingsTab(
 	fileSwitcherButton.addEventListener("click", () =>
 		setActiveTaskSourcePanel("file"),
 	);
-
-	// ========================================
-	// SECTION 3: Performance Settings
-	// ========================================
-	new Setting(containerEl)
-		.setName(t("Performance Configuration"))
-		.setDesc(t("Configure performance-related indexing settings"))
-		.setHeading();
-
-	new Setting(containerEl)
-		.setName(t("Enable worker processing"))
-		.setDesc(
-			t(
-				"Use background worker for file parsing to improve performance. Recommended for large vaults.",
-			),
-		)
-		.addToggle((toggle) => {
-			// Use the new fileSource.performance.enableWorkerProcessing setting
-			toggle.setValue(
-				settingTab.plugin.settings.fileSource?.performance
-					?.enableWorkerProcessing ?? true,
-			);
-			toggle.onChange((value) => {
-				// Ensure fileSource and performance objects exist
-				if (!settingTab.plugin.settings.fileSource) {
-					// Initialize with minimal required properties
-					settingTab.plugin.settings.fileSource = {
-						enabled: false,
-						performance: {
-							enableWorkerProcessing: true,
-							enableCaching: true,
-							cacheTTL: 300000,
-						},
-					} as any;
-				}
-				if (!settingTab.plugin.settings.fileSource.performance) {
-					settingTab.plugin.settings.fileSource.performance = {
-						enableWorkerProcessing: true,
-						enableCaching: true,
-						cacheTTL: 300000,
-					};
-				}
-				// Update the setting
-				settingTab.plugin.settings.fileSource.performance.enableWorkerProcessing =
-					value;
-
-				// Also update the legacy fileParsingConfig for backward compatibility
-				if (settingTab.plugin.settings.fileParsingConfig) {
-					settingTab.plugin.settings.fileParsingConfig.enableWorkerProcessing =
-						value;
-				}
-
-				settingTab.applySettingsUpdate();
-			});
-		});
 
 	// ========================================
 	// SECTION 5: Index Maintenance
