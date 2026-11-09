@@ -22,7 +22,8 @@ const owned=[
  'integrations/habits/ui/modal-close.ts',
   'components/features/task/view/content.ts',
   'components/features/fluent/components/FluentTopNavigation.ts', 'components/features/fluent/components/ProjectList.ts', 'components/features/fluent/components/FluentSidebar.ts',
-  'components/features/fluent/managers/FluentDataManager.ts',
+  'components/features/fluent/managers/FluentLayoutManager.ts',
+ 'components/features/fluent/managers/FluentDataManager.ts',
   'components/features/fluent/managers/FluentComponentManager.ts',
   'components/features/calendar/index.ts',
   'components/features/calendar/views/tg-year-view.ts',
@@ -63,6 +64,7 @@ await build({stdin:{contents:`
  export {TableRenderer} from './src/components/features/table/TableRenderer';
  export {TopNavigation} from './src/components/features/fluent/components/FluentTopNavigation';
  export {SavedTaskFilterModal} from './src/components/features/fluent/components/SavedTaskFilterModal';
+ export {FluentLayoutManager} from './src/components/features/fluent/managers/FluentLayoutManager';
  export {FluentDataManager} from './src/components/features/fluent/managers/FluentDataManager';
  export {FluentComponentManager} from './src/components/features/fluent/managers/FluentComponentManager';
  export {CalendarComponent} from './src/components/features/calendar';
@@ -101,7 +103,7 @@ export function createEmbeddableMarkdownEditor(app,root,options){const input=roo
    });
  }}],
 });
-const {Component,TaskGeniusIconManager,calendarWeekNumber,projectFolderContainer,getStatusIcon,ProjectFileManager,ProjectEditModal,ProjectCreateModal,openPeriodNote,attachDateTimePicker,QuickCaptureModal,getStatusText,DataflowOrchestrator,TaskPlanner,GanttComponent,TaskDetailsModal,TaskMetadataEditor,KanbanComponent,QuadrantComponent,QUADRANT_DEFINITIONS,TableView,TableRenderer,FluentSidebar,Menu,QuadrantColumnComponent,registerGanttPan,MarkdownStatusSync,TaskRendererComponent,SavedTaskFilterModal,ContentComponent,TopNavigation,FluentDataManager,FluentComponentManager,CalendarComponent,ViewComponentManager,FluentTaskView,HabitModal,PointsDashboard,snapshotViewSettings,AuthMiddleware,ProjectList,vaultFixture,moment}=await import(pathToFileURL(path.join(directory,'ui.mjs')));
+const {Component,Platform,FluentLayoutManager,TaskGeniusIconManager,calendarWeekNumber,projectFolderContainer,getStatusIcon,ProjectFileManager,ProjectEditModal,ProjectCreateModal,openPeriodNote,attachDateTimePicker,QuickCaptureModal,getStatusText,DataflowOrchestrator,TaskPlanner,GanttComponent,TaskDetailsModal,TaskMetadataEditor,KanbanComponent,QuadrantComponent,QUADRANT_DEFINITIONS,TableView,TableRenderer,FluentSidebar,Menu,QuadrantColumnComponent,registerGanttPan,MarkdownStatusSync,TaskRendererComponent,SavedTaskFilterModal,ContentComponent,TopNavigation,FluentDataManager,FluentComponentManager,CalendarComponent,ViewComponentManager,FluentTaskView,HabitModal,PointsDashboard,snapshotViewSettings,AuthMiddleware,ProjectList,vaultFixture,moment}=await import(pathToFileURL(path.join(directory,'ui.mjs')));
 function environment(){
  const dom=new JSDOM('<body></body>',{url:'https://obsidian.invalid',pretendToBeVisual:true});installObsidianDom(dom.window);
  globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.HTMLElement=dom.window.HTMLElement;globalThis.Window=dom.window.Window;globalThis.Event=dom.window.Event;globalThis.Document=dom.window.Document;
@@ -683,4 +685,49 @@ test('clearing a parsed time remains authoritative over the original natural-lan
 
 test('clearing the capture form synchronizes the visible native date and time pickers',()=>{
  const e=environment(),capture=new QuickCaptureModal(e.app,e.plugin,{dueDate:new Date(2026,10,12,9,35),datePrecision:{dueDate:'datetime'}});capture.onOpen();capture.handleClear();for(const input of capture.contentEl.querySelectorAll('input[type=date],input[type=time]'))assert.equal(input.value,'');capture.close();e.close();
+});
+
+
+test('the phone toolbar keeps its drawer toggle and closes on repeated backdrop taps', () => {
+ const e = environment();
+ const originalPhone = Platform.isPhone;
+ Platform.isPhone = true;
+ try {
+  const root = document.body.createDiv({cls: 'tg-fluent-container'});
+  const frame = root.createDiv({cls: 'tg-fluent-layout'});
+  const main = frame.createDiv({cls: 'tg-fluent-main-container'});
+  const toolbar = main.createDiv({cls: 'tg-fluent-phone-toolbar'});
+  const top = toolbar.createDiv({cls: 'tg-fluent-top-nav'});
+  const nav = new TopNavigation(top, e.plugin, () => {}, () => {}, () => {}, () => {}, () => {}, ['list', 'tree', 'kanban', 'calendar']);
+  e.plugin.settings.taskFilter = {presetTaskFilters: [{id: 'phone', name: '本月尚未完成的任务', options: {}}]};
+  nav.setActivePreset('phone');
+  const header = document.body.createDiv({cls: 'view-header'});
+  const layout = new FluentLayoutManager(e.app, e.plugin, {leaf: {}}, root, header, header, () => 0);
+  // Exercise native event options so a once-only listener fails the second tap.
+  layout.registerDomEvent = (el, name, handler, options) => el.addEventListener(name, handler, options);
+  layout.createSidebarToggle();
+  layout.setupDrawerOverlay(frame);
+  const toggle = toolbar.querySelector('button[aria-label="Toggle Sidebar"]');
+  const backdrop = frame.querySelector('.drawer-overlay');
+  assert.ok(toggle);
+  for (let attempt = 0; attempt < 2; attempt++) {
+   toggle.click();
+   assert.ok(root.classList.contains('drawer-open'));
+   backdrop.click();
+   assert.ok(!root.classList.contains('drawer-open'));
+  }
+  if (process.env.TG_LAYOUT_DIR) {
+   const searchInput = top.querySelector('.fluent-search-container input');
+   const wrapper = document.createElement('div');
+   wrapper.className = 'search-input-container';
+   searchInput.replaceWith(wrapper);
+   wrapper.append(searchInput);
+   fs.mkdirSync(process.env.TG_LAYOUT_DIR, {recursive: true});
+   fs.writeFileSync(path.join(process.env.TG_LAYOUT_DIR, 'phone.html'), root.outerHTML);
+  }
+  nav.unload();
+ } finally {
+  Platform.isPhone = originalPhone;
+  e.close();
+ }
 });

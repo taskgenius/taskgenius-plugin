@@ -17,6 +17,7 @@
 }
 
 .tg-fluent-layout {
+	position: relative;
 	display: flex;
 	height: 100%;
 	width: 100%;
@@ -656,12 +657,6 @@ button.fluent-new-task-btn:hover {
 
 /* Mobile-specific media query */
 @media (max-width: 480px) {
-	/* Ensure drawer takes appropriate width on small screens */
-	.tg-fluent-sidebar-container.is-mobile-drawer {
-		width: 75vw !important;
-		max-width: 320px !important;
-	}
-
 	/* Make hamburger button more prominent on mobile */
 	.fluent-hamburger-button {
 		width: 44px;
@@ -765,7 +760,7 @@ button.fluent-new-task-btn:hover {
 
 /* ===== Mobile Drawer Styles ===== */
 .drawer-overlay {
-	position: fixed;
+	position: absolute;
 	top: 0;
 	left: 0;
 	right: 0;
@@ -784,13 +779,14 @@ button.fluent-new-task-btn:hover {
 
 /* Mobile drawer sidebar */
 .tg-fluent-sidebar-container.is-mobile-drawer {
-	position: fixed;
+	position: absolute;
 	top: 0;
 	left: 0;
 	bottom: 0;
-	width: 280px !important;
-	max-width: 85vw !important;
-	min-width: 280px !important;
+	width: min(300px, 85%);
+	max-width: 85%;
+	min-width: 0;
+	visibility: hidden;
 	z-index: 1000;
 	transform: translateX(-100%);
 	transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -799,6 +795,7 @@ button.fluent-new-task-btn:hover {
 
 /* When drawer is open */
 .drawer-open .tg-fluent-sidebar-container.is-mobile-drawer {
+	visibility: visible;
 	transform: translateX(0);
 }
 
@@ -1068,3 +1065,94 @@ button.fluent-new-task-btn:hover {
 .view-header .fluent-search-container > .search-input-container { flex: 1; min-width: 80px; }
 
 .view-header:has(.tg-fluent-top-nav) .fluent-nav-left { flex: 1 1 300px; min-width: min(100%, 300px); }
+
+/* In-view phone toolbar with a dedicated first-row slot for the drawer button. */
+.tg-fluent-phone-toolbar {
+	position: relative;
+	flex-shrink: 0;
+}
+
+.tg-fluent-phone-toolbar .fluent-top-navigation {
+	height: auto;
+	min-height: 48px;
+	padding: 4px 8px;
+	gap: 4px;
+	flex-wrap: wrap;
+}
+
+.tg-fluent-phone-toolbar .fluent-nav-left {
+	flex: 1 0 100%;
+	min-width: 0;
+	padding-inline-start: 44px;
+	box-sizing: border-box;
+}
+
+.tg-fluent-phone-toolbar .fluent-search-container {
+	max-width: none;
+	min-width: 0;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.tg-fluent-phone-toolbar .search-input-container {
+	flex: 1 1 0;
+	width: auto;
+	min-width: 0;
+}
+
+.tg-fluent-phone-toolbar .search-input-container input {
+	width: 100%;
+	min-height: 40px;
+	font-size: 16px;
+}
+
+.tg-fluent-phone-toolbar .tg-active-filter-label {
+	flex-basis: 100%;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+.tg-fluent-phone-toolbar :is(.fluent-nav-center, .fluent-view-tabs, .fluent-nav-right, .fluent-nav-custom-buttons) {
+	display: flex;
+	flex-wrap: wrap;
+	min-width: 0;
+	gap: 2px;
+}
+
+.tg-fluent-phone-toolbar .fluent-nav-right {
+	margin-inline-start: auto;
+}
+
+.tg-fluent-phone-toolbar .panel-toggle-container {
+	position: absolute;
+	inset: 4px auto auto 8px;
+}
+
+.tg-fluent-phone-toolbar :is(.fluent-view-tab, .fluent-nav-icon-button, .panel-toggle-btn button, .fluent-nav-custom-button-wrapper .clickable-icon) {
+	box-sizing: border-box;
+	min-width: 40px;
+	min-height: 40px;
+	padding: 8px;
+	justify-content: center;
+}
+
+.tg-fluent-phone-toolbar .fluent-view-tab > span {
+	display: none;
+}
+
+@media (max-width: 520px) {
+	.tg-saved-filter-modal .setting-item {
+		flex-wrap: wrap;
+	}
+
+	.tg-saved-filter-modal .setting-item-control {
+		flex: 1 1 100%;
+		min-width: 0;
+		flex-wrap: wrap;
+	}
+
+	.tg-saved-filter-modal .setting-item-control :is(input, select, textarea) {
+		max-width: 100%;
+		min-height: 40px;
+	}
+}
