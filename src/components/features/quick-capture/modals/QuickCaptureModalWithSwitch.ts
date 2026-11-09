@@ -1,3 +1,5 @@
+import "@/styles/quick-capture.css";
+import { renderTaskDependencies } from "@/components/features/task/edit/TaskDependencyPicker";
 import { ProjectFileManager } from "@/managers/project-file-manager";
 import { attachDateTimePicker } from "@/utils/date/date-time-picker";
 import { parseOptionalDateTime, formatOptionalDateTime } from "@/utils/date/optional-date-time";
@@ -68,6 +70,10 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 
 	// Debounce timer for real-time parsing
 	private parseDebounceTimer?: number;
+	private editorSetupTimer?: number;
+	private suggestSetupTimer?: number;
+	protected rememberCaptureMode = true;
+	protected sourceTask?: Task;
 
 	constructor(
 		app: App,
@@ -86,6 +92,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 		} catch {}
 
 		super(app, plugin, initialMode, metadata);
+		this.modalEl.addClass("full");
 
 		// Initialize time parsing service
 		this.timeParsingService = new TimeParsingService(
@@ -107,7 +114,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 			}
 
 			// Enable universal suggest after editor is created
-			setTimeout(() => {
+			this.suggestSetupTimer = window.setTimeout(() => {
 				if (this.markdownEditor?.editor?.editor) {
 					this.universalSuggest =
 						this.suggestManager.enableForQuickCaptureModal(
@@ -241,7 +248,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 
 		// Update editor title
 		const editorTitle = this.contentContainer?.querySelector(
-			".quick-capture-section-title",
+			".quick-capture-editor-panel .quick-capture-section-title",
 		);
 		if (editorTitle) {
 			editorTitle.setText(
@@ -317,7 +324,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 	/**
 	 * Create target file selector
 	 */
-	private createTargetFileSelector(container: HTMLElement): void {
+	protected createTargetFileSelector(container: HTMLElement): void {
 		const project = this.taskMetadata.project?.trim();
 		if (project && this.currentMode !== "file") {
 			const manager = new ProjectFileManager(this.app), file = manager.find(project)?.file;
@@ -413,7 +420,15 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 		// Context input
 		this.createContextInput(container);
 
-		// Recurrence input
+		const additional = container.createEl("details", { cls: "quick-capture-additional" });
+		additional.createEl("summary", { text: t("More properties") });
+		new Setting(additional).setName(t("Task points")).addText(text => {
+			text.inputEl.type = "number"; text.inputEl.min = "0";
+			text.setValue(this.taskMetadata.points == null ? "" : String(this.taskMetadata.points)).onChange(value => { this.taskMetadata.points = value.trim() ? Math.max(0, Number(value)) : undefined; this.updatePreview(); });
+		});
+		new Setting(additional).setName(t("Tags")).addText(text => text.setValue((this.taskMetadata.tags || []).join(" ")).onChange(value => { this.taskMetadata.tags = value.split(/[\s,]+/).map(tag => tag.replace(/^#/, "")).filter(Boolean); this.updatePreview(); }));
+		const dependencies = new Setting(additional).setName(t("Depends On"));
+		renderTaskDependencies(this.app, this.plugin, dependencies.controlEl, this.sourceTask || { id: "capture-draft", content: "", filePath: "", metadata: { dependsOn: this.taskMetadata.dependsOn || [] } } as Task, ids => this.taskMetadata.dependsOn = ids);
 	}
 
 	/**
@@ -442,9 +457,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 					} else {
 						this.taskMetadata.startDate = undefined;
 						if (this.taskMetadata.datePrecision) delete this.taskMetadata.datePrecision.startDate;
-						if (this.taskMetadata.manuallySet) {
-							this.taskMetadata.manuallySet.startDate = false;
-						}
+						this.markAsManuallySet("startDate");
 					}
 					this.updatePreview();
 				});
@@ -472,9 +485,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 					} else {
 						this.taskMetadata.dueDate = undefined;
 						if (this.taskMetadata.datePrecision) delete this.taskMetadata.datePrecision.dueDate;
-						if (this.taskMetadata.manuallySet) {
-							this.taskMetadata.manuallySet.dueDate = false;
-						}
+						this.markAsManuallySet("dueDate");
 					}
 					this.updatePreview();
 				});
@@ -504,9 +515,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 					} else {
 						this.taskMetadata.scheduledDate = undefined;
 						if (this.taskMetadata.datePrecision) delete this.taskMetadata.datePrecision.scheduledDate;
-						if (this.taskMetadata.manuallySet) {
-							this.taskMetadata.manuallySet.scheduledDate = false;
-						}
+						this.markAsManuallySet("scheduledDate");
 					}
 					this.updatePreview();
 				});
@@ -550,6 +559,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 				.setValue(this.taskMetadata.project || "")
 				.onChange((value) => {
 					this.taskMetadata.project = value.trim() || undefined;
+					if (this.taskMetadata.project && this.currentMode === "file") { this.inlineModeAvailable = true; void this.switchMode("checkbox"); return; }
 					if (!this.taskMetadata.project) this.initializeTargetFile();
 					this.updateTargetDisplay();
 					this.updatePreview();
@@ -590,7 +600,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 	 * Setup markdown editor
 	 */
 	private setupMarkdownEditor(container: HTMLElement): void {
-		setTimeout(() => {
+		this.editorSetupTimer = window.setTimeout(() => {
 			this.markdownEditor = createEmbeddableMarkdownEditor(
 				this.app,
 				container,
@@ -764,6 +774,10 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 			}
 		}
 
+		if (this.taskMetadata.project) {
+			const manager = new ProjectFileManager(this.app, ["project", ...Object.values(this.plugin.settings.projectTagPrefix || {})]);
+			return processedLines.map(line => manager.stripProjectMarkers(line, this.taskMetadata.project!)).join("\n");
+		}
 		return processedLines.join("\n");
 	}
 
@@ -774,7 +788,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 		taskLine: string,
 		lineParseResult: LineParseResult,
 	): string {
-		const metadata = this.generateLineMetadata(lineParseResult);
+		const metadata = this.generateLineMetadata(lineParseResult, taskLine);
 		if (!metadata) return taskLine;
 		return `${taskLine} ${metadata}`.trim();
 	}
@@ -782,16 +796,14 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 	/**
 	 * Generate line metadata
 	 */
-	private generateLineMetadata(lineParseResult: LineParseResult): string {
+	private generateLineMetadata(lineParseResult: LineParseResult, taskLine = ""): string {
 		const metadata: string[] = [];
 		const useDataviewFormat = this.preferMetadataFormat === "dataview";
 
 		// Use line-specific dates first, fall back to global metadata
-		const startDate =
-			lineParseResult.startDate || this.taskMetadata.startDate;
-		const dueDate = lineParseResult.dueDate || this.taskMetadata.dueDate;
-		const scheduledDate =
-			lineParseResult.scheduledDate || this.taskMetadata.scheduledDate;
+		const startDate = this.isManuallySet("startDate") ? this.taskMetadata.startDate : lineParseResult.startDate || this.taskMetadata.startDate;
+		const dueDate = this.isManuallySet("dueDate") ? this.taskMetadata.dueDate : lineParseResult.dueDate || this.taskMetadata.dueDate;
+		const scheduledDate = this.isManuallySet("scheduledDate") ? this.taskMetadata.scheduledDate : lineParseResult.scheduledDate || this.taskMetadata.scheduledDate;
 
 		// Add dates
 		if (startDate) {
@@ -838,19 +850,15 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 			}
 		}
 
-		// Add project
-		if (this.taskMetadata.project) {
-			const projectPrefix =
-				this.plugin.settings.projectTagPrefix?.[
-					this.plugin.settings.preferMetadataFormat
-				] || "project";
-			metadata.push(
-				useDataviewFormat
-					? `[${projectPrefix}:: ${this.taskMetadata.project}]`
-					: `#${projectPrefix}/${this.taskMetadata.project}`,
-			);
-		}
+        // Project membership is represented by the destination note, never inline text.
+		if (this.taskMetadata.points != null && Number.isFinite(this.taskMetadata.points)) metadata.push(`[points:: ${this.taskMetadata.points}]`);
+		if (this.taskMetadata.dependsOn?.length) metadata.push(useDataviewFormat ? `[dependsOn:: ${this.taskMetadata.dependsOn.join(", ")}]` : `⛔ ${this.taskMetadata.dependsOn.join(", ")}`);
 
+		for (const raw of this.taskMetadata.tags || []) {
+			const tag = raw.replace(/^#/, "");
+			if (this.taskMetadata.project && ["project", ...Object.values(this.plugin.settings.projectTagPrefix || {})].some(prefix => tag.startsWith(prefix + "/"))) continue;
+			if (tag && !taskLine.split(/\s+/).includes("#" + tag)) metadata.push("#" + tag);
+		}
 		// Add context
 		if (this.taskMetadata.context) {
 			const contextPrefix =
@@ -982,9 +990,9 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 	 */
 	protected resetUIElements(): void {
 		// Reset date inputs
-		if (this.startDateInput) this.startDateInput.value = "";
-		if (this.dueDateInput) this.dueDateInput.value = "";
-		if (this.scheduledDateInput) this.scheduledDateInput.value = "";
+		if (this.startDateInput) { this.startDateInput.value = ""; this.startDateInput.dispatchEvent(new Event("tg-date-updated")); }
+		if (this.dueDateInput) { this.dueDateInput.value = ""; this.dueDateInput.dispatchEvent(new Event("tg-date-updated")); }
+		if (this.scheduledDateInput) { this.scheduledDateInput.value = ""; this.scheduledDateInput.dispatchEvent(new Event("tg-date-updated")); }
 
 		// Clear file name input
 		if (this.fileNameInput) {
@@ -1002,12 +1010,13 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 	 */
 	onClose() {
 		// Save last used mode if enabled
-		if (this.plugin.settings.quickCapture.rememberLastMode) {
+		if (this.rememberCaptureMode && this.plugin.settings.quickCapture.rememberLastMode) {
 			this.plugin.settings.quickCapture.lastUsedMode = this.currentMode;
 			this.plugin.saveSettings();
 		}
 
 		// Clean up
+		window.clearTimeout(this.editorSetupTimer); window.clearTimeout(this.suggestSetupTimer);
 		if (this.universalSuggest) {
 			this.universalSuggest.disable();
 			this.universalSuggest = null;

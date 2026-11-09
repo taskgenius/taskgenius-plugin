@@ -1,3 +1,4 @@
+import { t as translate } from "@/translations/helper";
 import { App, Notice, PluginSettingTab, setIcon, Setting } from "obsidian";
 import { t } from "./i18n";
 import type HabitsPlugin from "./main";
@@ -556,6 +557,13 @@ export class HabitsSettingTab extends PluginSettingTab {
 
 	/** General settings: everything that isn't Experimental or Advanced. */
 	private displayGeneral(containerEl: HTMLElement): void {
+		new Setting(containerEl).setName(translate("Ignore all past missed habits")).setDesc(translate("Dismiss reminders before today. Habit records and points stay unchanged."))
+			.addButton(button => button.setButtonText(translate("Ignore past misses")).onClick(async () => {
+				button.setDisabled(true);
+				try { await this.plugin.store.ignoreAllPastMisses(); this.plugin.events.trigger("settings-changed"); new Notice(translate("Past missed habit reminders ignored.")); }
+				catch (error) { new Notice(String(error)); }
+				finally { button.setDisabled(false); }
+			}));
 		new Setting(containerEl)
 			.setName(t("Habits folder"))
 			.setDesc(

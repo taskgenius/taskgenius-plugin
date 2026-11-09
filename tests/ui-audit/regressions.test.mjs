@@ -14,7 +14,7 @@ const {JSDOM}=createRequire(require.resolve('jest-environment-jsdom'))('jsdom');
 const directory=await mkdtemp(path.join(tmpdir(),'tg-ui-audit-'));
 after(()=>rm(directory,{recursive:true,force:true}));
 const owned=[
- 'components/features/quick-capture/modals/QuickCaptureModalWithSwitch.ts', 'components/features/task/view/details.ts',
+ 'components/features/quick-capture/modals/BaseQuickCaptureModal.ts', 'components/ui/feedback/StatusIndicator.ts', 'services/time-parsing-service.ts', 'components/features/task/edit/TaskDependencyPicker.ts', 'managers/icon-manager.ts', 'components/features/quick-capture/modals/QuickCaptureModalWithSwitch.ts', 'components/features/task/view/details.ts',
 
  "dataflow/Orchestrator.ts",
  'components/features/planner/TaskPlanner.ts', 'components/features/gantt/gantt.ts', 'utils/date/date-helper.ts', 'utils/date/optional-date-time.ts', 'components/features/task/edit/TaskDetailsModal.ts', 'components/features/task/edit/MetadataEditor.ts',
@@ -37,6 +37,7 @@ const owned=[
  'components/features/kanban/kanban.ts', 'components/features/quadrant/quadrant.ts', 'components/features/table/TableView.ts',
 ].map(file=>path.resolve('src',file));
 await build({stdin:{contents:`
+ export {TaskGeniusIconManager} from './src/managers/icon-manager';
  export {calendarWeekNumber} from './src/utils/date/calendar-week';
  export {projectFolderContainer} from './src/components/features/fluent/components/ProjectFolders';
  export {openPeriodNote} from './src/managers/period-notes';
@@ -79,6 +80,9 @@ await build({stdin:{contents:`
    builder.onResolve({filter:/^obsidian$/},()=>({path:path.resolve('tests/ui-audit/fixture.mjs')}));
    builder.onLoad({filter:/\.tsx?$/},args=>{
      if(!args.path.startsWith(path.resolve('src'))||owned.includes(args.path))return;
+     if(args.path.endsWith(path.normalize('components/ui/suggest/index.ts')))return{contents:`import {StubComponent} from ${JSON.stringify(path.resolve('tests/ui-audit/fixture.mjs'))};export const SuggestManager=StubComponent;export const UniversalEditorSuggest=StubComponent;`};
+     if(args.path.endsWith(path.normalize('editor-extensions/core/markdown-editor.ts')))return{contents:`export class EmbeddableMarkdownEditor {}
+export function createEmbeddableMarkdownEditor(app,root,options){const input=root.createEl('textarea');input.setAttribute('aria-label','Markdown editor');input.value=options.value||'';const editor={get value(){return input.value;},set(value){input.value=value;},destroy(){input.remove();},editor:{focus(){input.focus();}}};input.addEventListener('input',()=>options.onChange?.({}));return editor;}`};
      if(args.path.endsWith(path.normalize('translations/helper.ts')))return{contents:'export const t = s=>s; export const settingsText = s=>s;'};
      if(args.path.endsWith(path.normalize('common/setting-definition.ts')))return{contents:'export const getViewSettingOrDefault=(p,id)=>p.settings.viewConfiguration.find(v=>v.id===id)??{id,name:id}; export const DEFAULT_SETTINGS={};'};
      if(args.path.endsWith(path.normalize('utils/task/task-filter-utils.ts')))return{contents:'export const filterTasks=tasks=>tasks;'};
@@ -97,7 +101,7 @@ await build({stdin:{contents:`
    });
  }}],
 });
-const {calendarWeekNumber,projectFolderContainer,getStatusIcon,ProjectFileManager,ProjectEditModal,ProjectCreateModal,openPeriodNote,attachDateTimePicker,QuickCaptureModal,getStatusText,DataflowOrchestrator,TaskPlanner,GanttComponent,TaskDetailsModal,TaskMetadataEditor,KanbanComponent,QuadrantComponent,QUADRANT_DEFINITIONS,TableView,TableRenderer,FluentSidebar,Menu,QuadrantColumnComponent,registerGanttPan,MarkdownStatusSync,TaskRendererComponent,SavedTaskFilterModal,ContentComponent,TopNavigation,FluentDataManager,FluentComponentManager,CalendarComponent,ViewComponentManager,FluentTaskView,HabitModal,PointsDashboard,snapshotViewSettings,AuthMiddleware,ProjectList,vaultFixture,moment}=await import(pathToFileURL(path.join(directory,'ui.mjs')));
+const {Component,TaskGeniusIconManager,calendarWeekNumber,projectFolderContainer,getStatusIcon,ProjectFileManager,ProjectEditModal,ProjectCreateModal,openPeriodNote,attachDateTimePicker,QuickCaptureModal,getStatusText,DataflowOrchestrator,TaskPlanner,GanttComponent,TaskDetailsModal,TaskMetadataEditor,KanbanComponent,QuadrantComponent,QUADRANT_DEFINITIONS,TableView,TableRenderer,FluentSidebar,Menu,QuadrantColumnComponent,registerGanttPan,MarkdownStatusSync,TaskRendererComponent,SavedTaskFilterModal,ContentComponent,TopNavigation,FluentDataManager,FluentComponentManager,CalendarComponent,ViewComponentManager,FluentTaskView,HabitModal,PointsDashboard,snapshotViewSettings,AuthMiddleware,ProjectList,vaultFixture,moment}=await import(pathToFileURL(path.join(directory,'ui.mjs')));
 function environment(){
  const dom=new JSDOM('<body></body>',{url:'https://obsidian.invalid',pretendToBeVisual:true});installObsidianDom(dom.window);
  globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.HTMLElement=dom.window.HTMLElement;globalThis.Window=dom.window.Window;globalThis.Event=dom.window.Event;globalThis.Document=dom.window.Document;
@@ -106,11 +110,12 @@ function environment(){
  const tick=()=>{const pending=[...frames.values()];frames.clear();pending.forEach(fn=>fn());};
  globalThis.IntersectionObserver=class{observe(){}unobserve(){}disconnect(){}};
  const f=vaultFixture(),storage=new Map();f.app.loadLocalStorage=k=>storage.get(k);f.app.saveLocalStorage=(k,v)=>storage.set(k,v);
- const plugin={app:f.app,settings:{viewConfiguration:[{id:'inbox',name:'Inbox'},{id:'projects',name:'Projects'},{id:'calendar',name:'Calendar',specificConfig:{viewType:'calendar',firstDayOfWeek:1}}],defaultViewMode:'list',taskTimer:{enabled:false}},preloadedTasks:[]};
+ const plugin={app:f.app,settings:{quickCapture:{targetType:'fixed',targetFile:'Tasks.md',dailyNoteSettings:{folder:'Journal',format:'YYYY-MM-DD'},rememberLastMode:false},preferMetadataFormat:'tasks',taskStatuses:{completed:'x',inProgress:'/',abandoned:'-',planned:'?',notStarted:' ',archived:'a'},viewConfiguration:[{id:'inbox',name:'Inbox'},{id:'projects',name:'Projects'},{id:'calendar',name:'Calendar',specificConfig:{viewType:'calendar',firstDayOfWeek:1}}],defaultViewMode:'list',taskTimer:{enabled:false}},preloadedTasks:[]};
  return{...f,dom,tick,frames,plugin,close:()=>dom.window.close()};
 }
 // The isolated fixture initializes components through addChild/onload, and
 // does not expose Obsidian's load method for this directly hosted editor.
+Component.prototype.load ||= function(){this.onload?.();};
 TaskMetadataEditor.prototype.load ||= function(){this.onload();};
 const task=(id)=>({id,content:id,filePath:'Tasks.md',status:' ',completed:false,metadata:{}});
 test('old project preferences cannot resurrect deleted projects or replace canonical identifiers',()=>{
@@ -453,10 +458,10 @@ test('task editor preserves task identity and all staged fields, and cancel neve
  const e=environment(),original={...task('real-id'),line:8,originalMarkdown:'- [ ] Original',content:'Original',metadata:{tags:[],children:[],context:'home',scheduledDate:new Date(2026,10,8,9,30).getTime()}};let saved;
  e.plugin.writeAPI={updateTask:async args=>{saved=args;return {success:true};}};
  const modal=new TaskDetailsModal(e.app,e.plugin,original);await modal.onOpen();
- modal.metadataEditor.onMetadataChange({field:'priority',value:4});modal.metadataEditor.onMetadataChange({field:'status',value:'x'});modal.metadataEditor.onMetadataChange({field:'context',value:'work'});
+ const row=name=>[...modal.contentEl.querySelectorAll('.setting-item')].find(el=>el.querySelector('.setting-item-name')?.textContent===name);const priority=row('Priority').querySelector('select');priority.value='4';priority.dispatchEvent(new window.Event('change'));const complete=modal.contentEl.querySelector('.status-option[aria-label="Completed"] input');assert.ok(complete,JSON.stringify([...modal.contentEl.querySelectorAll('.status-option')].map(el=>({label:el.getAttribute('aria-label'),html:el.innerHTML}))));complete.click();const context=row('Context').querySelector('input');context.value='work';context.dispatchEvent(new window.Event('input'));
  await modal.save();assert.equal(saved.taskId,'real-id');assert.equal(saved.updates.line,8);assert.equal(saved.updates.id,'real-id');assert.equal(saved.updates.metadata.priority,4);assert.equal(saved.updates.metadata.context,'work');assert.equal(saved.updates.completed,true);assert.ok(saved.updates.metadata.completedDate);
  assert.deepEqual(original.metadata,{tags:[],children:[],context:'home',scheduledDate:new Date(2026,10,8,9,30).getTime()});
- saved=null;const cancel=new TaskDetailsModal(e.app,e.plugin,original);await cancel.onOpen();cancel.metadataEditor.onMetadataChange({field:'priority',value:1});cancel.close();assert.equal(saved,null);e.close();
+ saved=null;const cancel=new TaskDetailsModal(e.app,e.plugin,original);await cancel.onOpen();cancel.taskMetadata.priority=1;cancel.close();assert.equal(saved,null);e.close();
 });
 
 test('date editor keeps time until explicitly removed and accepts an optional midnight time',()=>{
@@ -580,8 +585,8 @@ test('periodic notes reuse existing folders, templates and ISO week years, creat
  assert.equal([...e.files.keys()].filter(path=>path==='Journal/weekly/2026-W53.md').length,1);assert.equal(opened.length,6);e.close();
 });
 
-test('calendar week title includes its week number and exposes all four period-note buttons',()=>{
- const e=environment(),calendar=new CalendarComponent(e.app,e.plugin,document.body.createDiv());calendar.currentDate=moment('2026-11-09');calendar.currentViewMode='week';calendar.renderHeader();assert.match(calendar.dateDisplayEl.textContent,/Week 46/);assert.equal(calendar.headerEl.querySelectorAll('.calendar-period-notes button').length,4);calendar.containerEl.remove();e.close();
+test('calendar week title includes its week number and keeps period-note navigation in the title',()=>{
+ const e=environment(),calendar=new CalendarComponent(e.app,e.plugin,document.body.createDiv());calendar.currentDate=moment('2026-11-09');calendar.currentViewMode='week';calendar.renderHeader();assert.match(calendar.dateDisplayEl.textContent,/Week 46/);assert.equal(calendar.headerEl.querySelectorAll('.calendar-period-notes button').length,0);calendar.containerEl.remove();e.close();
 });
 
 test('the legacy pause mark and pause names all resolve to the same pause icon',()=>{
@@ -625,4 +630,57 @@ test('zero habit points stay hidden and recent range filters sum daily contribut
  const e=environment();e.plugin.settings.rewards={rewardItems:[],pointsLedger:[]};const page=new PointsDashboard(e.app,e.plugin,document.body.createDiv());page.bodyEl=document.body.createDiv();page.scope=page.addChild(new (class {unload(){}})());page.activeTab='history';const today=moment().format('YYYY-MM-DD');
  page.snapshot={manual:[],ledger:[],automaticTasks:{days:[],habitPaths:[]},summaries:[{name:'Zero habit',path:'zero',points:0,todayPoints:0,entries:1,dailyPoints:{}},{name:'Paid habit',path:'paid',points:100,todayPoints:10,entries:3,dailyPoints:{[today]:10,'2020-01-01':90}}]};
  page.historyFilter='week';page.renderHistory();assert.doesNotMatch(page.bodyEl.textContent,/Zero habit/);assert.match(page.bodyEl.textContent,/Paid habit/);assert.doesNotMatch(page.bodyEl.textContent,/100/);assert.match(page.bodyEl.textContent,/10/);e.close();
+});
+
+
+test('calendar cells create tasks without opening notes, while only the period title opens a note',()=>{
+ const e=environment();globalThis.getComputedStyle=window.getComputedStyle.bind(window);globalThis.requestAnimationFrame=window.requestAnimationFrame;
+ const page=new CalendarComponent(e.app,e.plugin,document.body.createDiv()),notes=[];let created=0;const open=QuickCaptureModal.prototype.open;QuickCaptureModal.prototype.open=function(){created++;return this;};page.openNote=async(...args)=>notes.push(args);
+ try{page.onload();const date=page.containerEl.querySelector('.tg-date-number');assert.ok(date);date.dispatchEvent(new window.MouseEvent('click',{bubbles:true}));date.dispatchEvent(new window.MouseEvent('click',{bubbles:true}));date.dispatchEvent(new window.MouseEvent('dblclick',{bubbles:true}));assert.equal(notes.length,0);assert.equal(created,1);page.dateDisplayEl.click();assert.equal(notes.length,1);assert.equal(created,1);assert.equal(page.headerEl.querySelector('.calendar-period-notes'),null);}finally{QuickCaptureModal.prototype.open=open;page.unload();e.close();}
+});
+
+test('editing uses the capture form and shared field layout, and cancel does not save capture preferences',async()=>{
+ const e=environment();let saves=0;e.plugin.saveSettings=async()=>saves++;e.plugin.settings.quickCapture.rememberLastMode=true;
+ const create=new QuickCaptureModal(e.app,e.plugin);create.onOpen();const edit=new TaskDetailsModal(e.app,e.plugin,{...task('edit'),metadata:{tags:[],children:[],context:'home'}});await edit.onOpen();
+ const fields=modal=>[...modal.contentEl.querySelectorAll('.quick-capture-config-panel .setting-item-name')].map(el=>el.textContent);
+ assert.deepEqual(fields(edit),fields(create));assert.ok(edit.contentEl.querySelector('.quick-capture-editor-panel .quick-capture-modal-editor'));assert.ok(edit.contentEl.querySelector('.preview-markdown'));assert.equal(edit.contentEl.querySelector('.tg-task-editor-layout'),null);assert.equal(edit.contentEl.querySelector('.quick-capture-footer .mod-cta').textContent,'Save');edit.close();assert.equal(saves,0);create.close();e.close();
+});
+
+test('the clear-time button removes time while retaining the day in a staged task edit',async()=>{
+ const e=environment();let saved;e.plugin.writeAPI={updateTask:async args=>{saved=args;return {success:true};}};
+ const modal=new TaskDetailsModal(e.app,e.plugin,{...task('date-clear'),originalMarkdown:'- [ ] Test 📅 2026-11-12 09:35',metadata:{tags:[],children:[],dueDate:new Date(2026,10,12,9,35).getTime(),datePrecision:{dueDate:'datetime'}}});await modal.onOpen();
+ const row=[...modal.contentEl.querySelectorAll('.setting-item')].find(el=>el.querySelector('.setting-item-name')?.textContent==='Due Date');assert.equal(row.querySelector('input[type=time]').value,'09:35');row.querySelector('.tg-clear-time').click();assert.equal(row.querySelector('input[type=time]').value,'');assert.equal(row.querySelector('input[type=date]').value,'2026-11-12');await modal.save();assert.equal(saved.updates.metadata.datePrecision.dueDate,'date');assert.equal(new Date(saved.updates.metadata.dueDate).getHours(),0);e.close();
+});
+
+test('pause checkboxes keep the pause icon even with optional Task Genius icons disabled',async()=>{
+ const e=environment();e.plugin.settings.enableTaskGeniusIcons=false;const icons=new TaskGeniusIconManager(e.plugin);await icons.onload();const style=document.getElementById('task-genius-pause-icons');assert.ok(style);assert.match(style.textContent,/data-task="a"/);assert.doesNotMatch(style.textContent,/data-task="x"/);assert.ok(document.body.classList.contains('task-genius-pause-icons'));assert.equal(document.getElementById('task-genius-icons-styles'),null);assert.equal(e.plugin.settings.enableTaskGeniusIcons,false);icons.unload();assert.equal(document.getElementById('task-genius-pause-icons'),null);e.close();
+});
+
+test('habit check-in counts follow the same date range as their point contributions',()=>{
+ const e=environment(),page=new PointsDashboard(e.app,e.plugin,document.body.createDiv());page.bodyEl=document.body.createDiv();const today=moment().format('YYYY-MM-DD');page.historyFilter='week';page.snapshot={manual:[],ledger:[],automaticTasks:{days:[],habitPaths:[]},summaries:[{name:'Fitness',path:'fitness',points:30,todayPoints:10,entries:3,dailyPoints:{[today]:10,'2020-01-01':20},dailyEntries:{[today]:1,'2020-01-01':2}}]};page.renderHistory();assert.match(page.bodyEl.textContent,/Fitness · 1 check-ins/);assert.doesNotMatch(page.bodyEl.textContent,/3 check-ins/);e.close();
+});
+
+test('project-bound capture metadata never repeats project tags or inline fields in the task preview',()=>{
+ const e=environment(),capture=new QuickCaptureModal(e.app,e.plugin,{project:'Research'});capture.taskMetadata.project='Research';const text=capture.processContentWithMetadata('Write notes');assert.match(text,/Write notes/);assert.doesNotMatch(text,/#project\/|\[project::/);capture.onClose();e.close();
+});
+
+
+test('capture fields serialize explicit points, dependency ids and tags without repeating project ownership',()=>{
+ const e=environment(),capture=new QuickCaptureModal(e.app,e.plugin,{project:'Research'});capture.taskMetadata={project:'Research',points:5,dependsOn:['target-id'],tags:['writing','project/Research']};const output=capture.processContentWithMetadata('Write #writing #project/Research');assert.match(output,/\[points:: 5\]/);assert.match(output,/⛔ target-id/);assert.equal((output.match(/#writing/g)||[]).length,1);assert.doesNotMatch(output,/#project\/|\[project::/);capture.onClose();e.close();
+});
+
+test('export shared capture and edit forms for the independent browser layout check',async()=>{
+ if(!process.env.TG_LAYOUT_DIR)return;const e=environment(),target=process.env.TG_LAYOUT_DIR;fs.mkdirSync(target,{recursive:true});
+ const capture=new QuickCaptureModal(e.app,e.plugin);capture.onOpen();const edit=new TaskDetailsModal(e.app,e.plugin,{...task('Example task'),metadata:{tags:[],children:[],startDate:new Date(2026,10,9,9,30).getTime(),datePrecision:{startDate:'datetime'}}});await edit.onOpen();await new Promise(resolve=>setTimeout(resolve,65));for(const modal of [capture,edit]){for(const input of modal.modalEl.querySelectorAll('input'))input.defaultValue=input.value;for(const textarea of modal.modalEl.querySelectorAll('textarea'))textarea.defaultValue=textarea.value;}fs.writeFileSync(path.join(target,'capture.html'),capture.modalEl.outerHTML);fs.writeFileSync(path.join(target,'edit.html'),edit.modalEl.outerHTML);
+ const header=document.body.createDiv({cls:'view-header'}),root=header.createDiv({cls:'tg-fluent-top-nav'}),nav=new TopNavigation(root,e.plugin,()=>{},()=>{},()=>{},()=>{},()=>{});e.plugin.settings.taskFilter={presetTaskFilters:[{id:'layout-label',name:'本月尚未完成的任务',options:{}}]};nav.setActivePreset('layout-label');fs.writeFileSync(path.join(target,'filter.html'),header.outerHTML);const icons=new TaskGeniusIconManager(e.plugin);await icons.onload();fs.writeFileSync(path.join(target,'pause.css'),document.getElementById('task-genius-pause-icons').textContent);icons.unload();capture.close();edit.close();nav.unload();e.close();
+});
+
+
+test('clearing a parsed time remains authoritative over the original natural-language time',()=>{
+ const e=environment(),due=new Date(2026,10,12,9,35),capture=new QuickCaptureModal(e.app,e.plugin,{dueDate:due,datePrecision:{dueDate:'datetime'}});capture.onOpen();capture.capturedContent='Review tomorrow at 09:35';capture.timeParsingService.parseTimeExpressionsForLine=()=>({cleanedLine:'Review',dueDate:due});
+ const row=[...capture.contentEl.querySelectorAll('.setting-item')].find(el=>el.querySelector('.setting-item-name')?.textContent==='Due Date');row.querySelector('.tg-clear-time').click();const output=capture.processContentWithMetadata(capture.capturedContent);assert.match(output,/📅 2026-11-12/);assert.doesNotMatch(output,/09:35/);assert.equal(capture.taskMetadata.manuallySet.dueDate,true);capture.close();e.close();
+});
+
+test('clearing the capture form synchronizes the visible native date and time pickers',()=>{
+ const e=environment(),capture=new QuickCaptureModal(e.app,e.plugin,{dueDate:new Date(2026,10,12,9,35),datePrecision:{dueDate:'datetime'}});capture.onOpen();capture.handleClear();for(const input of capture.contentEl.querySelectorAll('input[type=date],input[type=time]'))assert.equal(input.value,'');capture.close();e.close();
 });

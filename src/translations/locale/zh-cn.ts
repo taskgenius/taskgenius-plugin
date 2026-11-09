@@ -3206,6 +3206,8 @@ const translations = {
 	"Folder name": "文件夹名称",
 	"Enter a valid folder name.": "请输入有效的文件夹名称。",
 	"View filter": "视图筛选",
+	"Clear time": "清除时间",
+	"More properties": "更多属性",
 };
 
 export default translations;

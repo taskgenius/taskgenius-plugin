@@ -3389,6 +3389,8 @@ const translations = {
 	"Folder name": "Folder name",
 	"Enter a valid folder name.": "Enter a valid folder name.",
 	"View filter": "View filter",
+	"Clear time": "Clear time",
+	"More properties": "More properties",
 };
 
 export default translations;

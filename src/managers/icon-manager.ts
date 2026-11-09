@@ -19,6 +19,7 @@ export class TaskGeniusIconManager extends Component {
 	}
 
 	async onload() {
+		this.installPauseIcons();
 		// Initialize if enabled
 		if (this.plugin.settings.enableTaskGeniusIcons) {
 			this.enable();
@@ -27,8 +28,18 @@ export class TaskGeniusIconManager extends Component {
 
 	onunload() {
 		this.disable();
+		document.getElementById("task-genius-pause-icons")?.remove();
+		document.body.classList.remove("task-genius-pause-icons");
 	}
 
+	private installPauseIcons(): void {
+		document.getElementById("task-genius-pause-icons")?.remove();
+		const style = document.createElement("style"); style.id = "task-genius-pause-icons";
+		const icon = getStatusIcon("pause"), encoded = this.encodeSvgForCSS(icon), color = this.extractFillColor(icon);
+		const marks = this.parseTaskStatuses(this.plugin.settings).filter(status => status.status === "archived").flatMap(status => status.chars);
+		style.textContent = [...new Set(marks)].map(mark => this.generateCSSRuleForChar(mark, encoded, color, false).split(this.BODY_CLASS).join("task-genius-pause-icons")).join("\n");
+		document.body.classList.add("task-genius-pause-icons"); document.head.appendChild(style);
+	}
 	/**
 	 * Enable Task Genius Icons functionality
 	 */
@@ -57,6 +68,7 @@ export class TaskGeniusIconManager extends Component {
 	 * Update functionality when settings change
 	 */
 	update() {
+		this.installPauseIcons();
 		if (this.plugin.settings.enableTaskGeniusIcons) {
 			this.enable();
 		} else {

@@ -191,7 +191,8 @@ export class PointsDashboard extends Component {
 			const amount = roundPoints(base + (snapshot.automaticTasks.habitPaths[0] === item.path ? completionPoints : 0));
 			if (!amount || !this.historyAmountMatches(amount)) continue;
 			const row = habits.createDiv({ cls: "tg-points-entry" });
-			row.createDiv({ text: `${item.name} · ${item.entries} ${t("check-ins")}` });
+			const entries = ["today", "week", "month"].includes(this.historyFilter) ? Object.entries(item.dailyEntries || Object.fromEntries(Object.keys(item.dailyPoints || {}).map(day => [day, 1]))).filter(([day]) => this.historyDateMatches(day)).reduce((sum, [, count]) => sum + count, 0) : item.entries;
+			row.createDiv({ text: `${item.name} · ${entries} ${t("check-ins")}` });
 			row.createDiv({ text: numberText(amount) });
 		}
 	}

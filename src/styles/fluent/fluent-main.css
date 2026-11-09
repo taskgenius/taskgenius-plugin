@@ -1061,3 +1061,10 @@ button.fluent-new-task-btn:hover {
 
 .fluent-sidebar-rail > .fluent-rail-btn { flex-shrink: 0; }
 .view-header:has(.tg-fluent-top-nav) :is(.view-header-left, .view-header-title-container, .view-header-nav-buttons .clickable-icon) { border: 0; box-shadow: none; }
+
+.view-header .tg-active-filter-label { flex: 0 0 auto; max-width: none; overflow: visible; text-overflow: clip; }
+.view-header .fluent-search-container { min-width: 0; flex-wrap: nowrap; }
+
+.view-header .fluent-search-container > .search-input-container { flex: 1; min-width: 80px; }
+
+.view-header:has(.tg-fluent-top-nav) .fluent-nav-left { flex: 1 1 300px; min-width: min(100%, 300px); }

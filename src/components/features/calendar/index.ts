@@ -166,13 +166,6 @@ export class CalendarComponent extends Component {
 		super.onload();
 		this.processTasks();
 		this.render();
-		this.registerDomEvent(this.containerEl, "click", event => {
-			const target = (event.target as Element).closest(".tg-date-number, .tg-time-header-cell");
-			if (!target) return;
-			const dated = target.closest<HTMLElement>("[data-date]");
-			const value = dated?.dataset.date;
-			if (value) { event.stopPropagation(); void this.openNote("daily", moment(value, "YYYY-MM-DD", true).toDate()); }
-		});
 
 		// Listen for calendar views configuration changes
 		this.registerEvent(
@@ -375,11 +368,7 @@ export class CalendarComponent extends Component {
 		this.updateDateHeader();
 		dateDisplay.setAttribute("role", "button"); dateDisplay.tabIndex = 0;
 		const openCurrent = () => { const mode = this.getCustomViewConfig(this.currentViewMode)?.baseViewType || this.currentViewMode; void this.openNote(mode === "year" ? "yearly" : mode === "month" ? "monthly" : mode === "week" || mode === "agenda" ? "weekly" : "daily", this.currentDate.toDate()); };
-		dateDisplay.onclick = openCurrent; dateDisplay.onkeydown = event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openCurrent(); } };
-		const notes = this.headerEl.createDiv("calendar-period-notes");
-		for (const [period, label] of [["daily", "Daily note"], ["weekly", "Weekly note"], ["monthly", "Monthly note"], ["yearly", "Yearly note"]] as const) {
-			new ButtonComponent(notes).setButtonText(t(label)).onClick(() => void this.openNote(period, this.currentDate.toDate()));
-		}
+		dateDisplay.onclick = event => { event.preventDefault(); event.stopPropagation(); openCurrent(); }; dateDisplay.onkeydown = event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); openCurrent(); } };
 
 		// View switcher - segmented control style
 		const viewGroup = this.headerEl.createDiv("calendar-view-switcher");

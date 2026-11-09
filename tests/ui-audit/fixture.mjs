@@ -4,6 +4,7 @@ import actualMoment from 'moment';
 export {actualMoment as moment};
 export class ButtonComponent {
   constructor(root) { this.buttonEl=root.createEl('button'); }
+  setClass(value) {this.buttonEl.classList.add(value);return this;}
   setIcon(icon) { this.buttonEl.dataset.icon=icon; return this; }
   setButtonText(text) {this.buttonEl.textContent=text;return this;}
   setTooltip(text) {this.buttonEl.title=text;return this;}
@@ -35,6 +36,9 @@ export const debounce=(callback,delay)=>{
 };
 export class StubComponent extends Component {
   constructor(...args){super();this.element=document.createElement('div');this.containerEl=this.element;this.task=args[0];}
+  startManaging(){}
+  stopManaging(){}
+  render(value){this.element.textContent=value;}
   load(){}
   setTasks(){}
   updateTasks(){}
@@ -47,7 +51,7 @@ export class StubComponent extends Component {
 }
 
 export class Modal extends Component {
-  constructor(app){super();this.app=app;this.containerEl=document.body.createDiv({cls:'modal-container'});this.modalEl=this.containerEl.createDiv({cls:'modal'});this.modalEl.createDiv({cls:'modal-header-button'});this.contentEl=this.modalEl.createDiv({cls:'modal-content'});}
+  constructor(app){super();this.app=app;this.containerEl=document.body.createDiv({cls:'modal-container'});this.modalEl=this.containerEl.createDiv({cls:'modal'});this.modalEl.createDiv({cls:'modal-header-button'});this.titleEl=this.modalEl.createEl('h2',{cls:'modal-title'});this.contentEl=this.modalEl.createDiv({cls:'modal-content'});}
   setTitle(value){this.titleEl ||= this.modalEl.createEl("h2");this.titleEl.textContent=value;return this;}
   open(){this.onOpen?.();return this;}
   close(){this.onClose?.();this.containerEl.remove();}

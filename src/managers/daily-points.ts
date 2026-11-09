@@ -12,6 +12,7 @@ export interface HabitPointSummary {
 	points: number;
 	todayPoints: number;
 	dailyPoints: Record<string, number>;
+	dailyEntries: Record<string, number>;
 	entries: number;
 	source: "habit" | "rule" | "default";
 }
@@ -74,7 +75,7 @@ export function calculateDailyHabitPoints(
 		}
 		return [{ name: habit.name, path: habit.path, rate, entries: records.length,
 			units: roundPoints(records.reduce((sum, entry) => sum + (count ? 1 : entry.value), 0)),
-			points, dailyPoints, todayPoints: roundPoints(points - total(records.filter(entry => entry.day !== today))),
+			points, dailyPoints, dailyEntries: Object.fromEntries(records.map(entry => [entry.day, 1])), todayPoints: roundPoints(points - total(records.filter(entry => entry.day !== today))),
 			source: hasOverride ? "habit" as const : rule ? "rule" as const : "default" as const }];
 	});
 }

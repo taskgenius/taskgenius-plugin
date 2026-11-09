@@ -33,6 +33,8 @@ export type QuickCaptureMode = "checkbox" | "file";
  * Task metadata interface
  */
 export interface TaskMetadata {
+	points?: number;
+	dependsOn?: string[];
 	dailyNoteDate?: string;
 	datePrecision?: Record<string, "date" | "datetime" | undefined>;
 	startDate?: Date;
@@ -893,6 +895,8 @@ export abstract class BaseQuickCaptureModal extends Modal {
 			yamlLines.push(`scheduledDate: ${JSON.stringify(scheduledDate)}`);
 		if (priorityVal)
 			yamlLines.push(`priority: ${JSON.stringify(priorityVal)}`);
+		if (this.taskMetadata.points != null && Number.isFinite(this.taskMetadata.points)) yamlLines.push(`points: ${this.taskMetadata.points}`);
+		if (this.taskMetadata.dependsOn?.length) yamlLines.push(`dependsOn: ${JSON.stringify(this.taskMetadata.dependsOn)}`);
 		if (projectVal)
 			yamlLines.push(`project: ${JSON.stringify(projectVal)}`);
 		if (contextVal)

@@ -5,7 +5,7 @@ export function installObsidianDom(window) {
   window.SVGElement.prototype.empty=function(){this.replaceChildren();};
 
   Object.defineProperties(proto,{doc:{get(){return this.ownerDocument;}},win:{get(){return this.ownerDocument.defaultView;}}});
-  proto.createEl=function(tag,options={}) {
+  proto.createEl=function(tag,options={},callback) {
     if(typeof options==='string') options={cls:options};
     const child=this.ownerDocument.createElement(tag);
     if(options.cls) child.className=Array.isArray(options.cls)?options.cls.join(' '):options.cls;
@@ -13,10 +13,10 @@ export function installObsidianDom(window) {
     if(options.value!==undefined) child.value=options.value;
     if(options.type!==undefined) child.type=options.type;
     for(const [key,value] of Object.entries(options.attr??{})) child.setAttribute(key,value);
-    this.append(child); return child;
+    this.append(child); callback?.(child); return child;
   };
-  proto.createDiv=function(options){return this.createEl('div',options);};
-  proto.createSpan=function(options){return this.createEl('span',options);};
+  proto.createDiv=function(options,callback){return this.createEl('div',options,callback);};
+  proto.createSpan=function(options,callback){return this.createEl('span',options,callback);};
   proto.empty=function(){this.replaceChildren();};
   proto.addClass=function(...names){this.classList.add(...names);};
   proto.addClasses=function(names){this.classList.add(...names);};

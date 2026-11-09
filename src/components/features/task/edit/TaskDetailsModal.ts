@@ -1,23 +1,23 @@
-import { createEmbeddableMarkdownEditor, EmbeddableMarkdownEditor } from "@/editor-extensions/core/markdown-editor";
-import "@/styles/quick-capture.css";
-import { App, Modal, ButtonComponent, Notice } from "obsidian";
+import { App, Notice } from "obsidian";
 import type { Task } from "@/types/task";
 import type TaskProgressBarPlugin from "@/index";
-import { TaskMetadataEditor } from "./MetadataEditor";
+import { QuickCaptureModal } from "@/components/features/quick-capture/modals/QuickCaptureModalWithSwitch";
+import { taskDatePrecisions } from "@/utils/date/optional-date-time";
 import { t } from "@/translations/helper";
 
-/** Shared editor for task cards and tasks in ordinary Markdown notes. */
-export class TaskDetailsModal extends Modal {
+/** Editing uses the actual capture form, editor, preview and footer. */
+export class TaskDetailsModal extends QuickCaptureModal {
 	private task: Task;
-	private markdownEditor?: EmbeddableMarkdownEditor;
-	private metadataEditor?: TaskMetadataEditor;
 	private closed = false;
 	private saving = false;
-	constructor(app: App, private plugin: TaskProgressBarPlugin, task: Task, private onTaskUpdated?: (task: Task) => Promise<void>) {
-		super(app);
-		this.task = { ...task, content: typeof task.content === "string" ? task.content : "", metadata: structuredClone(task.metadata || { tags: [], children: [] }) };
-		this.modalEl.addClass("task-details-modal", "tg-task-editor-modal", "quick-capture-modal", "full"); this.setTitle(t("Edit Task"));
+	constructor(app: App, plugin: TaskProgressBarPlugin, task: Task, private onTaskUpdated?: (task: Task) => Promise<void>) {
+		super(app, plugin, {}, true);
+		this.task = this.clone(task);
+		this.rememberCaptureMode = false;
+		this.currentMode = "checkbox"; this.inlineModeAvailable = true; this.fileModeAvailable = false;
+		this.setTitle(t("Edit Task"));
 	}
+	private clone(task: Task): Task { return { ...task, content: typeof task.content === "string" ? task.content : "", metadata: structuredClone(task.metadata || { tags: [], children: [] }) }; }
 	async onOpen(): Promise<void> {
 		this.closed = false;
 		const query = this.plugin.dataflowOrchestrator?.getQueryAPI();
@@ -28,55 +28,50 @@ export class TaskDetailsModal extends Modal {
 			const latest = tasks.find(task => task.id === this.task.id) || tasks.filter(task => task.filePath === this.task.filePath && task.originalMarkdown === this.task.originalMarkdown).filter((_, index, matches) => matches.length === 1)[0];
 			if (this.closed) return;
 			if (!latest) { new Notice(t("This task no longer exists. Refresh the task list.")); this.close(); return; }
-			this.task = { ...latest, content: latest.content || "", metadata: structuredClone(latest.metadata || { tags: [], children: [] }) };
+			this.task = this.clone(latest);
 		}
-		const root = this.contentEl; root.empty();
-		const layout = root.createDiv({ cls: "quick-capture-layout tg-task-editor-layout" });
-		const fields = layout.createDiv({ cls: "quick-capture-config-panel tg-task-editor-fields" });
-		fields.createDiv({ cls: "quick-capture-section-title", text: t("Task Properties") });
-		const content = layout.createDiv({ cls: "quick-capture-editor-panel tg-task-editor-content" });
-		content.createDiv({ cls: "quick-capture-section-title", text: t("Task Content") });
-		const editor = content.createDiv({ cls: "quick-capture-modal-editor" });
-		if ((this.app as any).embedRegistry) {
-			this.markdownEditor = createEmbeddableMarkdownEditor(this.app, editor, {
-				value: this.task.content,
-				onChange: () => { if (this.markdownEditor) this.task.content = this.markdownEditor.value; },
-				onEnter: (_editor, mod) => { if (mod) { void this.save(); return true; } return false; },
-				onEscape: () => this.close(),
-			});
-		} else {
-			const input = editor.createEl("textarea", { attr: { "aria-label": t("Task content") } }); input.value = this.task.content;
-			input.addEventListener("input", () => { this.task.content = input.value; });
-		}
-		this.metadataEditor = new TaskMetadataEditor(fields.createDiv(), this.app, this.plugin, false);
-		this.metadataEditor.load(); this.metadataEditor.showTask(this.task);
-		this.metadataEditor.onMetadataChange = event => {
-			if (["content","status","completed"].includes(event.field)) (this.task as any)[event.field] = event.value;
-			else (this.task.metadata as any)[event.field] = event.value;
-			if (event.field === "status") {
-				this.task.completed = (this.plugin.settings.taskStatuses?.completed || "x").split("|").includes(event.value);
-				this.task.metadata.completedDate = this.task.completed ? this.task.metadata.completedDate || Date.now() : undefined;
-				this.task.metadata.cancelledDate = (this.plugin.settings.taskStatuses?.abandoned || "-").split("|").includes(event.value) ? this.task.metadata.cancelledDate || Date.now() : undefined;
-			}
-		};
-		const footer = root.createDiv({ cls: "tg-task-editor-footer" });
-		new ButtonComponent(footer).setButtonText(t("Cancel")).onClick(() => this.close());
-		new ButtonComponent(footer).setButtonText(t("Save")).setCta().onClick(() => void this.save());
+		this.sourceTask = this.task;
+		const metadata = this.task.metadata;
+		const date = (value: unknown) => value == null ? undefined : new Date(value as number);
+		this.taskMetadata = { status: this.task.status, priority: metadata.priority, project: typeof metadata.project === "string" ? metadata.project : undefined, context: metadata.context, tags: [...(metadata.tags || [])], points: metadata.points, dependsOn: [...(metadata.dependsOn || [])], startDate: date(metadata.startDate), dueDate: date(metadata.dueDate), scheduledDate: date(metadata.scheduledDate), datePrecision: taskDatePrecisions(this.task), manuallySet: { startDate: true, dueDate: true, scheduledDate: true } };
+		this.capturedContent = this.task.content;
+		this.contentEl.empty(); super.onOpen();
 	}
+	protected createTargetFileSelector(root: HTMLElement): void {
+		if (this.taskMetadata.project && this.taskMetadata.project !== this.task?.metadata.project) { super.createTargetFileSelector(root); return; }
+		root.createDiv({ cls: "quick-capture-section-title", text: t("Capture to:") });
+		root.createDiv({ cls: "quick-capture-target", text: this.task?.filePath || "" });
+	}
+	protected createFooter(): void {
+		super.createFooter();
+		this.footerContainer?.querySelector(".quick-capture-footer-left")?.empty();
+		const button = this.footerContainer?.querySelector(".mod-cta"); if (button) button.textContent = t("Save");
+	}
+	protected async handleSubmit(): Promise<void> { await this.save(); }
 	private async save(): Promise<void> {
-		if (this.saving || !this.task.content.trim()) return;
+		const content = this.markdownEditor?.value ?? this.capturedContent;
+		if (this.saving || !content.trim()) return;
 		this.saving = true;
 		try {
 			if (this.contentEl.querySelector('[aria-invalid="true"]')) throw new Error(t("Enter a valid date, optionally followed by HH:mm."));
-			if (this.onTaskUpdated) await this.onTaskUpdated(this.task);
+			const form = this.taskMetadata, status = form.status ?? this.task.status;
+			const metadata = { ...this.task.metadata, priority: form.priority, project: form.project, context: form.context, tags: [...(form.tags || [])], points: form.points, dependsOn: [...(form.dependsOn || [])], startDate: form.startDate?.getTime(), dueDate: form.dueDate?.getTime(), scheduledDate: form.scheduledDate?.getTime(), datePrecision: { ...this.task.metadata.datePrecision, ...form.datePrecision, startDate: form.datePrecision?.startDate, dueDate: form.datePrecision?.dueDate, scheduledDate: form.datePrecision?.scheduledDate } };
+			let completed = this.task.completed;
+			if (status !== this.task.status) {
+				completed = (this.plugin.settings.taskStatuses?.completed || "x").split("|").includes(status);
+				metadata.completedDate = completed ? metadata.completedDate || Date.now() : undefined;
+				metadata.cancelledDate = (this.plugin.settings.taskStatuses?.abandoned || "-").split("|").includes(status) ? metadata.cancelledDate || Date.now() : undefined;
+			}
+			const updated = { ...this.task, content, status, completed, metadata };
+			if (this.onTaskUpdated) await this.onTaskUpdated(updated);
 			else {
 				if (!this.plugin.writeAPI) throw new Error(t("Task writer is unavailable"));
-				const result = await this.plugin.writeAPI.updateTask({ taskId: this.task.id, updates: this.task });
+				const result = await this.plugin.writeAPI.updateTask({ taskId: this.task.id, updates: updated });
 				if (!result.success) throw new Error(result.error || t("Failed to update task"));
 			}
 			this.close();
 		} catch (error) { new Notice(String(error)); }
 		finally { this.saving = false; }
 	}
-	onClose(): void { this.closed = true; this.markdownEditor?.unload(); this.markdownEditor = undefined; this.metadataEditor?.unload(); this.metadataEditor = undefined; this.contentEl.empty(); }
+	onClose(): void { this.closed = true; super.onClose(); }
 }
