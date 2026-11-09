@@ -39,7 +39,7 @@ import {
 	renderCalendarViewSettingsTab,
 } from "./components/features/settings";
 import { renderFileFilterSettingsTab } from "./components/features/settings/tabs/FileFilterSettingsTab";
-import { renderTimeParsingSettingsTab } from "./components/features/settings/tabs/TimeParsingSettingsTab";
+
 import { SettingsSearchComponent } from "./components//features/settings/components/SettingsSearchComponent";
 import { renderMcpIntegrationSettingsTab } from "./components/features/settings/tabs/McpIntegrationSettingsTab";
 import { IframeModal } from "@/components/ui/modals/IframeModal";
@@ -157,12 +157,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 			icon: "timer",
 			category: "workflow",
 		},
-		{
-			id: "time-parsing",
-			name: t("Time Parsing"),
-			icon: "clock",
-			category: "workflow",
-		},
+
 		{
 			id: "timeline-sidebar",
 			name: t("Timeline Sidebar"),
@@ -622,7 +617,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		// Ensure we start with general tab if no tab is set
-		if (!this.currentTab) {
+		if (!this.currentTab || this.currentTab !== "workspaces" && !this.tabs.some(tab => tab.id === this.currentTab)) {
 			this.currentTab = "general";
 		}
 
@@ -661,9 +656,6 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 		const taskTimerSection = this.createTabSection("task-timer");
 		this.displayTaskTimerSettings(taskTimerSection);
 
-		// Time Parsing Tab
-		const timeParsingSection = this.createTabSection("time-parsing");
-		this.displayTimeParsingSettings(timeParsingSection);
 
 		// Timeline Sidebar Tab
 		const timelineSidebarSection =
@@ -774,8 +766,6 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 				return `${base}/quick-capture`;
 			case "task-timer":
 				return `${base}/task-timer`;
-			case "time-parsing":
-				return `${base}/time-parsing`;
 			case "workflow":
 				return `${base}/workflows`;
 			case "timeline-sidebar":
@@ -843,9 +833,6 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 		this.renderTaskTimerSettingsTab(containerEl);
 	}
 
-	private displayTimeParsingSettings(containerEl: HTMLElement): void {
-		renderTimeParsingSettingsTab(this, containerEl);
-	}
 
 	private displayTimelineSidebarSettings(containerEl: HTMLElement): void {
 		renderTimelineSidebarSettingsTab(this, containerEl);

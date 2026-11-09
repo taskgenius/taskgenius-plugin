@@ -1,3 +1,4 @@
+import { parseOptionalDateTime, formatOptionalDateTime } from "@/utils/date/optional-date-time";
 import {
 	App,
 	Setting,
@@ -54,7 +55,6 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 	private startDateInput?: HTMLInputElement;
 	private dueDateInput?: HTMLInputElement;
 	private scheduledDateInput?: HTMLInputElement;
-	private includeTime: boolean = true;
 
 	// File name input for file creation mode
 	private fileNameInput: FileNameInput | null = null;
@@ -87,7 +87,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 
 		// Initialize time parsing service
 		this.timeParsingService = new TimeParsingService(
-			this.plugin.settings.timeParsing || DEFAULT_TIME_PARSING_CONFIG,
+			DEFAULT_TIME_PARSING_CONFIG,
 		);
 	}
 
@@ -397,21 +397,8 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 	 * Create date inputs
 	 */
 	private createDateInputs(container: HTMLElement): void {
-		const getInputType = () =>
-			this.includeTime ? "datetime-local" : "date";
-		const getPlaceholder = () =>
-			this.includeTime ? "YYYY-MM-DD HH:mm" : "YYYY-MM-DD";
-
-		// Toggle for including time in date inputs
-		new Setting(container)
-			.setName(t("Include time"))
-			.setDesc(t("Toggle between date-only and date+time input"))
-			.addToggle((toggle) => {
-				toggle.setValue(this.includeTime).onChange((value) => {
-					this.includeTime = value;
-					this.updateDateInputsMode();
-				});
-			});
+		const getInputType = () => "text";
+		const getPlaceholder = () => "YYYY-MM-DD / YYYY-MM-DD HH:mm";
 
 		// Start Date
 		new Setting(container).setName(t("Start Date")).addText((text) => {
@@ -422,11 +409,16 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 						: "",
 				)
 				.onChange((value) => {
+					this.startDateInput?.setAttribute("aria-invalid", String(!!value.trim() && !parseOptionalDateTime(value)));
 					if (value) {
-						this.taskMetadata.startDate = this.parseDate(value);
+						const parsed = parseOptionalDateTime(value);
+						if (!parsed) return;
+						this.taskMetadata.startDate = new Date(parsed.timestamp);
+						this.taskMetadata.datePrecision = { ...this.taskMetadata.datePrecision, startDate: parsed.precision };
 						this.markAsManuallySet("startDate");
 					} else {
 						this.taskMetadata.startDate = undefined;
+						if (this.taskMetadata.datePrecision) delete this.taskMetadata.datePrecision.startDate;
 						if (this.taskMetadata.manuallySet) {
 							this.taskMetadata.manuallySet.startDate = false;
 						}
@@ -446,11 +438,16 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 						: "",
 				)
 				.onChange((value) => {
+					this.dueDateInput?.setAttribute("aria-invalid", String(!!value.trim() && !parseOptionalDateTime(value)));
 					if (value) {
-						this.taskMetadata.dueDate = this.parseDate(value);
+						const parsed = parseOptionalDateTime(value);
+						if (!parsed) return;
+						this.taskMetadata.dueDate = new Date(parsed.timestamp);
+						this.taskMetadata.datePrecision = { ...this.taskMetadata.datePrecision, dueDate: parsed.precision };
 						this.markAsManuallySet("dueDate");
 					} else {
 						this.taskMetadata.dueDate = undefined;
+						if (this.taskMetadata.datePrecision) delete this.taskMetadata.datePrecision.dueDate;
 						if (this.taskMetadata.manuallySet) {
 							this.taskMetadata.manuallySet.dueDate = false;
 						}
@@ -472,11 +469,16 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 						: "",
 				)
 				.onChange((value) => {
+					this.scheduledDateInput?.setAttribute("aria-invalid", String(!!value.trim() && !parseOptionalDateTime(value)));
 					if (value) {
-						this.taskMetadata.scheduledDate = this.parseDate(value);
+						const parsed = parseOptionalDateTime(value);
+						if (!parsed) return;
+						this.taskMetadata.scheduledDate = new Date(parsed.timestamp);
+						this.taskMetadata.datePrecision = { ...this.taskMetadata.datePrecision, scheduledDate: parsed.precision };
 						this.markAsManuallySet("scheduledDate");
 					} else {
 						this.taskMetadata.scheduledDate = undefined;
+						if (this.taskMetadata.datePrecision) delete this.taskMetadata.datePrecision.scheduledDate;
 						if (this.taskMetadata.manuallySet) {
 							this.taskMetadata.manuallySet.scheduledDate = false;
 						}
@@ -929,29 +931,6 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 		this.taskMetadata.manuallySet[field] = true;
 	}
 
-	/**
-	 * Update all date input elements when the includeTime mode changes
-	 */
-	private updateDateInputsMode(): void {
-		const inputType = this.includeTime ? "datetime-local" : "date";
-		const placeholder = this.includeTime
-			? "YYYY-MM-DD HH:mm"
-			: "YYYY-MM-DD";
-
-		const updateInput = (input?: HTMLInputElement, value?: Date) => {
-			if (!input) return;
-			input.type = inputType;
-			input.placeholder = placeholder;
-			input.value = this.formatDateInputValue(value);
-		};
-
-		updateInput(this.startDateInput, this.taskMetadata.startDate);
-		updateInput(this.dueDateInput, this.taskMetadata.dueDate);
-		updateInput(this.scheduledDateInput, this.taskMetadata.scheduledDate);
-
-		this.updatePreview();
-	}
-
 	private setDateInputValue(
 		input: HTMLInputElement | undefined,
 		value?: Date,
@@ -961,21 +940,14 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 	}
 
 	private formatDateInputValue(value?: Date): string {
-		if (!value) return "";
-		return moment(value).format(
-			this.includeTime ? "YYYY-MM-DD[T]HH:mm" : "YYYY-MM-DD",
-		);
+		const field = (["startDate", "dueDate", "scheduledDate"] as const).find(field => this.taskMetadata[field] === value);
+		return formatOptionalDateTime(value, field ? this.taskMetadata.datePrecision?.[field] : undefined);
 	}
 
 	/**
-	 * Override formatDate to respect includeTime setting for task metadata output
+	 * Format each field according to whether the user supplied a time
 	 */
-	protected formatDate(date: Date): string {
-		return formatDateSmart(date, {
-			forceFormat: this.includeTime ? undefined : "date-only",
-			includeSeconds: false,
-		});
-	}
+	protected formatDate(date: Date): string { return this.formatDateInputValue(date); }
 
 	/**
 	 * Reset UI elements

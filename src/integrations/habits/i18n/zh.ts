@@ -683,4 +683,12 @@ export const zh: Record<string, string> = {
 	"At most": "限额",
 	"At least": "目标",
 	"Daily goal": "每日目标",
+	"Habit columns": "习惯列数",
+	"Choose a fixed column count or fit cards to the available space.": "选择一至四列，或根据页面宽度自动排列。",
+	"Automatic": "自适应",
+	"Ignore": "忽略",
+	"Habit note not found.": "找不到对应的习惯笔记。",
+	"That day is already due or has a record. Choose another day.": "这一天已有计划、记录或改期安排，请选择另一天。",
+	"This habit is already due every day. Ignore this miss or record it on its original day.": "这个习惯每天都有计划。可忽略本次漏记，或在原日期补记。",
+	"Close": "关闭",
 };

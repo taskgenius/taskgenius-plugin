@@ -162,9 +162,9 @@ export class PointsDashboard extends Component {
 		const snapshot = this.snapshot!;
 		const panel = this.panel(t("Points history"));
 		const records = [
-			...snapshot.automaticTasks.days.filter(item => item.supplement > 0).map(item => ({ id: `automatic-tasks:${item.date}`, date: item.date, label: `${t("Completed tasks")}: ${item.count}`, amount: item.supplement, manual: false })),
+
 			...snapshot.manual.map(item => ({ id: item.id, date: item.date, label: item.text, amount: item.points, manual: true })),
-			...snapshot.ledger.map(item => ({ id: item.id, date: pointLedgerDate(item), label: item.label, amount: item.delta, manual: false })),
+			...snapshot.ledger.filter(item => item.source !== "task").map(item => ({ id: item.id, date: pointLedgerDate(item), label: item.label, amount: item.delta, manual: false })),
 		].filter(item => this.matches(`${item.date} ${item.label}`) && (this.historyFilter !== "today" || item.date === localPointDate()) && (this.historyFilter !== "positive" || item.amount > 0) && (this.historyFilter !== "negative" || item.amount < 0)).sort((a, b) => b.date.localeCompare(a.date));
 		for (const record of records) {
 			const row = panel.createDiv({ cls: "tg-points-entry" });
@@ -174,10 +174,14 @@ export class PointsDashboard extends Component {
 		}
 		if (!records.length) panel.createDiv({ cls: "tg-points-empty", text: t("No matching records") });
 		const habits = this.panel(t("Habit points"));
+		const completionPoints = snapshot.automaticTasks.days.filter(day => this.historyFilter !== "today" || day.date === localPointDate()).reduce((sum, day) => sum + day.supplement, 0) + snapshot.ledger.filter(item => item.source === "task" && (this.historyFilter !== "today" || pointLedgerDate(item) === localPointDate())).reduce((sum, item) => sum + item.delta, 0);
+		if (!snapshot.automaticTasks.habitPaths.length && completionPoints && this.matches(t("Completed tasks"))) {
+			const row = habits.createDiv({ cls: "tg-points-entry" }); row.createDiv({ text: t("Completed tasks") }); row.createDiv({ text: numberText(completionPoints) });
+		}
 		for (const item of snapshot.summaries.filter(item => this.matches(item.name))) {
 			const row = habits.createDiv({ cls: "tg-points-entry" });
 			row.createDiv({ text: `${item.name} · ${item.entries} ${t("check-ins")}` });
-			row.createDiv({ text: numberText(this.historyFilter === "today" ? item.todayPoints : item.points) });
+			row.createDiv({ text: numberText((this.historyFilter === "today" ? item.todayPoints : item.points) + (snapshot.automaticTasks.habitPaths[0] === item.path ? completionPoints : 0)) });
 		}
 	}
 	private renderRules() {

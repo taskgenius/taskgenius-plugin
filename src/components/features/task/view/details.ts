@@ -44,9 +44,12 @@ function getStatus(task: Task, settings: TaskProgressBarSettings) {
 		planned: "Planned",
 		completed: "Completed",
 		inProgress: "In Progress",
+		archived: "Paused",
+		paused: "Paused",
+		pause: "Paused",
 	};
 
-	return statusTextMap[status as keyof typeof statusTextMap] || "No status";
+	return statusTextMap[status as keyof typeof statusTextMap] || "Paused";
 }
 
 export function getStatusText(
@@ -59,9 +62,12 @@ export function getStatusText(
 		planned: "Planned",
 		completed: "Completed",
 		inProgress: "In Progress",
+		archived: "Paused",
+		paused: "Paused",
+		pause: "Paused",
 	};
 
-	return statusTextMap[status as keyof typeof statusTextMap] || "No status";
+	return statusTextMap[status as keyof typeof statusTextMap] || "Paused";
 }
 
 function mapTextStatusToSymbol(status: string): string {
@@ -74,6 +80,8 @@ function mapTextStatusToSymbol(status: string): string {
 		"in-progress": "/",
 		"in progress": "/",
 		doing: "/",
+		pause: "p",
+		paused: "p",
 		planned: "?",
 		todo: "?",
 		cancelled: "-",

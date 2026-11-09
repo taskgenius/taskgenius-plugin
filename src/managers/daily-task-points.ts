@@ -32,5 +32,5 @@ export function dailyTaskPoints(tasks: Task[], habits: DailyHabitInput[], data: 
 		day.credited = roundPoints(recorded + transactions);
 		day.supplement = roundPoints(Math.max(0, day.points - day.credited));
 	}
-	return { rate, days: [...days.values()].sort((a, b) => b.date.localeCompare(a.date)) };
+	return { rate, habitPaths: metricHabits.map(habit => habit.path), days: [...days.values()].sort((a, b) => b.date.localeCompare(a.date)) };
 }

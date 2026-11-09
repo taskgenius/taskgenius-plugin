@@ -146,6 +146,12 @@ export class ContentComponent extends Component {
 		}));
 	}
 
+	public onShown(): void {
+		if (this.disposed) return;
+		this.pendingForceRefresh = true;
+		this.debounceRefreshTaskList();
+	}
+
 	private createContentHeader() {
 		this.headerEl = this.containerEl.createDiv({ cls: "content-header" });
 
@@ -579,7 +585,9 @@ export class ContentComponent extends Component {
 		forceRefresh: boolean = false,
 		externallyFiltered: boolean = false
 	) {
+		if (this.externallyFiltered !== externallyFiltered) forceRefresh = true;
 		this.externallyFiltered = externallyFiltered;
+		if (tasks.length && this.taskListEl && !this.taskListEl.querySelector(".task-item, .task-tree-item, .task-group, .group-section")) forceRefresh = true;
 		const updateSignatures = () => {
 			this.lastAllTasksSignature = this.computeTaskSignature(tasks);
 			this.lastNotFilteredTasksSignature =

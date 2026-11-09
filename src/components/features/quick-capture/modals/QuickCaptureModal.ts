@@ -153,7 +153,7 @@ export class QuickCaptureModal extends Modal {
 
 		// Initialize time parsing service
 		this.timeParsingService = new TimeParsingService(
-			this.plugin.settings.timeParsing || DEFAULT_TIME_PARSING_CONFIG,
+			DEFAULT_TIME_PARSING_CONFIG,
 		);
 
 		if (metadata) {

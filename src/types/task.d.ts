@@ -24,6 +24,7 @@ export interface BaseTask {
 
 /** Standard task metadata interface */
 export interface StandardTaskMetadata {
+	datePrecision?: Record<string, "date" | "datetime" | undefined>;
 	/** Creation date (optional) */
 	createdDate?: number;
 	/** Start date for the task (Tasks plugin compatible) */

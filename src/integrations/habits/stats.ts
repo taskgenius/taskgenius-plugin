@@ -555,7 +555,7 @@ export function isRescheduleTargetOpen(
 	if (dateKey < trackingStartKey(habit)) {
 		return false;
 	}
-	if (isDue(habit, date) || isPausedOn(habit, dateKey)) {
+	if (isDue({ ...habit, reschedules: [] }, date) || isDue(habit, date) || isPausedOn(habit, dateKey) || (habit.records[dateKey] || 0) > 0) {
 		return false;
 	}
 	return !habit.reschedules.some(
@@ -587,9 +587,7 @@ export function missedInstances(
 	// Guard against a pathological scan on a very old, long-gapped habit.
 	const maxScan = 366 * 2;
 	for (const habit of habits) {
-		if (!isRescheduleEligible(habit)) {
-			continue;
-		}
+		if (habit.stopped || habit.type === "note" || habit.goalDirection === "max" || isFlexible(habit)) continue;
 		const startKey = trackingStartKey(habit, today);
 		let cursor = addDays(today, -1);
 		let scanned = 0;
@@ -604,6 +602,7 @@ export function missedInstances(
 				// A failed day was decided on purpose, not forgotten, so
 				// it isn't offered for rescheduling.
 				!isFailedOn(habit, key) &&
+				!habit.ignoredMisses?.includes(key) &&
 				!isComplete(habit, key)
 			) {
 				results.push({ habit, dateKey: key });

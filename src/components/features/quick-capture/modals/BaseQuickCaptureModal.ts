@@ -32,6 +32,7 @@ export type QuickCaptureMode = "checkbox" | "file";
  * Task metadata interface
  */
 export interface TaskMetadata {
+	datePrecision?: Record<string, "date" | "datetime" | undefined>;
 	startDate?: Date;
 	dueDate?: Date;
 	scheduledDate?: Date;
@@ -519,6 +520,7 @@ export abstract class BaseQuickCaptureModal extends Modal {
 	 * Handle submit action
 	 */
 	protected async handleSubmit(): Promise<void> {
+		if (this.contentEl.querySelector('[aria-invalid="true"]')) { new Notice(t("Enter a valid date, optionally followed by HH:mm.")); return; }
 		const content =
 			this.capturedContent.trim() ||
 			this.markdownEditor?.value.trim() ||

@@ -1,3 +1,4 @@
+import { parseOptionalDateTime, formatOptionalDateTime, taskDatePrecisions } from "@/utils/date/optional-date-time";
 /**
  * Task Metadata Editor Component
  * Provides functionality to display and edit task metadata.
@@ -66,6 +67,9 @@ export class TaskMetadataEditor extends Component {
 	 */
 	showTask(task: Task): void {
 		this.task = task;
+		this.task.content = typeof task.content === "string" ? task.content : "";
+		this.task.metadata ||= { tags: [], children: [] };
+		this.task.metadata.datePrecision = taskDatePrecisions(this.task);
 		this.container.empty();
 		this.container.addClass("task-metadata-editor");
 
@@ -269,13 +273,7 @@ export class TaskMetadataEditor extends Component {
 	 * Converts a date value to a string.
 	 */
 	private getDateString(dateValue: string | number | undefined): string {
-		if (dateValue === undefined) return "";
-		if (typeof dateValue === "number") {
-			// For numeric timestamps, prefer helper for correct display across timezones
-			return timestampToLocalDateString(dateValue);
-		}
-		// Already a YYYY-MM-DD string
-		return dateValue;
+		return formatOptionalDateTime(dateValue);
 	}
 
 	/**
@@ -322,7 +320,7 @@ export class TaskMetadataEditor extends Component {
 			.addOption("4", "⏫ " + t("High"))
 			.addOption("5", "🔺 " + t("Highest"))
 			.onChange((value) => {
-				this.notifyMetadataChange("priority", parseInt(value));
+				this.notifyMetadataChange("priority", value ? parseInt(value) : undefined);
 			});
 
 		priorityDropdown.selectEl.addClass("priority-select");
@@ -356,41 +354,14 @@ export class TaskMetadataEditor extends Component {
 		const fieldLabel = fieldContainer.createDiv({ cls: "field-label" });
 		fieldLabel.setText(label);
 
-		const dateInput = fieldContainer.createEl("input", {
-			cls: `date-input ${field}-input`,
-			type: "date",
-		});
-
-		if (value) {
-			// If already a YYYY-MM-DD string, use directly; else use helper for timestamp
-			const isDateString =
-				typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
-			if (isDateString) {
-				dateInput.value = value as string;
-			} else {
-				try {
-					const asNum =
-						typeof value === "number" ? value : Number(value);
-					dateInput.value = timestampToLocalDateString(
-						Number.isFinite(asNum) ? (asNum as number) : undefined
-					);
-				} catch (e) {
-					console.error(`Cannot parse date: ${value}`, e);
-				}
-			}
-		}
-
+		const dateInput = fieldContainer.createEl("input", { cls: `date-input ${field}-input`, type: "text", attr: { placeholder: "YYYY-MM-DD / YYYY-MM-DD HH:mm", "aria-label": label } });
+		dateInput.value = formatOptionalDateTime(this.task.metadata[field as keyof typeof this.task.metadata] as number, this.task.metadata.datePrecision?.[field]);
 		this.registerDomEvent(dateInput, "change", () => {
-			const dateValue = dateInput.value;
-			if (dateValue) {
-				// Use helper to convert local date string to UTC noon timestamp
-				const timestamp = localDateStringToTimestamp(dateValue);
-				if (timestamp !== undefined) {
-					this.notifyMetadataChange(field, timestamp);
-				}
-			} else {
-				this.notifyMetadataChange(field, undefined);
-			}
+			const value = dateInput.value.trim(), parsed = value ? parseOptionalDateTime(value) : null;
+			dateInput.setAttribute("aria-invalid", String(!!value && !parsed));
+			if (value && !parsed) return;
+			this.notifyMetadataChange("datePrecision", { ...this.task.metadata.datePrecision, [field]: parsed?.precision });
+			this.notifyMetadataChange(field, parsed?.timestamp);
 		});
 	}
 
@@ -483,9 +454,7 @@ export class TaskMetadataEditor extends Component {
 		const contextInput = new TextComponent(fieldContainer)
 			.setPlaceholder(t("e.g. @home, @work"))
 			.setValue(
-				Array.isArray(this.task.metadata.context)
-					? this.task.metadata.context.join(", ")
-					: ""
+				Array.isArray(this.task.metadata.context) ? this.task.metadata.context.join(", ") : this.task.metadata.context || ""
 			);
 
 		this.registerDomEvent(contextInput.inputEl, "blur", () => {
@@ -493,7 +462,7 @@ export class TaskMetadataEditor extends Component {
 				.split(",")
 				.map((ctx) => ctx.trim())
 				.filter((ctx) => ctx);
-			this.notifyMetadataChange("context", contexts);
+			this.notifyMetadataChange("context", contexts.join(", "));
 		});
 
 		new ContextSuggest(this.app, contextInput.inputEl, this.plugin);

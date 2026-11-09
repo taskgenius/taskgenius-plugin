@@ -580,3 +580,15 @@
 .project-container.project-readonly .project-source-indicator {
 	margin-top: 8px;
 }
+
+.tg-task-editor-modal { width: min(940px, 92vw); }
+.tg-task-editor-layout { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(260px, 1fr); gap: 24px; }
+.tg-task-editor-content textarea { width: 100%; min-height: 260px; resize: vertical; margin-top: 12px; }
+.tg-task-editor-fields { min-width: 0; }
+.tg-task-editor-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+@media(max-width:650px) { .tg-task-editor-layout { grid-template-columns: 1fr; } }
+
+.tg-task-editor-layout { grid-template-areas: "fields content"; grid-template-columns: minmax(260px, 1fr) minmax(240px, 1.15fr); }
+.tg-task-editor-content { grid-area: content; }
+.tg-task-editor-fields { grid-area: fields; border-right: 1px solid var(--background-modifier-border); padding-right: 20px; }
+@media(max-width:650px) { .tg-task-editor-layout { grid-template-areas: "content" "fields"; grid-template-columns: 1fr; } .tg-task-editor-fields { border-right: 0; padding-right: 0; } }

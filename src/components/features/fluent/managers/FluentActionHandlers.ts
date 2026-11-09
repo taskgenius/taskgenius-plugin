@@ -50,9 +50,6 @@ export class FluentActionHandlers extends Component {
 	private onSearchQueryChanged?: (query: string) => void;
 	private onProjectSelected?: (projectId: string) => void;
 	private onViewModeChanged?: (mode: ViewMode) => void;
-	private showDetailsPanel?: (task: Task) => void;
-	private toggleDetailsVisibility?: (visible: boolean) => void;
-	private getIsDetailsVisible?: () => boolean;
 
 	constructor(
 		private app: App,
@@ -74,9 +71,6 @@ export class FluentActionHandlers extends Component {
 		onSearchQueryChanged?: (query: string) => void;
 		onProjectSelected?: (projectId: string) => void;
 		onViewModeChanged?: (mode: ViewMode) => void;
-		showDetailsPanel?: (task: Task) => void;
-		toggleDetailsVisibility?: (visible: boolean) => void;
-		getIsDetailsVisible?: () => boolean;
 	}): void {
 		this.onTaskSelectionChanged = callbacks.onTaskSelectionChanged;
 		this.onTaskUpdated = callbacks.onTaskUpdated;
@@ -85,50 +79,14 @@ export class FluentActionHandlers extends Component {
 		this.onSearchQueryChanged = callbacks.onSearchQueryChanged;
 		this.onProjectSelected = callbacks.onProjectSelected;
 		this.onViewModeChanged = callbacks.onViewModeChanged;
-		this.showDetailsPanel = callbacks.showDetailsPanel;
-		this.toggleDetailsVisibility = callbacks.toggleDetailsVisibility;
-		this.getIsDetailsVisible = callbacks.getIsDetailsVisible;
 	}
 
 	/**
 	 * Handle task selection
 	 */
 	handleTaskSelection(task: Task | null): void {
-		// Emit cross-view selection when using side leaves
-		if (this.useSideLeaves()) {
-			emitTaskSelected(this.app, {
-				taskId: task?.id ?? null,
-				origin: "main",
-				workspaceId: this.getWorkspaceId(),
-			});
-		}
-
-		if (task) {
-			const now = Date.now();
-			const timeSinceLastToggle = now - this.lastToggleTimestamp;
-
-			if (this.currentSelectedTaskId !== task.id) {
-				this.currentSelectedTaskId = task.id;
-				this.showDetailsPanel?.(task);
-				const isDetailsVisible = this.getIsDetailsVisible?.() ?? false;
-				if (!isDetailsVisible) {
-					this.toggleDetailsVisibility?.(true);
-				}
-				this.lastToggleTimestamp = now;
-				this.onTaskSelectionChanged?.(task);
-				return;
-			}
-
-			if (timeSinceLastToggle > 150) {
-				const isDetailsVisible = this.getIsDetailsVisible?.() ?? false;
-				this.toggleDetailsVisibility?.(!isDetailsVisible);
-				this.lastToggleTimestamp = now;
-			}
-		} else {
-			this.toggleDetailsVisibility?.(false);
-			this.currentSelectedTaskId = null;
-			this.onTaskSelectionChanged?.(null);
-		}
+		this.currentSelectedTaskId = task?.id || null;
+		this.onTaskSelectionChanged?.(task);
 	}
 
 	/**

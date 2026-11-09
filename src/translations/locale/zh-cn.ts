@@ -3186,6 +3186,13 @@ const translations = {
 	"Search bonuses, rewards and records": "搜索加分项、奖励和流水",
 
 	"Completed checkbox tasks earn points by completion date. Existing daily task check-ins are deducted to prevent double counting.": "按完成日期统计复选框任务积分，自动抵扣已有的完成任务打卡积分，避免重复计分。",
+	"Task scheduling": "任务排期",
+	"Unscheduled tasks": "未安排任务",
+	"Previous month": "上个月",
+	"Task content": "任务内容",
+	"This task no longer exists. Refresh the task list.": "此任务已不存在，请刷新任务列表。",
+	"Enter a valid date, optionally followed by HH:mm.": "请输入有效日期，可在后面填写时:分，例如 2026-11-12 09:30。",
+	"Task writer is unavailable": "任务保存服务尚未就绪",
 };
 
 export default translations;

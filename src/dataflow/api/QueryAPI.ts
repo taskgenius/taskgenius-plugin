@@ -33,29 +33,21 @@ export class QueryAPI {
 	/**
 	 * Get all tasks with deduplication for concurrent requests
 	 */
-	async getAllTasks(): Promise<Task[]> {
-		// If there's already a pending request, return the same promise
-		if (this.pendingPromise) {
-			return this.pendingPromise;
-		}
-
-		// Create new promise and cache it
-		this.pendingPromise = this.repository.all().then(tasks => {
-			// Update synchronous cache with fresh data
-			this.taskCache = tasks;
-			this.cacheTimestamp = Date.now();
-
-			// Clear pending promise after completion
-			this.pendingPromise = null;
-
+	async getAllTasks(fresh = false): Promise<Task[]> {
+		if (this.pendingPromise && !fresh) return this.pendingPromise;
+		const request = (async () => {
+			let revision: number;
+			let tasks: Task[];
+			do {
+				revision = this.repository.getRevision();
+				tasks = await this.repository.all();
+			} while (revision !== this.repository.getRevision());
+			this.taskCache = tasks; this.cacheTimestamp = Date.now();
 			return tasks;
-		}).catch(error => {
-			// Clear pending promise on error
-			this.pendingPromise = null;
-			throw error;
-		});
-
-		return this.pendingPromise;
+		})();
+		this.pendingPromise = request;
+		try { return await request; }
+		finally { if (this.pendingPromise === request) this.pendingPromise = null; }
 	}
 
 	/**
@@ -214,7 +206,7 @@ export class QueryAPI {
 	}
 
 	private async updateCache(): Promise<void> {
-		this.taskCache = await this.repository.all();
+		this.taskCache = await this.getAllTasks(true);
 		this.cacheTimestamp = Date.now();
 	}
 

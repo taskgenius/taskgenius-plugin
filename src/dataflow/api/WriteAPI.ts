@@ -758,6 +758,7 @@ export class WriteAPI {
 								dependsOn: mergedMd.dependsOn,
 								id: mergedMd.id,
 								points: mergedMd.points,
+								datePrecision: mergedMd.datePrecision,
 							});
 							taskLine = `${checkboxPrefix}${taskContent}${
 								newMetadata ? ` ${newMetadata}` : ""
@@ -2117,14 +2118,16 @@ export class WriteAPI {
 
 	private formatDateForWrite(
 		timestamp: number | string | Date | undefined | null,
+		precision?: "date" | "datetime",
 	): string {
-		return formatDateSmart(timestamp, { includeSeconds: false });
+		return formatDateSmart(timestamp, { includeSeconds: false, forceFormat: precision === "datetime" ? "date-time" : precision === "date" ? "date-only" : undefined });
 	}
 
 	/**
 	 * Generate metadata string based on format preference
 	 */
 	private generateMetadata(args: {
+		datePrecision?: Record<string, "date" | "datetime" | undefined>;
 		tags?: string[];
 		project?: string;
 		context?: string;
@@ -2260,7 +2263,7 @@ export class WriteAPI {
 
 		// Start Date
 		if (args.startDate) {
-			const dateStr = this.formatDateForWrite(args.startDate);
+			const dateStr = this.formatDateForWrite(args.startDate, args.datePrecision?.startDate);
 			if (dateStr) {
 				metadata.push(
 					useDataviewFormat
@@ -2272,7 +2275,7 @@ export class WriteAPI {
 
 		// Scheduled Date
 		if (args.scheduledDate) {
-			const dateStr = this.formatDateForWrite(args.scheduledDate);
+			const dateStr = this.formatDateForWrite(args.scheduledDate, args.datePrecision?.scheduledDate);
 			if (dateStr) {
 				metadata.push(
 					useDataviewFormat
@@ -2284,7 +2287,7 @@ export class WriteAPI {
 
 		// Due Date
 		if (args.dueDate) {
-			const dateStr = this.formatDateForWrite(args.dueDate);
+			const dateStr = this.formatDateForWrite(args.dueDate, args.datePrecision?.dueDate);
 			if (dateStr) {
 				metadata.push(
 					useDataviewFormat ? `[due:: ${dateStr}]` : `📅 ${dateStr}`,
@@ -2294,7 +2297,7 @@ export class WriteAPI {
 
 		// Completion Date
 		if (args.completed && args.completedDate) {
-			const dateStr = this.formatDateForWrite(args.completedDate);
+			const dateStr = this.formatDateForWrite(args.completedDate, args.datePrecision?.completedDate);
 			if (dateStr) {
 				metadata.push(
 					useDataviewFormat

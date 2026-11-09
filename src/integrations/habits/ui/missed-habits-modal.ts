@@ -1,3 +1,4 @@
+import { installHabitClose } from "./modal-close";
 import {
 	App,
 	ButtonComponent,
@@ -12,6 +13,7 @@ import type { HabitStore } from "../habit-store";
 import type { HabitDefinition } from "../types";
 import {
 	isRescheduleTargetOpen,
+	isRescheduleEligible,
 	missedInstances,
 	trackingStartKey,
 	type MissedInstance,
@@ -29,6 +31,7 @@ const PICKER_WINDOW_DAYS = 180;
  * first reschedule.
  */
 export class MissedHabitsModal extends Modal {
+	private removeCloseControl = () => {};
 	constructor(
 		app: App,
 		private store: HabitStore,
@@ -41,10 +44,12 @@ export class MissedHabitsModal extends Modal {
 
 	onOpen(): void {
 		this.modalEl.addClass("habits-modal");
+		this.removeCloseControl(); this.removeCloseControl = installHabitClose(this);
 		this.renderList();
 	}
 
 	onClose(): void {
+		this.removeCloseControl();
 		this.contentEl.empty();
 	}
 
@@ -106,8 +111,15 @@ export class MissedHabitsModal extends Modal {
 			attr: { type: "button" },
 			text: t("Reschedule"),
 		});
-		setTooltip(button, t("Move this missed day onto a different one"));
+		button.disabled = !isRescheduleEligible(habit);
+		setTooltip(button, button.disabled ? t("This habit is already due every day. Ignore this miss or record it on its original day.") : t("Move this missed day onto a different one"));
 		button.addEventListener("click", () => this.renderPicker(instance));
+		const ignore = card.createEl("button", { text: t("Ignore"), attr: { type: "button" } });
+		ignore.addEventListener("click", async () => {
+			ignore.disabled = true;
+			try { await this.store.ignoreMissedDay(habit, dateKey); this.habits = this.habits.map(item => item.path === habit.path ? { ...item, ignoredMisses: [...(item.ignoredMisses || []), dateKey] } : item); this.onChanged(); this.renderList(); }
+			catch (error) { new Notice(String(error)); ignore.disabled = false; }
+		});
 	}
 
 	private renderPicker(instance: MissedInstance): void {
@@ -187,7 +199,9 @@ export class MissedHabitsModal extends Modal {
 			new Notice(t("That day no longer works — pick another."));
 			return;
 		}
-		await this.store.rescheduleHabit(habit, from, to);
+		try { await this.store.rescheduleHabit(habit, from, to); }
+		catch (error) { new Notice(String(error)); return; }
+		this.habits = this.habits.map(item => item.path === habit.path ? { ...item, reschedules: [...item.reschedules.filter(entry => entry.from !== from), { from, to }] } : item);
 		this.onChanged();
 		this.renderList();
 	}

@@ -1,3 +1,4 @@
+import { isDue, isComplete, isRescheduleTargetOpen, isRescheduleEligible } from "./stats";
 import { App, normalizePath, Notice, TFile, TFolder } from "obsidian";
 import {
 	DEFAULT_FRONTMATTER_KEYS,
@@ -230,9 +231,9 @@ export class HabitStore {
 		return habits;
 	}
 
-	private parseFile(file: TFile): HabitDefinition | null {
+	private parseFile(file: TFile, currentFrontmatter?: Record<string, unknown>): HabitDefinition | null {
 		const cache = this.app.metadataCache.getFileCache(file);
-		const fm = cache?.frontmatter;
+		const fm = currentFrontmatter || cache?.frontmatter;
 		const k = this.keys();
 		if (!fm || !isHabitType(fm[k.type])) {
 			return null;
@@ -280,6 +281,7 @@ export class HabitStore {
 			reschedules: this.readReschedules(fm[k.reschedules]),
 			failed: this.readDateList(fm[k.failed]),
 			skipped: this.readDateList(fm[k.skipped]),
+			ignoredMisses: this.readDateList(fm.ignoredMisses),
 			stopped: fm[k.stopped] === true,
 			stopDate: this.readDateString(fm[k.stopDate]),
 			records: this.readRecords(fm[k.records]),
@@ -1094,6 +1096,9 @@ export class HabitStore {
 		const k = this.keys();
 		await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
 			const fm = frontmatter as Record<string, unknown>;
+			const latest = this.parseFile(file, fm);
+			const current = { ...habit, ...latest, records: this.readRecords(fm[k.records]), reschedules: this.readReschedules(fm[k.reschedules]), ignoredMisses: this.readDateList(fm.ignoredMisses) };
+			if (!isRescheduleEligible(current) || from >= toDateKey(new Date()) || !isDue(current, new Date(`${from}T00:00:00`)) || isComplete(current, from) || current.ignoredMisses?.includes(from) || !isRescheduleTargetOpen(current, to) || (current.records[to] || 0) > 0) throw new Error(t("That day is already due or has a record. Choose another day."));
 			const reschedules = this.readReschedules(fm[k.reschedules]).filter(
 				(r) => r.from !== from,
 			);
@@ -1103,6 +1108,14 @@ export class HabitStore {
 		new Notice(
 			t('Rescheduled "{name}" to {date}.', { name: habit.name, date: to }),
 		);
+	}
+
+	async ignoreMissedDay(habit: HabitDefinition, dateKey: string): Promise<void> {
+		const file = this.fileForHabit(habit);
+		if (!file) throw new Error(t("Habit note not found."));
+		await this.app.fileManager.processFrontMatter(file, fm => {
+			fm.ignoredMisses = [...new Set([...this.readDateList(fm.ignoredMisses), dateKey])].sort();
+		});
 	}
 
 	/** Undo a reschedule: the original day goes back to being due. */

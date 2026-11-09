@@ -65,7 +65,7 @@ export class StatusComponent extends Component {
 				// Create checkbox-like element or icon for the status
 				let interactiveElement: HTMLElement = statusEl;
 				if (this.plugin.settings.enableTaskGeniusIcons) {
-					setIcon(interactiveElement, status.status);
+					setIcon(interactiveElement, ["archived", "paused", "pause"].includes(status.status) ? "pause" : status.status);
 				} else {
 					// Create checkbox-like element for the status
 					interactiveElement = createTaskCheckbox(

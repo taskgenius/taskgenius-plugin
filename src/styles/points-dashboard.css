@@ -48,3 +48,7 @@
 .tg-quick-filter-button.is-active { color:var(--interactive-accent); background:var(--background-modifier-hover); }
 @media (max-width:600px) { .tg-points-page { padding:12px; } .tg-points-tabs button { flex:1; padding:8px; } .tg-points-summary { grid-template-columns:1fr; } .tg-points-header { align-items:flex-start; } }
 @media (max-width:850px) { .tg-points-body.is-actions,.tg-points-body.is-history { grid-template-columns:minmax(0,1fr); } }
+
+.tg-points-entry { display: grid; grid-template-columns: minmax(0, 1fr) 100px 64px; }
+.tg-points-entry > :nth-child(2) { text-align: right; font-variant-numeric: tabular-nums; }
+.tg-points-entry > button { grid-column: 3; }

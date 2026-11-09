@@ -5,10 +5,7 @@ import {
 	LeftSidebarView,
 	TG_LEFT_SIDEBAR_VIEW_TYPE,
 } from "@/pages/LeftSidebarView";
-import {
-	RightDetailView,
-	TG_RIGHT_DETAIL_VIEW_TYPE,
-} from "@/pages/RightDetailView";
+
 import { t } from "@/translations/helper";
 import { TASK_VIEW_TYPE } from "@/pages/TaskView";
 
@@ -29,6 +26,11 @@ export class FluentIntegration {
 			return;
 		}
 
+		// Remove only panes left by the retired Task Genius detail view.
+		this.plugin.app.workspace.onLayoutReady(() => {
+			for (const leaf of this.plugin.app.workspace.getLeavesOfType("tg-right-detail")) leaf.detach();
+		});
+
 		// Register the Fluent view
 		this.plugin.registerView(
 			FLUENT_TASK_VIEW,
@@ -40,10 +42,7 @@ export class FluentIntegration {
 				TG_LEFT_SIDEBAR_VIEW_TYPE,
 				(leaf: WorkspaceLeaf) => new LeftSidebarView(leaf, this.plugin),
 			);
-			this.plugin.registerView(
-				TG_RIGHT_DETAIL_VIEW_TYPE,
-				(leaf: WorkspaceLeaf) => new RightDetailView(leaf, this.plugin),
-			);
+
 		}
 		// Register side leaf views for new architecture
 
@@ -58,7 +57,6 @@ export class FluentIntegration {
 				const watched = new Set<string>([
 					FLUENT_TASK_VIEW,
 					TG_LEFT_SIDEBAR_VIEW_TYPE,
-					TG_RIGHT_DETAIL_VIEW_TYPE,
 				]);
 				if (!watched.has(vt)) return;
 				const ws = this.plugin.app.workspace as Workspace & any;
@@ -70,25 +68,16 @@ export class FluentIntegration {
 						"left",
 						{ active: false },
 					);
-					const rightLeaf = await ws.ensureSideLeaf(
-						TG_RIGHT_DETAIL_VIEW_TYPE,
-						"right",
-						{ active: false },
-					);
+
 					// Bring them to front within their splits (without keeping focus)
 					if (leftLeaf) ws.revealLeaf(leftLeaf);
-					if (rightLeaf) ws.revealLeaf(rightLeaf);
 					// Expand sidebars if they are collapsed
 					if (
 						ws.leftSplit?.collapsed &&
 						typeof ws.leftSplit.expand === "function"
 					)
 						ws.leftSplit.expand();
-					if (
-						ws.rightSplit?.collapsed &&
-						typeof ws.rightSplit.expand === "function"
-					)
-						ws.rightSplit.expand();
+
 					// Restore focus to the currently active (incoming) leaf
 					if (ws.setActiveLeaf && leaf)
 						ws.setActiveLeaf(leaf, { focus: true });
@@ -142,15 +131,8 @@ export class FluentIntegration {
 					TG_LEFT_SIDEBAR_VIEW_TYPE,
 				);
 			}
-			const rightSidebarLeaves =
-				this.plugin.app.workspace.getLeavesOfType(
-					TG_RIGHT_DETAIL_VIEW_TYPE,
-				);
-			if (rightSidebarLeaves.length > 0) {
-				this.plugin.app.workspace.detachLeavesOfType(
-					TG_RIGHT_DETAIL_VIEW_TYPE,
-				);
-			}
+
+			return;
 		}
 
 		const ws = this.plugin.app.workspace as Workspace;
@@ -158,9 +140,7 @@ export class FluentIntegration {
 		await ws.ensureSideLeaf(TG_LEFT_SIDEBAR_VIEW_TYPE, "left", {
 			active: false,
 		});
-		await ws.ensureSideLeaf(TG_RIGHT_DETAIL_VIEW_TYPE, "right", {
-			active: false,
-		});
+
 	}
 
 	/**

@@ -113,6 +113,8 @@ export class GanttComponent extends Component {
 	private app: App;
 
 	private timescale: Timescale = "Day";
+	private projectScale: "Week" | "Month" | "Year" = "Month";
+	private periodAnchor = new Date();
 	private dayWidth: number = DAY_WIDTH_DEFAULT;
 	private startDate: Date | null = null;
 	private endDate: Date | null = null;
@@ -223,27 +225,6 @@ export class GanttComponent extends Component {
 		this.createBaseSVG(); // Creates SVG and groups
 
 		// Instantiate Child Components
-		this.filterComponent = this.addChild(
-			new FilterComponent(
-				{
-					container: this.filterContainerEl,
-					options: buildFilterOptionsFromTasks(this.tasks), // Initialize with empty array to satisfy type, will be updated dynamically
-					onChange: (activeFilters: ActiveFilter[]) => {
-						this.applyFiltersAndRender(activeFilters);
-					},
-					components: [
-						new ScrollToDateButton(
-							this.filterContainerEl,
-							(date: Date) => this.scrollToDate(date)
-						),
-					],
-				},
-				this.plugin
-
-
-
-			)
-		);
 
 		if (this.headerContainerEl) {
 			this.timelineHeaderComponent = this.addChild(
@@ -273,9 +254,8 @@ export class GanttComponent extends Component {
 		});
 		registerGanttPan(this, this.scrollContainerEl);
 		const controls = this.filterContainerEl.createDiv({ cls: "gantt-project-controls" });
-		new ButtonComponent(controls).setButtonText(t("Zoom out")).onClick(() => this.zoomBy(0.8));
-		new ButtonComponent(controls).setButtonText(t("Zoom in")).onClick(() => this.zoomBy(1.25));
-		new ButtonComponent(controls).setButtonText(t("Today")).onClick(() => this.scrollToDate(new Date()));
+		new ButtonComponent(controls).setButtonText(t("Today")).onClick(() => { this.periodAnchor = new Date(); this.setProjectScale(this.projectScale); });
+		for (const scale of ["Week", "Month", "Year"] as const) new ButtonComponent(controls).setButtonText(t(scale)).onClick(() => this.setProjectScale(scale));
 			this.applyEffectiveConfig();
 
 		// Initial render is triggered by updateTasks or refresh
@@ -388,10 +368,27 @@ export class GanttComponent extends Component {
 
 	// --- Date Range and Timescale Calculations ---
 
+	public onShown(): void { if (this.viewId === "gantt") this.setProjectScale(this.projectScale); }
+
+	public setProjectScale(scale: "Week" | "Month" | "Year"): void {
+		this.projectScale = scale; this.startDate = null; this.endDate = null;
+		this.calculateDateRange(true); this.prepareTasksForRender(); this.renderInternal();
+		this.scrollToDate(this.periodAnchor);
+	}
+
 	private calculateDateRange(forceRecalculate: boolean = false): {
 		startDate: Date;
 		endDate: Date;
 	} {
+		if (this.viewId === "gantt") {
+			const anchor = new Date(this.periodAnchor); anchor.setHours(0,0,0,0);
+			if (this.projectScale === "Week") { anchor.setDate(anchor.getDate()-(anchor.getDay()+6)%7-7); this.startDate = anchor; this.endDate = this.dateHelper.addDays(anchor,21); }
+			else if (this.projectScale === "Month") { this.startDate = new Date(anchor.getFullYear(),anchor.getMonth()-1,1); this.endDate = new Date(anchor.getFullYear(),anchor.getMonth()+2,1); }
+			else { this.startDate = new Date(anchor.getFullYear()-1,0,1); this.endDate = new Date(anchor.getFullYear()+2,0,1); }
+			this.dayWidth = Math.max(.2, (this.scrollContainerEl?.clientWidth || 1000)/Math.max(1,this.dateHelper.daysBetween(this.startDate,this.endDate)));
+			this.visibleStartDate = new Date(this.startDate); this.visibleEndDate = new Date(this.endDate);
+			return { startDate: this.startDate, endDate: this.endDate };
+		}
 		if (!forceRecalculate && this.startDate && this.endDate) {
 			return { startDate: this.startDate, endDate: this.endDate };
 		}
@@ -506,6 +503,7 @@ export class GanttComponent extends Component {
 	}
 
 	private calculateTimescaleParams() {
+		if (this.viewId === "gantt") { this.timescale = this.projectScale; return; }
 		if (!this.startDate || !this.endDate) return;
 
 		// Determine appropriate timescale based on dayWidth

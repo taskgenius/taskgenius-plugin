@@ -1,136 +1,67 @@
-/**
- * Task Details Modal Component
- * Used in mobile environments to display the full task details and editing interface.
- */
-
-import { App, Modal, TFile, MarkdownView, ButtonComponent } from "obsidian";
-import { Task } from "@/types/task";
-import TaskProgressBarPlugin from "@/index";
+import { App, Modal, ButtonComponent, Notice } from "obsidian";
+import type { Task } from "@/types/task";
+import type TaskProgressBarPlugin from "@/index";
 import { TaskMetadataEditor } from "./MetadataEditor";
 import { t } from "@/translations/helper";
 
+/** Shared editor for task cards and tasks in ordinary Markdown notes. */
 export class TaskDetailsModal extends Modal {
 	private task: Task;
-	private plugin: TaskProgressBarPlugin;
-	private metadataEditor: TaskMetadataEditor;
-	private onTaskUpdated: (task: Task) => Promise<void>;
-
-	constructor(
-		app: App,
-		plugin: TaskProgressBarPlugin,
-		task: Task,
-		onTaskUpdated?: (task: Task) => Promise<void>
-	) {
+	private metadataEditor?: TaskMetadataEditor;
+	private closed = false;
+	private saving = false;
+	constructor(app: App, private plugin: TaskProgressBarPlugin, task: Task, private onTaskUpdated?: (task: Task) => Promise<void>) {
 		super(app);
-		this.task = task;
-		this.plugin = plugin;
-		this.onTaskUpdated = onTaskUpdated || (async () => {});
-
-		// Set modal style
-		this.modalEl.addClass("task-details-modal");
-		this.titleEl.setText(t("Edit Task"));
+		this.task = { ...task, content: typeof task.content === "string" ? task.content : "", metadata: structuredClone(task.metadata || { tags: [], children: [] }) };
+		this.modalEl.addClass("task-details-modal", "tg-task-editor-modal"); this.setTitle(t("Edit Task"));
 	}
-
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.empty();
-
-		// Create metadata editor, use full mode
-		this.metadataEditor = new TaskMetadataEditor(
-			contentEl,
-			this.app,
-			this.plugin,
-			false // Full mode, not compact mode
-		);
-
-		// Initialize editor and display task
-		this.metadataEditor.onload();
-		this.metadataEditor.showTask(this.task);
-
-		new ButtonComponent(this.contentEl)
-			.setIcon("check")
-			.setTooltip(t("Save"))
-			.onClick(async () => {
-				await this.onTaskUpdated(this.task);
-				this.close();
-			});
-
-		// Listen for metadata change events
-		this.metadataEditor.onMetadataChange = async (event) => {
-			// Determine if the field is a top-level task property or metadata property
-			const topLevelFields = ["status", "completed", "content"];
-			const isTopLevelField = topLevelFields.includes(event.field);
-
-			// Create a base task object with the updated field
-			const updatedTask = {
-				...this.task,
-				line: this.task.line - 1,
-				id: `${this.task.filePath}-L${this.task.line - 1}`,
-			};
-
-			if (isTopLevelField) {
-				// Update top-level task property
-				(updatedTask as any)[event.field] = event.value;
-			} else {
-				// Update metadata property
-				updatedTask.metadata = {
-					...this.task.metadata,
-					[event.field]: event.value,
-				};
+	async onOpen(): Promise<void> {
+		this.closed = false;
+		const query = this.plugin.dataflowOrchestrator?.getQueryAPI();
+		if (query) {
+			let tasks: Task[];
+			try { await this.plugin.dataflowOrchestrator?.refreshFile?.(this.task.filePath); tasks = await query.getAllTasks(true); }
+			catch (error) { if (!this.closed) { new Notice(String(error)); this.close(); } return; }
+			const latest = tasks.find(task => task.id === this.task.id) || tasks.filter(task => task.filePath === this.task.filePath && task.originalMarkdown === this.task.originalMarkdown).filter((_, index, matches) => matches.length === 1)[0];
+			if (this.closed) return;
+			if (!latest) { new Notice(t("This task no longer exists. Refresh the task list.")); this.close(); return; }
+			this.task = { ...latest, content: latest.content || "", metadata: structuredClone(latest.metadata || { tags: [], children: [] }) };
+		}
+		const root = this.contentEl; root.empty();
+		const layout = root.createDiv({ cls: "tg-task-editor-layout" });
+		const content = layout.createDiv({ cls: "tg-task-editor-content" });
+		content.createEl("label", { text: t("Task content") });
+		const input = content.createEl("textarea", { attr: { "aria-label": t("Task content") } }); input.value = this.task.content;
+		input.addEventListener("input", () => { this.task.content = input.value; });
+		this.metadataEditor = new TaskMetadataEditor(layout.createDiv({ cls: "tg-task-editor-fields" }), this.app, this.plugin, false);
+		this.metadataEditor.load(); this.metadataEditor.showTask(this.task);
+		this.metadataEditor.onMetadataChange = event => {
+			if (["content","status","completed"].includes(event.field)) (this.task as any)[event.field] = event.value;
+			else (this.task.metadata as any)[event.field] = event.value;
+			if (event.field === "status") {
+				this.task.completed = (this.plugin.settings.taskStatuses?.completed || "x").split("|").includes(event.value);
+				this.task.metadata.completedDate = this.task.completed ? this.task.metadata.completedDate || Date.now() : undefined;
+				this.task.metadata.cancelledDate = (this.plugin.settings.taskStatuses?.abandoned || "-").split("|").includes(event.value) ? this.task.metadata.cancelledDate || Date.now() : undefined;
 			}
-
-			// Handle special status field logic
-			if (
-				event.field === "status" &&
-				(event.value === "x" || event.value === "X")
-			) {
-				updatedTask.completed = true;
-				updatedTask.metadata = {
-					...updatedTask.metadata,
-					completedDate: Date.now(),
-				};
-				// Remove cancelled date if task is completed
-				const { cancelledDate, ...metadataWithoutCancelledDate } =
-					updatedTask.metadata;
-				updatedTask.metadata = metadataWithoutCancelledDate;
-			} else if (event.field === "status" && event.value === "-") {
-				// If status is changing to cancelled, mark as not completed and add cancelled date
-				updatedTask.completed = false;
-				const { completedDate, ...metadataWithoutCompletedDate } =
-					updatedTask.metadata;
-				updatedTask.metadata = {
-					...metadataWithoutCompletedDate,
-					cancelledDate: Date.now(),
-				};
-			} else if (event.field === "status") {
-				// If status is changing to something else, mark as not completed
-				updatedTask.completed = false;
-				const {
-					completedDate,
-					cancelledDate,
-					...metadataWithoutDates
-				} = updatedTask.metadata;
-				updatedTask.metadata = metadataWithoutDates;
-			}
-
-			this.task = updatedTask;
 		};
+		const footer = root.createDiv({ cls: "tg-task-editor-footer" });
+		new ButtonComponent(footer).setButtonText(t("Cancel")).onClick(() => this.close());
+		new ButtonComponent(footer).setButtonText(t("Save")).setCta().onClick(() => void this.save());
 	}
-
-	onClose() {
-		const { contentEl } = this;
-		if (this.metadataEditor) {
-			this.metadataEditor.onunload();
-		}
-		contentEl.empty();
+	private async save(): Promise<void> {
+		if (this.saving || !this.task.content.trim()) return;
+		this.saving = true;
+		try {
+			if (this.contentEl.querySelector('[aria-invalid="true"]')) throw new Error(t("Enter a valid date, optionally followed by HH:mm."));
+			if (this.onTaskUpdated) await this.onTaskUpdated(this.task);
+			else {
+				if (!this.plugin.writeAPI) throw new Error(t("Task writer is unavailable"));
+				const result = await this.plugin.writeAPI.updateTask({ taskId: this.task.id, updates: this.task });
+				if (!result.success) throw new Error(result.error || t("Failed to update task"));
+			}
+			this.close();
+		} catch (error) { new Notice(String(error)); }
+		finally { this.saving = false; }
 	}
-
-	/**
-	 * Updates a task field.
-	 */
-	private updateTaskField(field: string, value: any) {
-		if (field in this.task) {
-			(this.task as any)[field] = value;
-		}
-	}
+	onClose(): void { this.closed = true; this.metadataEditor?.unload(); this.metadataEditor = undefined; this.contentEl.empty(); }
 }

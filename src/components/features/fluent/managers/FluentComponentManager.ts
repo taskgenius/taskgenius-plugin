@@ -665,6 +665,8 @@ export class FluentComponentManager extends Component {
 				targetComponent.updateTasks(filteredTasks);
 			}
 
+			(targetComponent as ManagedViewComponent & { onShown?: () => void }).onShown?.();
+
 			// Refresh review settings if needed
 			if (
 				viewId === "review" &&

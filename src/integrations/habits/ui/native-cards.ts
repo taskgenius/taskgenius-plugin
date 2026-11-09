@@ -1,3 +1,5 @@
+import { renderMissedNotification } from "./missed-notification";
+import { applyHabitIcon } from "./icon-suggest-modal";
 import { App, Component, Events, MarkdownRenderChild, Menu, Notice, setIcon } from "obsidian";
 import type { HabitStore } from "../habit-store";
 import type { HabitsPluginSettings } from "../settings";
@@ -44,12 +46,12 @@ export class NativeHabitCards extends MarkdownRenderChild {
 		this.button(nav, "chevron-left", t("Previous day"), () => { this.selectedDate = addDays(this.selectedDate, -1); this.render(); });
 		const label = nav.createEl("button", { text: friendlyDateLabel(this.selectedDate, new Date()), cls: "tg-native-habit-date-label", attr: { title: toDateKey(this.selectedDate), "aria-label": t("Today") } });
 		this.events.registerDomEvent(label, "click", () => { this.selectedDate = new Date(); this.render(); });
-		const date = nav.createEl("input", { attr: { type: "date", "aria-label": t("Date") } }); date.value = toDateKey(this.selectedDate);
+		const date = this.containerEl.createEl("input", { cls: "tg-habit-date-picker", attr: { type: "date", tabindex: "-1", "aria-label": t("Date") } }); date.value = toDateKey(this.selectedDate);
 		this.events.registerDomEvent(date, "change", () => { const next = fromDateKey(date.value); if (next) { this.selectedDate = next; this.render(); } });
+		this.events.registerDomEvent(label, "contextmenu", event => { event.preventDefault(); if (typeof date.showPicker === "function") date.showPicker(); else date.click(); });
 		this.button(nav, "chevron-right", t("Next day"), () => { this.selectedDate = addDays(this.selectedDate, 1); this.render(); });
-		this.button(nav, "plus", t("Add habit"), () => new HabitModal(this.app, this.store, () => this.render(), null, this.settings.experimental.noteHabits).open());
-		const legend = this.containerEl.createDiv({ cls: "tg-native-heat-legend" });
-		for (const [level, label] of [[0, "No activity"], [1, "Below target"], [2, "Target met"], [3, "Double target"]] as const) legend.createSpan({ text: t(label), attr: { "data-level": level } });
+		renderMissedNotification(nav, this.events, this.app, this.store, () => this.render());
+		const add = this.button(nav, "plus", t("Add habit"), () => new HabitModal(this.app, this.store, () => this.render(), null, this.settings.experimental.noteHabits).open()); add.addClass("tg-habit-add");
 		const key = toDateKey(this.selectedDate);
 		const habits = sortHabits(this.store.getHabits().filter(habit => !habit.stopped && (!this.query || `${habit.name} ${habit.group}`.toLocaleLowerCase().includes(this.query))).map(original => {
 			const habit = { ...original, records: { ...original.records } };
@@ -62,12 +64,14 @@ export class NativeHabitCards extends MarkdownRenderChild {
 		const visible = scheduled.filter(habit => !closed.some(item => item.habit.path === habit.path));
 		const ordered = [...visible.filter(habit => !isDailyComplete(habit, key) && !isPausedOn(habit, key)), ...visible.filter(habit => isDailyComplete(habit, key) && !isPausedOn(habit, key)), ...visible.filter(habit => isPausedOn(habit, key))];
 		const cards = this.containerEl.createDiv({ cls: "tg-native-habit-cards" });
+		cards.dataset.columns = this.settings.habitColumns || "auto";
 		for (const habit of ordered) {
 			const original = habit;
 			const card = cards.createDiv({ cls: "tg-native-habit-card" });
 			card.toggleClass("is-done", isDailyComplete(habit, key)); card.style.setProperty("--habit-accent", habitAccent(habit, this.settings.groups));
 			const header = card.createDiv({ cls: "tg-native-habit-heading" });
-			setIcon(header.createSpan(), "circle-check"); header.createEl("strong", { text: habit.name });
+			const icon = header.createSpan({ cls: "tg-native-habit-icon" });
+			if (habit.icon || this.settings.groups[habit.group]?.icon) applyHabitIcon(icon, habit.icon || this.settings.groups[habit.group].icon); else setIcon(icon, "circle-check"); header.createEl("strong", { text: habit.name });
 			this.button(header, "more-horizontal", t("More actions"), () => {
 				const menu = new Menu();
 				addDayStatusItems(menu, this.app, this.store, original, key, () => this.render());

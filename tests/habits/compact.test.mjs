@@ -45,7 +45,7 @@ const result = await build({
 });
 const { HabitsCompact, HabitsBlock } = await import(`data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString('base64')}`);
 class Element {
-  children = []; handlers = {}; attrs = {}; classes = new Set();
+  children = []; handlers = {}; attrs = {}; dataset = {}; classes = new Set();
   win = { timers: new Map(), setTimeout(fn) { const id = this.timers.size + 1; this.timers.set(id, fn); return id; }, clearTimeout(id) { this.timers.delete(id); } };
   constructor(tag = 'div', options = {}) { this.tag = tag; this.text = options.text ?? ''; this.attrs = options.attr ?? {}; this.className = options.cls ?? ''; }
   createEl(tag, options) { const el = new Element(tag, options); this.children.push(el); return el; }

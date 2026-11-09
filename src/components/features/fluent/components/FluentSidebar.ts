@@ -44,6 +44,7 @@ export class FluentSidebar extends Component {
 		string,
 		{ icon: string; label: () => string }
 	> = {
+		planner: { icon: "calendar-clock", label: () => t("Task scheduling") },
 		inbox: { icon: "inbox", label: () => t("Inbox") },
 		today: { icon: "calendar-days", label: () => t("Today") },
 		upcoming: { icon: "calendar", label: () => t("Upcoming") },

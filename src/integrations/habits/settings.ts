@@ -36,7 +36,7 @@ export interface ExperimentalFlags {
 export const DEFAULT_EXPERIMENTAL: ExperimentalFlags = {
 	aiSummaries: false,
 	noteHabits: false,
-	rescheduling: false,
+	rescheduling: true,
 };
 
 /**
@@ -191,6 +191,7 @@ export interface HabitsPluginSettings {
 	 * or a compact list with one row per habit.
 	 */
 	dashboardLayout: DashboardLayout;
+	habitColumns?: "auto" | "1" | "2" | "3" | "4";
 	nativeLayout?: "cards" | "dashboard";
 	layoutUnified?: boolean;
 	/** How many cards are visible at once in the carousel on wide screens. */
@@ -657,6 +658,10 @@ export class HabitsSettingTab extends PluginSettingTab {
 					renderStatsOptions();
 				}));
 
+		new Setting(containerEl).setName(t("Habit columns")).setDesc(t("Choose a fixed column count or fit cards to the available space."))
+			.addDropdown(dropdown => dropdown.addOption("auto", t("Automatic")).addOption("1", "1").addOption("2", "2").addOption("3", "3").addOption("4", "4")
+				.setValue(this.plugin.settings.habitColumns || "auto").onChange(async value => { this.plugin.settings.habitColumns = value as HabitsPluginSettings["habitColumns"]; await this.plugin.saveSettings(); }));
+
 		new Setting(containerEl)
 			.setName(t("Cards per view"))
 			.setDesc(
@@ -951,21 +956,6 @@ export class HabitsSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		new Setting(containerEl)
-			.setName(t("Reschedule missed habits"))
-			.setDesc(
-				t(
-					"Add a notification button to the dashboard and sidebar panel when a habit's been missed, opening a review of missed days you can move onto a different one (never a day that habit is already due, so nothing doubles up).",
-				),
-			)
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.experimental.rescheduling)
-					.onChange(async (value) => {
-						this.plugin.settings.experimental.rescheduling = value;
-						await this.plugin.saveSettings();
-					}),
-			);
 
 		new Setting(containerEl)
 			.setName(t("AI summaries"))

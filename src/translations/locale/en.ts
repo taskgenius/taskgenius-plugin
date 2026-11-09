@@ -3369,6 +3369,13 @@ const translations = {
 	"Search bonuses, rewards and records": "Search bonuses, rewards and records",
 
 	"Completed checkbox tasks earn points by completion date. Existing daily task check-ins are deducted to prevent double counting.": "Completed checkbox tasks earn points by completion date. Existing daily task check-ins are deducted to prevent double counting.",
+	"Task scheduling": "Task scheduling",
+	"Unscheduled tasks": "Unscheduled tasks",
+	"Previous month": "Previous month",
+	"Task content": "Task content",
+	"This task no longer exists. Refresh the task list.": "This task no longer exists. Refresh the task list.",
+	"Enter a valid date, optionally followed by HH:mm.": "Enter a valid date, optionally followed by HH:mm.",
+	"Task writer is unavailable": "Task writer is unavailable",
 };
 
 export default translations;

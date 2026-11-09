@@ -1482,6 +1482,7 @@ export class MarkdownTaskParser {
 			originalMarkdown: enhancedTask.originalMarkdown,
 			children: enhancedTask.children || [],
 			metadata: {
+				...(["startDate", "dueDate", "scheduledDate", "completedDate", "cancelledDate"].some(field => /\d{1,2}:\d{2}/.test(String(enhancedTask.metadata[field] || ""))) ? { datePrecision: Object.fromEntries(["startDate", "dueDate", "scheduledDate", "completedDate", "cancelledDate"].filter(field => enhancedTask.metadata[field]).map(field => [field, /\d{1,2}:\d{2}/.test(String(enhancedTask.metadata[field])) ? "datetime" : "date"])) } : {}),
 				tags:
 					enhancedTask.tags ||
 					(enhancedTask.metadata.tags

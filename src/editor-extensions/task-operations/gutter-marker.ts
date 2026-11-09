@@ -10,7 +10,7 @@ import { App, Platform, ExtraButtonComponent } from "obsidian";
 import { Task } from "@/types/task";
 import TaskProgressBarPlugin from "@/index";
 import { TaskDetailsModal } from "@/components/features/task/edit/TaskDetailsModal";
-import { TaskDetailsPopover } from "@/components/features/task/edit/TaskDetailsPopover";
+
 import { MarkdownTaskParser } from "@/dataflow/core/ConfigurableTaskParser";
 // @ts-ignore - This import is necessary but TypeScript can't find it
 import { syntaxTree, tokenClassNodeProp } from "@codemirror/language";
@@ -108,29 +108,7 @@ const showTaskDetails = (
 	task: Task,
 	extraSettingsEl: HTMLElement
 ) => {
-	// Task update callback function
-	const onTaskUpdated = async (updatedTask: Task) => {
-		if (plugin.writeAPI) {
-			await plugin.writeAPI.updateTask({
-				taskId: updatedTask.id,
-				updates: updatedTask,
-			});
-		}
-	};
-
-	if (Platform.isDesktop) {
-		// Desktop environment - show Popover
-		const popover = new TaskDetailsPopover(app, plugin, task);
-		const rect = extraSettingsEl.getBoundingClientRect();
-		popover.showAtPosition({
-			x: rect.left,
-			y: rect.bottom + 10,
-		});
-	} else {
-		// Mobile environment - show Modal
-		const modal = new TaskDetailsModal(app, plugin, task, onTaskUpdated);
-		modal.open();
-	}
+	new TaskDetailsModal(app, plugin, task).open();
 };
 
 // Task parser instance

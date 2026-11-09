@@ -103,7 +103,7 @@ export class FluentDataManager extends Component {
 				);
 				const queryAPI = this.plugin.dataflowOrchestrator.getQueryAPI();
 				console.log("[FluentData] Getting all tasks from queryAPI...");
-				loadedTasks = await queryAPI.getAllTasks();
+				loadedTasks = await queryAPI.getAllTasks(true);
 				console.log(
 					`[FluentData] Loaded ${loadedTasks.length} tasks from dataflow`,
 				);

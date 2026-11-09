@@ -1,3 +1,4 @@
+import { TaskPlanner } from "@/components/features/planner/TaskPlanner";
 import { App, Component } from "obsidian";
 import { Task } from "@/types/task";
 import TaskProgressBarPlugin from "@/index";
@@ -51,6 +52,7 @@ class ViewComponentFactory {
 		const viewConfig = getViewSettingOrDefault(plugin, viewId);
 
 		switch (viewType) {
+			case "planner": return new TaskPlanner(plugin, parentEl);
 			case "kanban":
 				return new KanbanComponent(
 					app,
@@ -246,6 +248,7 @@ export class ViewComponentManager extends Component {
 				"forecast",
 				"table",
 				"quadrant",
+				"planner",
 			].includes(viewId)
 		) {
 			viewType = viewId;
@@ -319,14 +322,14 @@ export class ViewComponentManager extends Component {
 			"isSpecialView",
 			viewId,
 			specificViewType,
-			["calendar", "kanban", "gantt", "forecast", "table", "quadrant"].includes(
+			["calendar", "kanban", "gantt", "forecast", "table", "quadrant", "planner"].includes(
 				viewId,
 			),
 		);
 
 		return !!(
 			specificViewType ||
-			["calendar", "kanban", "gantt", "forecast", "table", "quadrant"].includes(
+			["calendar", "kanban", "gantt", "forecast", "table", "quadrant", "planner"].includes(
 				viewId,
 			)
 		);

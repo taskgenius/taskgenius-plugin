@@ -536,9 +536,8 @@ export class FluentTaskView extends ItemView {
 		this.actionHandlers.setCallbacks({
 			onTaskSelectionChanged: (task) => {
 				this.selectedTask = task;
-				if (task) {
-					this.layoutManager.showTaskDetails(task);
-				}
+				if (task) this.layoutManager.showTaskDetails(task);
+				else this.layoutManager.closeTaskEditor();
 			},
 			onTaskUpdated: (taskId, updatedTask) => {
 				// Update task in cache
@@ -740,13 +739,7 @@ export class FluentTaskView extends ItemView {
 				// Save to workspace
 				this.workspaceStateManager.saveFilterStateToWorkspace();
 			},
-			showDetailsPanel: (task) => {
-				this.layoutManager.showTaskDetails(task);
-			},
-			toggleDetailsVisibility: (visible) => {
-				this.layoutManager.toggleDetailsVisibility(visible);
-			},
-			getIsDetailsVisible: () => this.layoutManager.isDetailsVisible,
+
 		});
 		this.addChild(this.actionHandlers);
 
@@ -852,25 +845,12 @@ export class FluentTaskView extends ItemView {
 		this.layoutManager.setOnProjectSelect((projectId) => {
 			this.actionHandlers.handleProjectSelect(projectId);
 		});
-		this.layoutManager.setTaskCallbacks({
-			onTaskToggleComplete: (task) => {
-				this.actionHandlers.toggleTaskCompletion(task);
-			},
-			onTaskEdit: (task) => {
-				void this.actionHandlers.handleTaskEditInFile(task);
-			},
-			onTaskUpdate: async (originalTask, updatedTask) => {
-				await this.actionHandlers.handleTaskUpdate(
-					originalTask,
-					updatedTask
-				);
-			},
-		});
+
 		this.addChild(this.layoutManager);
 
 		if (!useWorkspaceSideLeaves) {
 			// Initialize details component (non-leaves mode only)
-			this.layoutManager.initializeDetailsComponent();
+
 
 			// Initialize sidebar (non-leaves mode only)
 			this.layoutManager.initializeSidebar(sidebarEl);

@@ -18,7 +18,7 @@ await build({
     export {nativeCardHeat} from './src/integrations/habits/ui/native-card-state';
     export {DEFAULT_SETTINGS, DEFAULT_FRONTMATTER_KEYS} from './src/integrations/habits/settings';
     export {planLegacyHabits, importLegacyHabits} from './src/integrations/habits/legacy-import';
-    export {isDue, isActive, isComplete, isDailyComplete, habitStats} from './src/integrations/habits/stats';
+    export {isDue, isActive, isComplete, isDailyComplete, habitStats, missedInstances, isRescheduleTargetOpen} from './src/integrations/habits/stats';
     export {resolveTaskPoints, taskCompletionTransactionId} from './src/managers/points-utils';
     export {t} from './src/integrations/habits/i18n';
     export {ReminderSync} from './src/integrations/habits/reminders';
@@ -34,7 +34,7 @@ await build({
   }}],
 });
 const {TaskGeniusHabits, HabitStore, NativeHabitCards, nativeCardHeat, Events, DEFAULT_SETTINGS, DEFAULT_FRONTMATTER_KEYS,
-  planLegacyHabits, importLegacyHabits, isDue, isActive, isComplete, isDailyComplete, habitStats, t, vaultFixture,
+  planLegacyHabits, importLegacyHabits, isDue, isActive, isComplete, isDailyComplete, habitStats, missedInstances, isRescheduleTargetOpen, t, vaultFixture,
   ReminderSync, NoteHabitSync, computeNoteValue, applyCommentLog, parseCommentLog, generateSummary, ExportModal, resolveTaskPoints, taskCompletionTransactionId} = await import(pathToFileURL(path.join(directory, 'integration.mjs')));
 const settings = extra => ({...structuredClone(DEFAULT_SETTINGS), ...extra});
 const date = value => {const [year, month, day] = value.split('-').map(Number); return new Date(year, month - 1, day);};
@@ -309,7 +309,7 @@ test('all embedded settings tabs render in English and Chinese; folder input sav
     const layoutSelectors=[...root.querySelectorAll('select')].filter(select=>[...select.options].some(option=>option.value==='cards'));
     assert.equal(layoutSelectors.length,1);assert.deepEqual([...layoutSelectors[0].options].map(option=>option.value),['cards','compact','grid','carousel','vertical']);
     layoutSelectors[0].value='compact';layoutSelectors[0].dispatchEvent(new dom.window.Event('change'));await globalThis.lastSettingSave;assert.equal(host.settings.habitsIntegration.dashboardLayout,'compact');assert.equal(host.settings.habitsIntegration.nativeLayout,undefined);
-    tabs[1].click(); assert.ok(root.querySelectorAll('input[type=checkbox]').length>=3);
+    tabs[1].click(); assert.ok(root.querySelectorAll('input[type=checkbox]').length>=2);
     tabs[2].click(); assert.ok(root.querySelectorAll('.setting-item').length>=30);
     plugin.unload(); dom.window.close();
   }
@@ -375,4 +375,41 @@ test('the two old layout settings merge into one selector without losing the sel
   const integration=new TaskGeniusHabits(host);const result=await integration.loadData();assert.equal(result.dashboardLayout,expected);assert.equal(result.nativeLayout,undefined);assert.equal(result.layoutUnified,true);
   host.settings.habitsIntegration={...result,dashboardLayout:'grid'};assert.equal((await integration.loadData()).dashboardLayout,'grid');
  }
+});
+
+
+test('ignored missed days stay ignored without changing recorded values or future schedules',async()=>{
+ const f=vaultFixture(),config=settings();await f.app.vault.createFolder('Habits');
+ await f.app.vault.create('Habits/Exercise.md','---\n'+JSON.stringify({habit:true,type:'binary',frequency:'interval',intervalDays:2,startDate:'2026-11-01',records:{'2026-11-01':1}})+'\n---\n');
+ const store=new HabitStore(f.app,()=>config,async()=>{});let h=store.getHabits()[0];
+ assert.ok(missedInstances([h],date('2026-11-09')).some(item=>item.dateKey==='2026-11-07'));
+ await store.ignoreMissedDay(h,'2026-11-07');h=store.getHabits()[0];
+ assert.equal(missedInstances([h],date('2026-11-09')).some(item=>item.dateKey==='2026-11-07'),false);assert.deepEqual(h.records,{'2026-11-01':1});assert.equal(h.startDate,'2026-11-01');assert.deepEqual(h.ignoredMisses,['2026-11-07']);
+});
+
+test('rescheduling rejects originally due days, existing records and concurrent claims at save time',async()=>{
+ const f=vaultFixture(),config=settings();await f.app.vault.createFolder('Habits');
+ await f.app.vault.create('Habits/Exercise.md','---\n'+JSON.stringify({habit:true,type:'binary',frequency:'interval',intervalDays:2,startDate:'2026-11-01',records:{'2026-11-01':1,'2026-11-06':1}})+'\n---\n');
+ const store=new HabitStore(f.app,()=>config,async()=>{}),h=store.getHabits()[0];
+ assert.equal(isRescheduleTargetOpen(h,'2026-11-09'),false);assert.equal(isRescheduleTargetOpen(h,'2026-11-06'),false);
+ await assert.rejects(()=>store.rescheduleHabit(h,'2026-11-03','2026-11-09'));
+ await assert.rejects(()=>store.rescheduleHabit(h,'2026-11-03','2026-11-06'));
+ await store.rescheduleHabit(h,'2026-11-03','2026-11-10');
+ await assert.rejects(()=>store.rescheduleHabit(h,'2026-11-05','2026-11-10'));
+ const current=store.getHabits()[0];assert.deepEqual(current.reschedules,[{from:'2026-11-03',to:'2026-11-10'}]);assert.deepEqual(current.records,{'2026-11-01':1,'2026-11-06':1});
+});
+
+test('daily habits expose missed-day review and ignore without offering an overlapping reschedule',()=>{
+ const h=habit({frequency:'daily',startDate:'2026-11-01',records:{},ignoredMisses:['2026-11-07']});
+ assert.equal(missedInstances([h],date('2026-11-09')).some(item=>item.dateKey==='2026-11-08'),true);
+ assert.equal(missedInstances([h],date('2026-11-09')).some(item=>item.dateKey==='2026-11-07'),false);
+ assert.equal(isRescheduleTargetOpen(h,'2026-11-10'),false);
+});
+
+test('native habit cards hide the duplicate date and legend, show habit icons and apply column settings',async()=>{
+ globalThis.testLanguage='en';const dom=new JSDOM('<body></body>');installObsidianDom(dom.window);globalThis.document=dom.window.document;globalThis.window=dom.window;
+ const f=vaultFixture(),config=settings({habitColumns:'3'});await f.app.vault.createFolder('Habits');await f.app.vault.create('Habits/Exercise.md','---\n'+JSON.stringify({habit:true,type:'binary',frequency:'daily',icon:'💪',startDate:'2026-11-01',records:{}})+'\n---\n');
+ const root=document.body.createDiv(),cards=new NativeHabitCards(f.app,new HabitStore(f.app,()=>config,async()=>{}),config,new Events(),root);cards.onload();
+ assert.equal(root.querySelector('.tg-native-habit-cards').dataset.columns,'3');assert.match(root.querySelector('.tg-native-habit-icon').textContent,/💪/);assert.equal(root.querySelector('.tg-native-heat-legend'),null);assert.equal(root.querySelector('.tg-native-habit-nav input[type=date]'),null);assert.ok(root.querySelector('.tg-habit-add'));assert.ok(root.querySelector('[aria-label="Missed habits"]'));
+ cards.unload();dom.window.close();delete globalThis.document;delete globalThis.window;
 });

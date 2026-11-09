@@ -61,3 +61,10 @@ export class Menu {
  showAtMouseEvent(){return this;}
  showAtPosition(){return this;}
 }
+
+export class TextComponent {
+ constructor(root){this.inputEl=root.createEl('input');}
+ setValue(value){this.inputEl.value=value??'';return this;}setPlaceholder(value){this.inputEl.placeholder=value;return this;}
+ setDisabled(value){this.inputEl.disabled=value;return this;}onChange(fn){this.inputEl.addEventListener('input',()=>fn(this.inputEl.value));return this;}
+}
+export class TextAreaComponent extends TextComponent {}

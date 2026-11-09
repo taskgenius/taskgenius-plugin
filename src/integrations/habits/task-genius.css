@@ -33,3 +33,22 @@
 .tg-habits-surface .habits-compact-group { grid-column: 1 / -1; }
 .tg-habits-surface .habits-compact-row { min-width: 0; flex-wrap: wrap; }
 @media (max-width: 650px) { .tg-habits-surface .habits-compact-list { grid-template-columns: 1fr; } }
+
+.tg-habits-surface :is(.tg-native-habit-cards,.habits-compact-list)[data-columns="auto"] { grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr)); }
+.tg-habits-surface :is(.tg-native-habit-cards,.habits-compact-list)[data-columns="1"] { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.tg-habits-surface :is(.tg-native-habit-cards,.habits-compact-list)[data-columns="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tg-habits-surface :is(.tg-native-habit-cards,.habits-compact-list)[data-columns="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tg-habits-surface :is(.tg-native-habit-cards,.habits-compact-list)[data-columns="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tg-habits-surface :is(.tg-native-habit-card,.habits-compact-row).is-done { opacity: .25; filter: saturate(.35); }
+.tg-habits-surface .tg-habit-date-picker { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.tg-habits-surface .tg-native-habit-nav { display: grid; grid-template-columns: 28px auto 28px 1fr auto auto; }
+.tg-habits-surface .tg-habit-add { grid-column: 6; justify-self: end; }
+.tg-habits-surface .tg-native-habit-nav .habits-missed-button { position: relative; grid-column: 5; }
+.tg-habits-surface .tg-native-habit-icon { display: inline-flex; min-width: 24px; font-size: 22px; }
+
+.tg-habits-surface .tg-habit-modal-close { position: absolute; top: 10px; right: 10px; z-index: 20; width: 30px; height: 30px; pointer-events: auto; border: 0; background: var(--background-primary); }
+.tg-habits-surface:has(> .tg-habit-modal-close) > :is(.modal-close-button,.modal-header-button) { visibility: hidden; }
+
+.tg-habits-surface .tg-native-habits { max-width: none; width: 100%; box-sizing: border-box; }
+.tg-habits-surface .tg-native-habit-nav .habits-missed-button { inset: auto; margin: 0; }
+.tg-habits-surface :is(.tg-native-habit-card,.habits-compact-row).is-done:hover { opacity: .42; }

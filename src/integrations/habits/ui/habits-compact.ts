@@ -1,3 +1,4 @@
+import { renderMissedNotification } from "./missed-notification";
 import { App, Component, MarkdownRenderChild, Menu, Notice, TFile, debounce, normalizePath, setIcon, setTooltip, type Events } from "obsidian";
 import type { HabitStore } from "../habit-store";
 import type { HabitsPluginSettings } from "../settings";
@@ -133,6 +134,7 @@ export class HabitsCompact extends MarkdownRenderChild {
 		});
 		this.button(nav, "chevron-right", t("Next day"), () => { this.selectedDate = addDays(this.selectedDate, 1); this.render(); });
 		if (toDateKey(this.selectedDate) !== toDateKey(new Date())) this.button(nav, "calendar-check", t("Today"), () => { this.selectedDate = new Date(); this.render(); });
+		renderMissedNotification(header, this.renderEvents, this.app, this.store, () => this.render());
 		this.button(header, "plus", t("Add habit"), () => {
 			new HabitModal(this.app, this.store, () => this.render(), null, settings.experimental.noteHabits).open();
 		});
@@ -161,6 +163,7 @@ export class HabitsCompact extends MarkdownRenderChild {
 			return;
 		}
 		const list = root.createDiv({ cls: "habits-compact-list" });
+		list.dataset.columns = settings.habitColumns || "auto";
 		const grouped = settings.groupsEnabled && settings.sortMode === "group";
 		for (const section of groupHabits(due, grouped, settings.groupOrder)) {
 			if (grouped) list.createDiv({ cls: "habits-compact-group", text: sectionLabel(section.key) });

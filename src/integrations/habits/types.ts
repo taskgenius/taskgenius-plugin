@@ -140,6 +140,7 @@ export interface HabitReschedule {
  * value logged for each day (keyed by `YYYY-MM-DD`).
  */
 export interface HabitDefinition {
+	ignoredMisses?: string[];
 	/** Path of the backing note. Used as a stable identifier. */
 	path: string;
 	/** Display name, taken from the note's basename. */

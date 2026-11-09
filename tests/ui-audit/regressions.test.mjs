@@ -14,6 +14,12 @@ const {JSDOM}=createRequire(require.resolve('jest-environment-jsdom'))('jsdom');
 const directory=await mkdtemp(path.join(tmpdir(),'tg-ui-audit-'));
 after(()=>rm(directory,{recursive:true,force:true}));
 const owned=[
+ 'components/features/quick-capture/modals/QuickCaptureModalWithSwitch.ts', 'components/features/task/view/details.ts',
+
+ "dataflow/Orchestrator.ts",
+ 'components/features/planner/TaskPlanner.ts', 'components/features/gantt/gantt.ts', 'utils/date/date-helper.ts', 'utils/date/optional-date-time.ts', 'components/features/task/edit/TaskDetailsModal.ts', 'components/features/task/edit/MetadataEditor.ts',
+
+ 'integrations/habits/ui/modal-close.ts',
   'components/features/task/view/content.ts',
   'components/features/fluent/components/FluentTopNavigation.ts', 'components/features/fluent/components/ProjectList.ts', 'components/features/fluent/components/FluentSidebar.ts',
   'components/features/fluent/managers/FluentDataManager.ts',
@@ -23,7 +29,7 @@ const owned=[
   'components/features/calendar/views/tg-agenda-view.ts',
   'components/ui/behavior/ViewComponentManager.ts',
   'pages/FluentTaskView.ts', 'integrations/habits/ui/habit-modal.ts',
-  'mcp/auth/AuthMiddleware.ts', 'services/view-settings-signature.ts', 'dataflow/events/Events.ts', 'utils/ui/view-mode-utils.ts',
+  'mcp/auth/AuthMiddleware.ts', 'services/view-settings-signature.ts', 'integrations/habits/ui/modal-close.ts', 'dataflow/events/Events.ts', 'utils/ui/view-mode-utils.ts',
   'utils/ui/tree-view-utils.ts',
 	'components/features/gantt/drag-pan.ts', 'components/features/gantt/task-renderer.ts', 'utils/task/priority-utils.ts', 'services/markdown-status-sync.ts', 'utils/task/filter-compatibility.ts', 'utils/task/saved-task-filters.ts', 'utils/task/project-calendar.ts', 'components/features/quadrant/quadrant-column.ts', 'components/features/table/TableRenderer.ts', 'components/features/fluent/components/SavedTaskFilterModal.ts',
 	'components/features/rewards/PointsDashboard.ts', 'managers/points-service.ts', 'managers/daily-points.ts', 'managers/daily-task-points.ts', 'managers/points-utils.ts',
@@ -36,6 +42,13 @@ await build({stdin:{contents:`
  export {registerGanttPan} from './src/components/features/gantt/drag-pan';
  export {QuadrantColumnComponent} from './src/components/features/quadrant/quadrant-column';
  export {FluentSidebar} from './src/components/features/fluent/components/FluentSidebar';
+ export {DataflowOrchestrator} from './src/dataflow/Orchestrator';
+ export {QuickCaptureModal} from './src/components/features/quick-capture/modals/QuickCaptureModalWithSwitch';
+ export {getStatusText} from './src/components/features/task/view/details';
+ export {TaskPlanner} from './src/components/features/planner/TaskPlanner';
+ export {GanttComponent} from './src/components/features/gantt/gantt';
+ export {TaskDetailsModal} from './src/components/features/task/edit/TaskDetailsModal';
+ export {TaskMetadataEditor} from './src/components/features/task/edit/MetadataEditor';
  export {KanbanComponent} from './src/components/features/kanban/kanban';
  export {QuadrantComponent,QUADRANT_DEFINITIONS} from './src/components/features/quadrant/quadrant';
  export {TableView} from './src/components/features/table/TableView';
@@ -77,7 +90,7 @@ await build({stdin:{contents:`
    });
  }}],
 });
-const {KanbanComponent,QuadrantComponent,QUADRANT_DEFINITIONS,TableView,TableRenderer,FluentSidebar,Menu,QuadrantColumnComponent,registerGanttPan,MarkdownStatusSync,TaskRendererComponent,SavedTaskFilterModal,ContentComponent,TopNavigation,FluentDataManager,FluentComponentManager,CalendarComponent,ViewComponentManager,FluentTaskView,HabitModal,PointsDashboard,snapshotViewSettings,AuthMiddleware,ProjectList,vaultFixture,moment}=await import(pathToFileURL(path.join(directory,'ui.mjs')));
+const {QuickCaptureModal,getStatusText,DataflowOrchestrator,TaskPlanner,GanttComponent,TaskDetailsModal,TaskMetadataEditor,KanbanComponent,QuadrantComponent,QUADRANT_DEFINITIONS,TableView,TableRenderer,FluentSidebar,Menu,QuadrantColumnComponent,registerGanttPan,MarkdownStatusSync,TaskRendererComponent,SavedTaskFilterModal,ContentComponent,TopNavigation,FluentDataManager,FluentComponentManager,CalendarComponent,ViewComponentManager,FluentTaskView,HabitModal,PointsDashboard,snapshotViewSettings,AuthMiddleware,ProjectList,vaultFixture,moment}=await import(pathToFileURL(path.join(directory,'ui.mjs')));
 function environment(){
  const dom=new JSDOM('<body></body>',{url:'https://obsidian.invalid',pretendToBeVisual:true});installObsidianDom(dom.window);
  globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.HTMLElement=dom.window.HTMLElement;globalThis.Window=dom.window.Window;globalThis.Document=dom.window.Document;
@@ -89,6 +102,9 @@ function environment(){
  const plugin={app:f.app,settings:{viewConfiguration:[{id:'inbox',name:'Inbox'},{id:'projects',name:'Projects'},{id:'calendar',name:'Calendar',specificConfig:{viewType:'calendar',firstDayOfWeek:1}}],defaultViewMode:'list',taskTimer:{enabled:false}},preloadedTasks:[]};
  return{...f,dom,tick,frames,plugin,close:()=>dom.window.close()};
 }
+// The isolated fixture initializes components through addChild/onload, and
+// does not expose Obsidian's load method for this directly hosted editor.
+TaskMetadataEditor.prototype.load ||= function(){this.onload();};
 const task=(id)=>({id,content:id,filePath:'Tasks.md',status:' ',completed:false,metadata:{}});
 test('old project preferences cannot resurrect deleted projects or replace canonical identifiers',()=>{
  const e=environment();e.plugin.settings.projectConfig={customProjects:[{id:'old-real-id',name:'Real',displayName:'Real',color:'#123'},{id:'ghost-id',name:'Deleted'}]};
@@ -199,7 +215,7 @@ test('both native close-control versions dismiss the habit dialog even when docu
   const button=modal.modalEl.querySelector('.modal-header-button');button.className=css;modal.onOpen();
   const swallow=event=>event.stopPropagation();document.addEventListener('click',swallow,true);
   button.dispatchEvent(new window.MouseEvent('pointerup',{bubbles:true,button:0}));
-  assert.equal(modal.containerEl.isConnected,false);assert.equal(modal.closeButton,null);
+  assert.equal(modal.containerEl.isConnected,false);assert.equal(modal.modalEl.querySelector('.tg-habit-modal-close'),null);
   document.removeEventListener('click',swallow,true);
  }
  e.close();
@@ -423,4 +439,87 @@ test('kanban drag uses the column value rather than its translated title and com
  const from=root.createDiv({cls:'tg-kanban-column',attr:{'data-column-value':'3'}}),to=root.createDiv({cls:'tg-kanban-column',attr:{'data-column-value':'5'}});from.createSpan({cls:'tg-kanban-column-title',text:'中等'});to.createSpan({cls:'tg-kanban-column-title',text:'最高'});const a=from.createDiv(),b=to.createDiv(),card=b.createDiv({attr:{'data-task-id':'a'}});
  await board.handleSortEnd({from:a,to:b,item:card,oldIndex:0,newIndex:0});assert.equal(saved.updates.metadata.priority,5);assert.equal(board.allTasks[0].metadata.priority,5);assert.equal(source.metadata.priority,3);
  await board.handleStatusUpdate('a','x');assert.equal(saved.updates.completed,true);assert.ok(Number.isFinite(saved.updates.metadata.completedDate));await board.handleStatusUpdate('a',' ');assert.equal(saved.updates.metadata.completedDate,undefined);e.close();
+});
+
+
+test('task editor preserves task identity and all staged fields, and cancel never writes',async()=>{
+ const e=environment(),original={...task('real-id'),line:8,originalMarkdown:'- [ ] Original',content:'Original',metadata:{tags:[],children:[],context:'home',scheduledDate:new Date(2026,10,8,9,30).getTime()}};let saved;
+ e.plugin.writeAPI={updateTask:async args=>{saved=args;return {success:true};}};
+ const modal=new TaskDetailsModal(e.app,e.plugin,original);await modal.onOpen();
+ modal.metadataEditor.onMetadataChange({field:'priority',value:4});modal.metadataEditor.onMetadataChange({field:'status',value:'x'});modal.metadataEditor.onMetadataChange({field:'context',value:'work'});
+ await modal.save();assert.equal(saved.taskId,'real-id');assert.equal(saved.updates.line,8);assert.equal(saved.updates.id,'real-id');assert.equal(saved.updates.metadata.priority,4);assert.equal(saved.updates.metadata.context,'work');assert.equal(saved.updates.completed,true);assert.ok(saved.updates.metadata.completedDate);
+ assert.deepEqual(original.metadata,{tags:[],children:[],context:'home',scheduledDate:new Date(2026,10,8,9,30).getTime()});
+ saved=null;const cancel=new TaskDetailsModal(e.app,e.plugin,original);await cancel.onOpen();cancel.metadataEditor.onMetadataChange({field:'priority',value:1});cancel.close();assert.equal(saved,null);e.close();
+});
+
+test('date editor keeps time until explicitly removed and accepts an optional midnight time',()=>{
+ const e=environment(),root=document.body.createDiv(),editor=new TaskMetadataEditor(root,e.app,e.plugin),changes=[];
+ editor.task={...task('date'),metadata:{tags:[],children:[],dueDate:new Date(2026,10,12,9,30).getTime(),datePrecision:{dueDate:'datetime'}}};editor.onMetadataChange=event=>{changes.push(event);editor.task.metadata[event.field]=event.value;};editor.createDateEditor(root,'Due Date','dueDate','');
+ const input=root.querySelector('input');assert.equal(input.type,'text');assert.equal(input.value,'2026-11-12 09:30');
+ input.value='2026-11-13 00:00';input.dispatchEvent(new window.Event('change'));assert.equal(editor.task.metadata.datePrecision.dueDate,'datetime');assert.equal(new Date(editor.task.metadata.dueDate).getHours(),0);
+ input.value='2026-11-14';input.dispatchEvent(new window.Event('change'));assert.equal(editor.task.metadata.datePrecision.dueDate,'date');
+ const before=editor.task.metadata.dueDate;input.value='2026-02-31';input.dispatchEvent(new window.Event('change'));assert.equal(input.getAttribute('aria-invalid'),'true');assert.equal(editor.task.metadata.dueDate,before);
+ input.value='';input.dispatchEvent(new window.Event('change'));assert.equal(editor.task.metadata.dueDate,undefined);editor.unload();e.close();
+});
+
+test('task editor resolves a stale gutter identifier to the indexed task before saving',async()=>{
+ const e=environment(),indexed={...task('indexed'),line:3,originalMarkdown:'- [ ] Test',metadata:{tags:[],children:[]}};let saved;
+ e.plugin.dataflowOrchestrator={getQueryAPI:()=>({getAllTasks:async()=>[indexed]})};e.plugin.writeAPI={updateTask:async args=>{saved=args;return {success:true};}};
+ const modal=new TaskDetailsModal(e.app,e.plugin,{...indexed,id:'wrong-gutter-id',line:4});await modal.onOpen();await modal.save();assert.equal(saved.taskId,'indexed');assert.equal(saved.updates.line,3);e.close();
+});
+
+test('planner drag sets only the scheduled date, preserves deadline/time, and supports unscheduling',async()=>{
+ const e=environment(),deadline=new Date(2026,11,1).getTime(),source={...task('schedule'),metadata:{tags:[],children:[],dueDate:deadline,scheduledDate:new Date(2026,10,10,9,45).getTime(),datePrecision:{scheduledDate:'datetime'}}};let saved;
+ e.plugin.writeAPI={updateTask:async args=>{saved=args;return {success:true};}};
+ const planner=new TaskPlanner(e.plugin,document.body.createDiv());planner.setTasks([source]);assert.equal(planner.containerEl.querySelectorAll('.tg-planner-day').length,42);
+ await planner.schedule('schedule','2026-11-12');assert.equal(saved.updates.metadata.dueDate,deadline);assert.equal(new Date(saved.updates.metadata.scheduledDate).getHours(),9);assert.equal(new Date(saved.updates.metadata.scheduledDate).getMinutes(),45);assert.equal(new Date(saved.updates.metadata.scheduledDate).getDate(),12);
+ await planner.schedule('schedule',null);assert.equal(saved.updates.metadata.scheduledDate,undefined);assert.equal(saved.updates.metadata.dueDate,deadline);planner.unload();e.close();
+});
+
+test('project Gantt week, month and year each contain exactly the previous/current/next period',()=>{
+ const e=environment(),gantt=Object.create(GanttComponent.prototype);Object.assign(gantt,{viewId:'gantt',periodAnchor:new Date(2026,10,12),scrollContainerEl:{clientWidth:900},dateHelper:{daysBetween:(a,b)=>Math.round((b-a)/86400000),addDays:(a,n)=>{const d=new Date(a);d.setDate(d.getDate()+n);return d;}}});
+ for(const[scale,start,end]of [['Week',[2026,10,2],[2026,10,23]],['Month',[2026,9,1],[2026,12,1]],['Year',[2025,0,1],[2028,0,1]]]){gantt.projectScale=scale;const range=gantt.calculateDateRange(true);assert.equal(+range.startDate,+new Date(...start));assert.equal(+range.endDate,+new Date(...end));}
+ e.close();
+});
+
+test('unchanged task data repairs a cleared list instead of relying on the manual refresh button',()=>{
+ const e=environment(),c=contentFixture(e);c.isTreeView=false;c.setTasks([task('visible')],[task('visible')],true,true);e.tick();assert.ok(c.taskListEl.children.length);
+ c.taskListEl.replaceChildren();c.setTasks([task('visible')],[task('visible')],false,true);e.tick();assert.ok(c.taskListEl.children.length);c.onunload();e.close();
+});
+
+
+test('every completed file write, including one with a task id, forces fresh indexing',async()=>{
+ const e=environment(),orchestrator=Object.create(DataflowOrchestrator.prototype),calls=[];const file={path:'Tasks.md'};
+ Object.assign(orchestrator,{app:e.app,eventRefs:[],processingQueue:new Map(),vault:{getAbstractFileByPath:()=>file},processFileImmediate:async(f,force)=>calls.push([f,force])});orchestrator.subscribeToEvents();
+ const listeners=e.app.workspace.handlers.get('task-genius:write-operation-complete');assert.ok(listeners?.size);
+ for(const listener of listeners)await listener({path:'Tasks.md',taskId:'real-id'});
+ assert.deepEqual(calls,[[file,true]]);e.close();
+});
+
+test('same-file indexing is serialized so a slow old parse cannot overwrite the final edit',async()=>{
+ const e=environment(),orchestrator=Object.create(DataflowOrchestrator.prototype);let release;const old=new Promise(resolve=>release=resolve),events=[];
+ Object.assign(orchestrator,{disposed:false,fileProcessing:new Map(),processFileSnapshot:async(file,forced)=>{events.push(forced?'new-start':'old-start');if(!forced)await old;events.push(forced?'new-end':'old-end');}});
+ const a=orchestrator.processFileImmediate({path:'Tasks.md'},false),b=orchestrator.processFileImmediate({path:'Tasks.md'},true);await Promise.resolve();await Promise.resolve();assert.deepEqual(events,['old-start']);release();await Promise.all([a,b]);assert.deepEqual(events,['old-start','old-end','new-start','new-end']);e.close();
+});
+
+
+test('new-task dates infer optional time independently without an include-time toggle',()=>{
+ const e=environment(),quick=Object.create(QuickCaptureModal.prototype),root=document.body.createDiv();Object.assign(quick,{taskMetadata:{},updatePreview(){}});quick.createDateInputs(root);
+ assert.equal(root.querySelector('input[type=checkbox]'),null);assert.equal(quick.startDateInput.type,'text');
+ quick.startDateInput.value='2026-11-12';quick.startDateInput.dispatchEvent(new window.Event('input'));quick.dueDateInput.value='2026-11-13 00:00';quick.dueDateInput.dispatchEvent(new window.Event('input'));
+ assert.equal(quick.formatDate(quick.taskMetadata.startDate),'2026-11-12');assert.equal(quick.formatDate(quick.taskMetadata.dueDate),'2026-11-13 00:00');
+ quick.dueDateInput.value='invalid';quick.dueDateInput.dispatchEvent(new window.Event('input'));assert.equal(quick.dueDateInput.getAttribute('aria-invalid'),'true');
+ quick.dueDateInput.value='';quick.dueDateInput.dispatchEvent(new window.Event('input'));assert.equal(quick.taskMetadata.dueDate,undefined);assert.equal(quick.taskMetadata.datePrecision.dueDate,undefined);e.close();
+});
+
+test('configured legacy pause group and unknown-status fallback both display pause instead of no status',()=>{
+ const e=environment();assert.equal(getStatusText('archived',e.plugin.settings),'Paused');assert.equal(getStatusText('paused',e.plugin.settings),'Paused');assert.equal(getStatusText('unmapped',e.plugin.settings),'Paused');e.close();
+});
+
+
+test('completion points stay in the habit total and are excluded from the points ledger list',()=>{
+ const e=environment(),dashboard=Object.create(PointsDashboard.prototype),root=document.body.createDiv();
+ Object.assign(dashboard,{app:e.app,plugin:e.plugin,bodyEl:root,query:'',historyFilter:'all',snapshot:{manual:[{id:'manual',date:'2026-11-08',text:'Bonus',points:10}],ledger:[{id:'task:t:2026-11-08',source:'task',createdAt:Date.now(),label:'Task award',delta:2}],automaticTasks:{habitPaths:['Habits/Tasks.md'],days:[{date:'2026-11-08',supplement:3}]},summaries:[{path:'Habits/Tasks.md',name:'Completed task habit',entries:4,points:4,todayPoints:4}]}});
+ dashboard.renderHistory();const panels=root.querySelectorAll('.tg-points-panel');assert.match(panels[0].textContent,/Bonus/);assert.doesNotMatch(panels[0].textContent,/Task award|Completed task habit/);
+ assert.match(panels[1].textContent,/Completed task habit/);assert.equal(panels[1].querySelector('.tg-points-entry').children[1].textContent,'9');e.close();
 });

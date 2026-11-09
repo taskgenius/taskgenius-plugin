@@ -45,6 +45,7 @@ export class TaskGeniusHabits extends HabitsPlugin {
 			if (saved.nativeLayout === "cards" || (!saved.nativeLayout && !saved.layoutUnified)) saved.dashboardLayout = "cards";
 			delete saved.nativeLayout;
 			saved.layoutUnified = true;
+			saved.experimental = { ...saved.experimental, rescheduling: true };
 			return saved;
 		}
 		try {
