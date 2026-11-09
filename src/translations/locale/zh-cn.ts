@@ -1900,9 +1900,6 @@ const translations = {
 		"选择所有视图的默认显示模式。这影响您第一次打开视图或创建新视图时任务的显示方式。",
 	"List View": "列表视图",
 	"Tree View": "树状视图",
-	"Global Filter Configuration": "全局筛选配置",
-	"Configure global filter rules that apply to all Views by default. Individual Views can override these settings.":
-		"配置默认应用于所有视图的全局筛选规则。单个视图可以覆盖这些设定。",
 	"Cancelled Date": "取消日期",
 	"Depends On": "依赖于",
 	"Task IDs separated by commas": "用逗号分隔的任务 ID",
@@ -3193,6 +3190,22 @@ const translations = {
 	"This task no longer exists. Refresh the task list.": "此任务已不存在，请刷新任务列表。",
 	"Enter a valid date, optionally followed by HH:mm.": "请输入有效日期，可在后面填写时:分，例如 2026-11-12 09:30。",
 	"Task writer is unavailable": "任务保存服务尚未就绪",
+	"Project color": "项目颜色",
+	"Manual order": "手动排序",
+	"Daily note date": "日记日期",
+	"Weekly note": "周记",
+	"Monthly note": "月记",
+	"Yearly note": "年记",
+	"Ignore all past missed habits": "忽略所有过去漏打卡的习惯",
+	"Dismiss reminders before today. Habit records and points stay unchanged.": "忽略今天之前的漏打卡提醒，保留所有习惯记录和积分。",
+	"Ignore past misses": "忽略过去的漏打卡",
+	"Past missed habit reminders ignored.": "已忽略过去的漏打卡提醒。",
+	"Parent folder": "父级文件夹",
+	"Projects root": "项目根目录",
+	"New parent folder (optional)": "新建父级文件夹（可选）",
+	"Folder name": "文件夹名称",
+	"Enter a valid folder name.": "请输入有效的文件夹名称。",
+	"View filter": "视图筛选",
 };
 
 export default translations;

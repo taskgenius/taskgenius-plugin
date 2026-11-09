@@ -52,6 +52,8 @@ export class TopNavigation extends Component {
 	private activePresetId: string | null = null;
 	public updateContext(viewId: string): void {
 		this.contextViewId = viewId;
+		const label = this.containerEl.querySelector<HTMLElement>(".tg-active-filter-label");
+		if (label) label.hidden = !label.textContent || ["points", "rewards", "habit"].includes(viewId);
 
 		this.containerEl.show();
 		const taskContext = !["points", "rewards", "habit"].includes(viewId);
@@ -218,6 +220,7 @@ export class TopNavigation extends Component {
 			attr: { "aria-label": t("Quick filters") },
 		});
 		setIcon(filterButton, "list-filter");
+		searchContainer.createSpan({ cls: "tg-active-filter-label", attr: { hidden: "" } });
 		filterButton.toggleClass("is-active", !!this.activePresetId);
 		this.registerDomEvent(filterButton, "click", (event) => {
 			const menu = new Menu();
@@ -421,6 +424,12 @@ export class TopNavigation extends Component {
 		}
 	}
 
+	public setActivePreset(id: string | null, advanced = false): void {
+		this.activePresetId = id;
+		const label = this.containerEl.querySelector<HTMLElement>(".tg-active-filter-label");
+		if (label) { label.textContent = id ? savedTaskFilters(this.plugin.settings.taskFilter?.presetTaskFilters).find(preset => preset.id === id)?.name || "" : advanced ? t("View filter") : ""; label.hidden = !label.textContent || ["points", "rewards", "habit"].includes(this.contextViewId); label.title = label.textContent || ""; }
+		this.containerEl.querySelector(".tg-quick-filter-button")?.classList.toggle("is-active", !!id);
+	}
 	public refresh() {
 		this.updateNotificationCount();
 	}

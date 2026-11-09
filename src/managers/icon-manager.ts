@@ -147,7 +147,7 @@ export class TaskGeniusIconManager extends Component {
 			| "inProgress"
 			| "completed"
 			| "abandoned"
-			| "planned";
+			| "planned" | "archived";
 		chars: string[];
 	}> {
 		const result: Array<{
@@ -156,19 +156,22 @@ export class TaskGeniusIconManager extends Component {
 				| "inProgress"
 				| "completed"
 				| "abandoned"
-				| "planned";
+				| "planned" | "archived";
 			chars: string[];
 		}> = [];
 
 		const statusMap: Record<
 			string,
-			"notStarted" | "inProgress" | "completed" | "abandoned" | "planned"
+			"notStarted" | "inProgress" | "completed" | "abandoned" | "planned" | "archived"
 		> = {
 			notStarted: "notStarted",
 			inProgress: "inProgress",
 			completed: "completed",
 			abandoned: "abandoned",
 			planned: "planned",
+			archived: "archived",
+			paused: "archived",
+			pause: "archived",
 		};
 
 		for (const [statusKey, charString] of Object.entries(

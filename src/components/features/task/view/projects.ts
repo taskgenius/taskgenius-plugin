@@ -1,3 +1,4 @@
+import { projectFolderContainer } from "@/components/features/fluent/components/ProjectFolders";
 import {
 	App,
 	Component,
@@ -394,7 +395,7 @@ export class ProjectsComponent extends Component {
 		// Clear existing list
 		this.projectsListEl.empty();
 
-		if (this.isProjectTreeView && this.projectTree) {
+		if (this.isProjectTreeView && this.projectTree && !new ProjectFileManager(this.app).list().some(project => project.folder)) {
 			// Render as tree
 			if (this.projectTreeComponent) {
 				this.projectTreeComponent.unload();
@@ -455,8 +456,9 @@ export class ProjectsComponent extends Component {
 			// Sort projects alphabetically
 			const sortedProjects = Array.from(
 				this.allProjectsMap.keys(),
-			).sort();
+			).sort((a, b) => new ProjectFileManager(this.app).compareNames(a, b));
 
+			const folder = projectFolderContainer(this.projectsListEl, this.app);
 			// Render each project
 			sortedProjects.forEach((project) => {
 				// Get tasks for this project
@@ -475,15 +477,17 @@ export class ProjectsComponent extends Component {
 				}
 
 				// Create project item
-				const projectItem = this.projectsListEl.createDiv({
+				const projectItem = folder(new ProjectFileManager(this.app).find(project)?.folder || "").createDiv({
 					cls: "project-list-item",
 				});
 
+				new ProjectFileManager(this.app).bindReorder(projectItem, project, () => sortedProjects, () => { this.renderProjectsList(); void this.plugin.triggerViewUpdate(); });
 				// Project icon
 				const projectIconEl = projectItem.createDiv({
 					cls: "project-icon",
 				});
 				setIcon(projectIconEl, "folder");
+				const color = new ProjectFileManager(this.app).find(project)?.color; if (color) projectIconEl.style.color = color;
 
 				// Project name
 				const projectNameEl = projectItem.createDiv({

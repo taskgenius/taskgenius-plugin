@@ -512,7 +512,6 @@ export function filterTasks(
 	}
 	const viewConfig = getViewSettingOrDefault(plugin, viewId);
 	const filterRules = viewConfig.filterRules || {};
-	const globalFilterRules = plugin.settings.globalFilterRules || {};
 
 	// --- 过滤 ICS 事件在不应展示的视图中（例如 inbox）---
 	// ICS 事件应仅在日历/日程类视图（calendar/forecast）中展示
@@ -545,17 +544,6 @@ export function filterTasks(
 
 	if (viewConfig.filterBlanks) {
 		filtered = filtered.filter((task) => task.content.trim() !== "");
-	}
-
-	// --- 应用全局筛选器（如果存在） ---
-	if (
-		globalFilterRules.advancedFilter &&
-		globalFilterRules.advancedFilter.filterGroups?.length > 0
-	) {
-		console.log("应用全局筛选器:", globalFilterRules.advancedFilter);
-		filtered = filtered.filter((task) =>
-			applyAdvancedFilter(task, globalFilterRules.advancedFilter!),
-		);
 	}
 
 	// --- 应用视图配置中的基础高级过滤器（如果存在） ---

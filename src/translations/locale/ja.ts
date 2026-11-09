@@ -1947,9 +1947,6 @@ const translations = {
 		"すべてのビューのデフォルト表示モードを選択してください。これはビューを初めて開いたり新しいビューを作成したりするときのタスクの表示方法に影響します。",
 	"List View": "リストビュー",
 	"Tree View": "ツリービュー",
-	"Global Filter Configuration": "グローバルフィルター設定",
-	"Configure global filter rules that apply to all Views by default. Individual Views can override these settings.":
-		"デフォルトですべてのビューに適用されるグローバルフィルタールールを設定します。個別のビューでこれらの設定を上書きできます。",
 	"Cancelled Date": "キャンセル日",
 	"Configuration is valid": "設定が有効です",
 	"Action to execute on completion": "完了時に実行するアクション",

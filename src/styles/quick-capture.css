@@ -636,3 +636,14 @@
 .quick-capture-modal .setting-item-control input[type="datetime-local"] {
 	width: 10rem;
 }
+
+.tg-date-time-picker { display: flex; gap: 5px; flex-wrap: wrap; min-width: 0; }
+.tg-date-time-picker input[type=date] { min-width: 125px; width: 130px; }
+.tg-date-time-picker input[type=time] { width: 100px; }
+.calendar-period-notes { display: flex; gap: 4px; flex-wrap: wrap; }
+.calendar-period-notes button { font-size: var(--font-ui-smaller); padding: 2px 7px; height: 26px; }
+.calendar-current-date[role=button] { cursor: pointer; }
+.calendar-current-date[role=button]:hover { color: var(--text-accent); }
+
+.tg-active-filter-label { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--font-ui-small); color: var(--text-accent); }
+.tg-active-filter-label[hidden] { display:none; }

@@ -1539,8 +1539,6 @@ const translations = {
   "Choose the default display mode for all views. This affects how tasks are displayed when you first open a view or create a new view.": "Choose the default display mode for all views. This affects how tasks are displayed when you first open a view or create a new view.",
   "List View": "List View",
   "Tree View": "Tree View",
-  "Global Filter Configuration": "Global Filter Configuration",
-  "Configure global filter rules that apply to all Views by default. Individual Views can override these settings.": "Configure global filter rules that apply to all Views by default. Individual Views can override these settings.",
   "Cancelled Date": "Cancelled Date",
   "Configuration is valid": "Configuration is valid",
   "Action to execute on completion": "Action to execute on completion",

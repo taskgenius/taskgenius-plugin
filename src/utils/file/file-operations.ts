@@ -122,7 +122,7 @@ export async function saveCapture(
 	// Determine the target file path based on target type
 	if (targetType === "daily-note" && dailyNoteSettings) {
 		// Generate daily note file path
-		const dateStr = moment().format(dailyNoteSettings.format);
+		const dateStr = moment(options.dailyNoteDate || undefined).format(dailyNoteSettings.format);
 		// For daily notes, the format might include path separators (e.g., YYYY-MM/YYYY-MM-DD)
 		// We need to preserve the path structure and only sanitize the final filename
 		const pathWithDate = dailyNoteSettings.folder

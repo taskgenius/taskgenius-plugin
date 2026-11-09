@@ -1,3 +1,4 @@
+import { attachDateTimePicker } from "@/utils/date/date-time-picker";
 import { parseOptionalDateTime, formatOptionalDateTime, taskDatePrecisions } from "@/utils/date/optional-date-time";
 /**
  * Task Metadata Editor Component
@@ -356,6 +357,7 @@ export class TaskMetadataEditor extends Component {
 
 		const dateInput = fieldContainer.createEl("input", { cls: `date-input ${field}-input`, type: "text", attr: { placeholder: "YYYY-MM-DD / YYYY-MM-DD HH:mm", "aria-label": label } });
 		dateInput.value = formatOptionalDateTime(this.task.metadata[field as keyof typeof this.task.metadata] as number, this.task.metadata.datePrecision?.[field]);
+		attachDateTimePicker(dateInput, label);
 		this.registerDomEvent(dateInput, "change", () => {
 			const value = dateInput.value.trim(), parsed = value ? parseOptionalDateTime(value) : null;
 			dateInput.setAttribute("aria-invalid", String(!!value && !parsed));

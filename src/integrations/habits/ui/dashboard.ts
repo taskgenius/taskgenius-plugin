@@ -1,3 +1,4 @@
+import { calendarWeekNumber } from "@/utils/date/calendar-week";
 import {
 	App,
 	debounce,
@@ -448,7 +449,7 @@ export class HabitsDashboard
 		const weekly = this.statsPeriod === "weekly";
 		const options: { id: StatsRangeMode; label: string }[] = [
 			{ id: "rolling", label: weekly ? t("Last 7 days") : t("Last 30 days") },
-			{ id: "calendar", label: weekly ? t("This week") : t("This month") },
+			{ id: "calendar", label: weekly ? (t("This week") + " · W" + calendarWeekNumber(this.selectedDate)) : t("This month") },
 		];
 		for (const option of options) {
 			const btn = wrap.createEl("button", {
@@ -1403,7 +1404,7 @@ export class HabitsDashboard
 		const icon = overlay.createSpan({
 			cls: "habits-paused-overlay-icon",
 		});
-		setIcon(icon, "circle-pause");
+		setIcon(icon, "pause");
 		await sleep(600);
 		return overlay;
 	}

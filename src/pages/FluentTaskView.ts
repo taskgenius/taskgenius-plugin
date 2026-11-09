@@ -97,6 +97,29 @@ export class FluentTaskView extends ItemView {
 	private activeTaskPreset: PresetTaskFilter["options"] | null = null;
 	private activeTaskPresetId: string | null = null;
 
+	private loadedFilterKey = "";
+	private viewFilterKey(): string { return `${this.workspaceId}:${this.currentViewId}`; }
+	private saveViewFilters(): void {
+		if (this.isInitializing || this.loadedFilterKey !== this.viewFilterKey()) return;
+		const all = this.app.loadLocalStorage("task-genius-view-filters-v2") || {};
+		all[this.viewFilterKey()] = structuredClone({ presetId: this.activeTaskPresetId, filters: this.viewState.filters, advanced: this.liveFilterState, project: this.viewState.selectedProject });
+		this.app.saveLocalStorage("task-genius-view-filters-v2", all);
+	}
+	private restoreViewFilters(): void {
+		const key = this.viewFilterKey();
+		const legacy = this.plugin.workspaceManager?.getEffectiveSettings(this.workspaceId)?.fluentFilterState?.[this.currentViewId];
+		const stored = this.app.loadLocalStorage("task-genius-view-filters-v2")?.[key] || (legacy ? { filters: legacy.filters, advanced: legacy.advancedFilter, project: legacy.selectedProject } : undefined);
+		this.loadedFilterKey = key;
+		this.activeTaskPresetId = stored?.presetId && savedTaskFilters(this.plugin.settings.taskFilter?.presetTaskFilters).some(preset => preset.id === stored.presetId) ? stored.presetId : null;
+		this.activeTaskPreset = null;
+		this.liveFilterState = stored?.advanced ? structuredClone(stored.advanced) : null;
+		this.currentFilterState = this.liveFilterState;
+		this.viewState.filters = structuredClone(stored?.filters || {});
+		this.viewState.selectedProject = stored?.project;
+		this.topNavigation?.setActivePreset(this.activeTaskPresetId, !!this.liveFilterState?.filterGroups?.length);
+		this.app.saveLocalStorage("task-genius-view-filter", this.liveFilterState);
+	}
+
 	// Selection state
 	private selectedTask: Task | null = null;
 
@@ -159,7 +182,9 @@ export class FluentTaskView extends ItemView {
 	 * Delay: 150ms to balance responsiveness and performance
 	 */
 	private handleFilterChanged = debounce(
-		(filterState: RootFilterState, leafId?: string) => {
+		(filterState: RootFilterState, leafId?: string, originKey?: string) => {
+			if (originKey && originKey !== this.viewFilterKey()) return;
+			if (!leafId || leafId !== (this.leaf as any)?.id) return;
 			// Only update if it's from a live filter component
 			if (
 				leafId &&
@@ -205,6 +230,7 @@ export class FluentTaskView extends ItemView {
 			}
 
 			// Persist and update header UI
+			this.saveViewFilters();
 			this.workspaceStateManager.saveFilterStateToWorkspace();
 			this.layoutManager.updateActionButtons();
 
@@ -413,6 +439,7 @@ export class FluentTaskView extends ItemView {
 					}
 				},
 				onAfterSync: () => {
+					this.restoreViewFilters();
 					this.layoutManager?.updateActionButtons();
 				},
 			});
@@ -580,7 +607,9 @@ export class FluentTaskView extends ItemView {
 					this.currentViewId,
 					this.viewState.viewMode
 				);
+				this.saveViewFilters();
 				this.currentViewId = viewId;
+				this.restoreViewFilters();
 				console.log(`[Task Genius] currentViewId updated to: ${this.currentViewId}`);
 
 				// When navigating to projects view directly, clear project selection
@@ -619,7 +648,7 @@ export class FluentTaskView extends ItemView {
 							// Broadcast filter change
 							this.app.workspace.trigger(
 								"task-genius:filter-changed",
-								nextState
+								nextState, (this.leaf as any).id
 							);
 						}
 					} catch (e) {
@@ -649,14 +678,16 @@ export class FluentTaskView extends ItemView {
 			},
 			onProjectSelected: (projectId) => {
 				console.log(`[Task Genius] Project selected: ${projectId}`);
-				this.viewState.selectedProject = projectId;
 
 				// Switch to projects view
 				this.recordViewModeForView(
 					this.currentViewId,
 					this.viewState.viewMode
 				);
+				this.saveViewFilters();
 				this.currentViewId = "projects";
+				this.restoreViewFilters();
+				this.viewState.selectedProject = projectId;
 				this.filteredTasks = this.dataManager.applyFilters(this.tasks);
 				const projectsViewMode = this.ensureViewModeForView(
 					this.currentViewId
@@ -710,12 +741,9 @@ export class FluentTaskView extends ItemView {
 						nextState
 					);
 
-					// Broadcast so any open filter UI reacts and header button shows reset
-					// The filter-changed event listener will handle applyFilters and updateView
-					this.app.workspace.trigger(
-						"task-genius:filter-changed",
-						nextState
-					);
+					this.saveViewFilters();
+					this.filteredTasks = this.dataManager.applyFilters(this.tasks);
+					this.updateView();
 				} catch (e) {
 					console.warn(
 						"[Task Genius] Failed to project-sync filter UI state",
@@ -881,6 +909,7 @@ export class FluentTaskView extends ItemView {
 				this.activeTaskPreset = presetId
 					? savedTaskFilters(this.plugin.settings.taskFilter?.presetTaskFilters).find(preset => preset.id === presetId)?.options || null
 					: null;
+				this.saveViewFilters();
 				this.filteredTasks = this.dataManager.applyFilters(this.tasks);
 				this.updateView();
 			},
@@ -997,6 +1026,7 @@ export class FluentTaskView extends ItemView {
 			this.registerEvent(
 				onWorkspaceSwitched(this.app, async (payload) => {
 					if (payload.workspaceId !== this.workspaceId) {
+						this.saveViewFilters();
 						// Save current workspace state immediately (before switching)
 						const snapshot =
 							this.workspaceStateManager.captureFilterStateSnapshot();
@@ -1067,6 +1097,7 @@ export class FluentTaskView extends ItemView {
 								}
 							},
 							onAfterSync: () => {
+								this.restoreViewFilters();
 								this.layoutManager?.updateActionButtons();
 							},
 						});
@@ -1101,7 +1132,7 @@ export class FluentTaskView extends ItemView {
 			this.app.workspace.on(
 				"task-genius:filter-changed",
 				(filterState: RootFilterState, leafId?: string) => {
-					this.handleFilterChanged(filterState, leafId);
+					this.handleFilterChanged(filterState, leafId, this.viewFilterKey());
 				}
 			)
 		);
@@ -1115,7 +1146,9 @@ export class FluentTaskView extends ItemView {
 							payload.selectionType === "view" &&
 							payload.selectionId
 						) {
+							this.saveViewFilters();
 							this.currentViewId = payload.selectionId;
+							this.restoreViewFilters();
 							this.filteredTasks = this.dataManager.applyFilters(
 								this.tasks
 							);
@@ -1167,6 +1200,11 @@ export class FluentTaskView extends ItemView {
 			return;
 		}
 
+		if (this.loadedFilterKey !== this.viewFilterKey()) {
+			this.restoreViewFilters();
+			this.filteredTasks = this.dataManager.applyFilters(this.tasks);
+		}
+		this.topNavigation?.setActivePreset(this.activeTaskPresetId, !!this.liveFilterState?.filterGroups?.length);
 		console.log(
 			`[Task Genius] Proceeding with view update for ${this.currentViewId}`
 		);
@@ -1245,6 +1283,7 @@ export class FluentTaskView extends ItemView {
 	private resetCurrentFilter(): void {
 		console.log("[Task Genius] Resetting filter");
 
+		this.activeTaskPresetId = null; this.activeTaskPreset = null; this.viewState.filters = {};
 		// Clear filter states
 		this.liveFilterState = null;
 		this.currentFilterState = null;
@@ -1253,6 +1292,7 @@ export class FluentTaskView extends ItemView {
 		// Clear localStorage
 		this.app.saveLocalStorage("task-genius-view-filter", null);
 
+		this.saveViewFilters();
 		// Save the cleared filter state to workspace
 		this.workspaceStateManager.saveFilterStateToWorkspace();
 
@@ -1260,7 +1300,7 @@ export class FluentTaskView extends ItemView {
 		this.app.workspace.trigger("task-genius:filter-changed", {
 			rootCondition: "all",
 			filterGroups: [],
-		} as any);
+		} as any, (this.leaf as any).id);
 
 		// Clear any active project selection in sidebar
 		this.layoutManager.setActiveProject(null);
@@ -1313,6 +1353,7 @@ export class FluentTaskView extends ItemView {
 	 * Clean up on close
 	 */
 	async onClose() {
+		this.saveViewFilters();
 		console.log("[Task Genius] onClose started");
 
 		// Save workspace layout before closing

@@ -7,10 +7,10 @@
 	color: var(--text-normal);
 	background: radial-gradient(ellipse at 85% 0%, color-mix(in srgb, var(--interactive-accent) 12%, transparent), transparent 42%);
 }
-.tg-points-header { display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; margin:0 auto 26px; max-width:1220px; }
+.tg-points-header { display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; margin:0 auto 26px; max-width:none; }
 .tg-points-heading { font-size:1.8em; font-weight:700; letter-spacing:-.025em; }
 .tg-points-subtitle,.tg-points-date,.tg-points-label { color:var(--text-muted); }
-.tg-points-summary,.tg-points-columns { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; max-width:1220px; margin:0 auto 18px; }
+.tg-points-summary,.tg-points-columns { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; max-width:none; margin:0 auto 18px; }
 .tg-points-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .tg-points-card,.tg-points-panel { border:1px solid var(--background-modifier-border); border-radius:16px; background:color-mix(in srgb,var(--background-secondary) 88%,transparent); box-shadow:0 10px 34px color-mix(in srgb,#000 10%,transparent); }
 .tg-points-card { min-height:118px; padding:22px; }
@@ -30,7 +30,7 @@
 .tg-points-empty { padding:24px 0; color:var(--text-muted); }
 @media(max-width:850px) { .tg-points-columns { grid-template-columns:1fr; } .tg-points-summary { grid-template-columns:1fr 1fr; } }
 @media(max-width:520px) { .tg-points-summary { grid-template-columns:1fr; } .tg-points-header { align-items:flex-start; flex-direction:column; } .tg-points-panel { padding:16px; } }
-.tg-points-page { width:100%; max-width:1120px; margin:0 auto; overflow-y:auto; min-height:0; }
+.tg-points-page { width:100%; max-width:none; margin:0 auto; overflow-y:auto; min-height:0; }
 .tg-points-page h2 { margin:0 0 8px; font-size:24px; }
 .tg-points-tabs { display:flex; gap:6px; padding:5px; margin:20px 0 14px; border-radius:12px; background:var(--background-secondary); flex-wrap:wrap; }
 .tg-points-tabs button { border:0; background:transparent; box-shadow:none; color:var(--text-muted); padding:9px 15px; border-radius:9px; }
@@ -52,3 +52,9 @@
 .tg-points-entry { display: grid; grid-template-columns: minmax(0, 1fr) 100px 64px; }
 .tg-points-entry > :nth-child(2) { text-align: right; font-variant-numeric: tabular-nums; }
 .tg-points-entry > button { grid-column: 3; }
+
+.tg-points-page > * { max-width: none; width: 100%; box-sizing: border-box; }
+.tg-points-body.is-history { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tg-points-page .tg-points-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; }
+.tg-points-page .tg-points-entry > :last-child { text-align: right; min-width: 6.5em; font-variant-numeric: tabular-nums; justify-self: end; }
+@media(max-width:850px) { .tg-points-body.is-history { grid-template-columns: minmax(0, 1fr); } }

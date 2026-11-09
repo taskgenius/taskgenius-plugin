@@ -67,7 +67,7 @@
 		border-radius: 4px;
 		padding: 2px 6px;
 		font-size: var(--tg-font-event);
-		color: var(--text-on-accnet);
+		color: var(--text-normal);
 		background-color: var(--background-secondary-alt) !important;
 		cursor: grab;
 		z-index: 10;
@@ -77,7 +77,7 @@
 		box-shadow: var(--shadow-s);
 		transition:
 			opacity 0.2s,
-			transform 0.1s;
+			box-shadow 0.1s;
 	}
 
 	.tg-event-base:active {
@@ -86,7 +86,6 @@
 
 	.tg-event-base:hover {
 		opacity: 0.9;
-		transform: translateY(-1px);
 		box-shadow: var(--shadow-l);
 		color: var(--text-on-accent);
 		background-color: var(--interactive-accent) !important;
@@ -681,3 +680,18 @@
 		transform: scale(1);
 	}
 }
+
+/* Geometry belongs to the calendar engine; theme styling must not stretch it. */
+.full-calendar-container .tg-time-grid-container { display: block; height: auto; min-height: 0; }
+.full-calendar-container .tg-time-body { flex-shrink: 0; }
+.full-calendar-container .tg-day-column { flex: 1 1 0; min-width: 0; box-sizing: border-box; }
+.full-calendar-container .tg-time-header { padding-right: 0; }
+.full-calendar-container .tg-time-header-cell { flex: 1 1 0; min-width: 0; box-sizing: border-box; }
+.full-calendar-container .tg-event-base { box-sizing: border-box; }
+.full-calendar-container .tg-event-block .task-list-item-checkbox { flex-shrink: 0; align-self: flex-start; width: 16px; height: 16px; margin: 0 0 2px; }
+.full-calendar-container .tg-now-line { position: absolute; left: 0; right: 0; height: 2px; background: var(--color-red, #e5484d); z-index: 70; pointer-events: none; }
+.full-calendar-container .tg-now-line::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: inherit; }
+
+.full-calendar-container .calendar-header { flex-wrap: wrap; gap: 8px; }
+
+.full-calendar-container .tg-view-container { min-height: 0; }

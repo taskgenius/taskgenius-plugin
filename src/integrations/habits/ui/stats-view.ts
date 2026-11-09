@@ -1,3 +1,4 @@
+import { calendarWeekNumber } from "@/utils/date/calendar-week";
 import { Notice, setIcon } from "obsidian";
 import { t } from "../i18n";
 import type { AiSummarySettings } from "../settings";
@@ -78,7 +79,7 @@ export function renderStatsView(
 					? t("Last 7 days")
 					: t("Last 30 days")
 				: period === "weekly"
-					? t("This week")
+					? (t("This week") + " · W" + calendarWeekNumber(today))
 					: t("This month");
 	const subtitle =
 		period === "monthly" && mode === "calendar"

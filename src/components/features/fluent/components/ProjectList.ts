@@ -1,3 +1,4 @@
+import { projectFolderContainer } from "./ProjectFolders";
 import { Component, setIcon, Menu, Modal, App, Notice } from "obsidian";
 import TaskProgressBarPlugin from "@/index";
 import { Task } from "@/types/task";
@@ -17,6 +18,7 @@ import {
 import { QuickCaptureModal } from "@/components/features/quick-capture/modals/QuickCaptureModalWithSwitch";
 
 export interface Project {
+	folder?: string;
 	id: string;
 	name: string;
 	filterKey: string;
@@ -38,7 +40,7 @@ interface ProjectTreeNode {
 	fullPath: string;
 }
 
-type SortOption =
+type SortOption = "manual"
 	| "name-asc"
 	| "name-desc"
 	| "tasks-asc"
@@ -55,7 +57,7 @@ export class ProjectList extends Component {
 	private projectLoad = 0;
 	private disposed = false;
 	private onProjectSelect: (projectId: string) => void;
-	private currentSort: SortOption = "name-asc";
+	private currentSort: SortOption = "manual";
 	private readonly STORAGE_KEY = "task-genius-project-sort";
 	private readonly EXPANDED_KEY = "task-genius-project-expanded";
 	private collator: Intl.Collator;
@@ -197,8 +199,10 @@ export class ProjectList extends Component {
 		for (const record of projectFiles.list()) {
 			if (record.archived) continue;
 			const existing = this.projects.find((project) => project.name === record.name);
+			if (existing) existing.folder = record.folder;
 			if (!existing) {
 				this.projects.push({
+					folder: record.folder,
 					id: record.name,
 					name: record.name,
 					filterKey: record.name,
@@ -240,6 +244,7 @@ export class ProjectList extends Component {
 
 	private isValidSortOption(value: string): boolean {
 		return [
+			"manual",
 			"name-asc",
 			"name-desc",
 			"tasks-asc",
@@ -271,6 +276,7 @@ export class ProjectList extends Component {
 	private sortProjects() {
 		this.projects.sort((a, b) => {
 			switch (this.currentSort) {
+				case "manual": return this.createProjectFileManager().compareNames(a.name, b.name);
 				case "name-asc":
 					return this.collator.compare(
 						a.displayName || a.name,
@@ -418,6 +424,7 @@ export class ProjectList extends Component {
 
 		nodes.sort((a, b) => {
 			switch (this.currentSort) {
+				case "manual": return this.createProjectFileManager().compareNames(a.project.name, b.project.name);
 				case "name-asc":
 					return this.collator.compare(
 						a.project.displayName || a.project.name,
@@ -478,6 +485,7 @@ export class ProjectList extends Component {
 	}
 
 	private generateColorForProject(projectName: string): string {
+		const saved = this.createProjectFileManager().find(projectName)?.color; if (saved) return saved;
 		const colors = [
 			"#e74c3c",
 			"#3498db",
@@ -510,7 +518,10 @@ export class ProjectList extends Component {
 			cls: "fluent-project-scroll",
 		});
 
-		if (this.isTreeView) {
+		if (this.projects.some(project => project.folder)) {
+			const folder = projectFolderContainer(scrollArea, this.plugin.app);
+			for (const project of this.projects) this.renderProjectItem(folder(project.folder || ""), project, 0, false);
+		} else if (this.isTreeView) {
 			// Build tree structure first
 			this.buildTreeStructure();
 			// Render tree view
@@ -582,6 +593,9 @@ export class ProjectList extends Component {
 			},
 		});
 
+		this.createProjectFileManager().bindReorder(projectItem, project.name, () => this.projects.map(project => project.name), () => {
+			this.currentSort = "manual"; void this.saveSortPreference(); void this.loadProjects(); void this.plugin.triggerViewUpdate();
+		});
 		// Add virtual class for styling
 		if (project.isVirtual) {
 			projectItem.addClass("is-virtual");
@@ -810,7 +824,7 @@ export class ProjectList extends Component {
 				return;
 			} else {
 				// Update existing project with custom color
-				this.projects[existingIndex].color = customProject.color;
+				this.projects[existingIndex].color = this.createProjectFileManager().find(customProject.name)?.color || customProject.color;
 				this.projects[existingIndex].displayName =
 					customProject.displayName || customProject.name;
 				this.projects[existingIndex].createdAt =
@@ -857,6 +871,7 @@ export class ProjectList extends Component {
 			value: SortOption;
 			icon: string;
 		}[] = [
+			{ label: t("Manual order"), value: "manual", icon: "grip-vertical" },
 			{ label: t("Name (A-Z)"), value: "name-asc", icon: "arrow-up-a-z" },
 			{
 				label: t("Name (Z-A)"),

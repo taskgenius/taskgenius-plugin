@@ -1,3 +1,4 @@
+import { calendarWeekNumber } from "@/utils/date/calendar-week";
 import { renderMissedNotification } from "./missed-notification";
 import { App, Component, MarkdownRenderChild, Menu, Notice, TFile, debounce, normalizePath, setIcon, setTooltip, type Events } from "obsidian";
 import type { HabitStore } from "../habit-store";
@@ -228,7 +229,7 @@ export class HabitsCompact extends MarkdownRenderChild {
 		const target = habit.goalDirection === "max" ? limitOf(habit) : habit.target;
 		const readout = controls.createSpan({ cls: "habits-compact-value" });
 		readout.createSpan({ cls: "habits-compact-current", text: formatValue(total) });
-		readout.createSpan({ text: ` / ${formatValue(target)}${habit.unit ? ` ${habit.unit}` : ""}${flexible ? ` ${habit.frequency === "flexibleWeekly" ? t("This week") : t("This month")}` : ""}` });
+		readout.createSpan({ text: ` / ${formatValue(target)}${habit.unit ? ` ${habit.unit}` : ""}${flexible ? ` ${habit.frequency === "flexibleWeekly" ? (t("This week") + " · W" + calendarWeekNumber(this.selectedDate)) : t("This month")}` : ""}` });
 		const step = habit.type === "timed" ? 5 : stepOf(habit);
 		const minus = this.button(controls, "minus", t("Decrease by {n}", { n: formatValue(step) }), () => { void this.commit(habit, key, roundValue(Math.max(0, value - step))); });
 		minus.disabled = busy || value <= 0;

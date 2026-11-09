@@ -1,3 +1,4 @@
+import { calendarWeekNumber } from "@/utils/date/calendar-week";
 import {
 	App,
 	MarkdownRenderChild,
@@ -534,7 +535,7 @@ export class HabitsTable extends MarkdownRenderChild {
 	private periodColumns(today: Date): PeriodColumn[] {
 		const columns: PeriodColumn[] = [
 			{
-				label: t("This week"),
+				label: (t("This week") + " · W" + calendarWeekNumber(today)),
 				range: getStatsRange(today, "weekly", "calendar"),
 			},
 		];

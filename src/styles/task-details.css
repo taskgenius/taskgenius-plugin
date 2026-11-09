@@ -581,14 +581,12 @@
 	margin-top: 8px;
 }
 
-.tg-task-editor-modal { width: min(940px, 92vw); }
-.tg-task-editor-layout { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(260px, 1fr); gap: 24px; }
-.tg-task-editor-content textarea { width: 100%; min-height: 260px; resize: vertical; margin-top: 12px; }
-.tg-task-editor-fields { min-width: 0; }
+.tg-task-editor-modal .tg-task-editor-layout { display: flex; min-height: 340px; max-height: min(68vh, 700px); }
+.tg-task-editor-modal .tg-task-editor-content { min-width: 0; }
+.tg-task-editor-modal .tg-task-editor-content textarea { width: 100%; min-height: 260px; resize: vertical; border: 0; background: transparent; }
+.tg-task-editor-modal .field-container { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--background-modifier-border); }
+.tg-task-editor-modal .field-label { flex: 1; min-width: 70px; font-size: var(--font-ui-small); color: var(--text-muted); }
+.tg-task-editor-modal .dates-container { display: block; }
+.tg-task-editor-modal .field-container > input:not([type=checkbox]), .tg-task-editor-modal .field-container > select { max-width: 65%; }
 .tg-task-editor-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
-@media(max-width:650px) { .tg-task-editor-layout { grid-template-columns: 1fr; } }
-
-.tg-task-editor-layout { grid-template-areas: "fields content"; grid-template-columns: minmax(260px, 1fr) minmax(240px, 1.15fr); }
-.tg-task-editor-content { grid-area: content; }
-.tg-task-editor-fields { grid-area: fields; border-right: 1px solid var(--background-modifier-border); padding-right: 20px; }
-@media(max-width:650px) { .tg-task-editor-layout { grid-template-areas: "content" "fields"; grid-template-columns: 1fr; } .tg-task-editor-fields { border-right: 0; padding-right: 0; } }
+@media(max-width:768px) { .tg-task-editor-modal .tg-task-editor-layout { max-height: 70vh; overflow: auto; } .tg-task-editor-modal .quick-capture-config-panel { max-height: none; flex-shrink: 0; } }

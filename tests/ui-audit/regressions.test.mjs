@@ -33,9 +33,16 @@ const owned=[
   'utils/ui/tree-view-utils.ts',
 	'components/features/gantt/drag-pan.ts', 'components/features/gantt/task-renderer.ts', 'utils/task/priority-utils.ts', 'services/markdown-status-sync.ts', 'utils/task/filter-compatibility.ts', 'utils/task/saved-task-filters.ts', 'utils/task/project-calendar.ts', 'components/features/quadrant/quadrant-column.ts', 'components/features/table/TableRenderer.ts', 'components/features/fluent/components/SavedTaskFilterModal.ts',
 	'components/features/rewards/PointsDashboard.ts', 'managers/points-service.ts', 'managers/daily-points.ts', 'managers/daily-task-points.ts', 'managers/points-utils.ts',
+ 'utils/date/calendar-week.ts', 'components/features/fluent/components/ProjectFolders.ts', 'utils/date/date-time-picker.ts', 'managers/project-file-manager.ts', 'managers/period-notes.ts', 'icon.ts',
  'components/features/kanban/kanban.ts', 'components/features/quadrant/quadrant.ts', 'components/features/table/TableView.ts',
 ].map(file=>path.resolve('src',file));
 await build({stdin:{contents:`
+ export {calendarWeekNumber} from './src/utils/date/calendar-week';
+ export {projectFolderContainer} from './src/components/features/fluent/components/ProjectFolders';
+ export {openPeriodNote} from './src/managers/period-notes';
+ export {attachDateTimePicker} from './src/utils/date/date-time-picker';
+ export {ProjectFileManager,ProjectEditModal,ProjectCreateModal} from './src/managers/project-file-manager';
+ export {getStatusIcon} from './src/icon';
  export {ContentComponent} from './src/components/features/task/view/content';
  export {TaskRendererComponent} from './src/components/features/gantt/task-renderer';
  export {MarkdownStatusSync} from './src/services/markdown-status-sync';
@@ -90,10 +97,10 @@ await build({stdin:{contents:`
    });
  }}],
 });
-const {QuickCaptureModal,getStatusText,DataflowOrchestrator,TaskPlanner,GanttComponent,TaskDetailsModal,TaskMetadataEditor,KanbanComponent,QuadrantComponent,QUADRANT_DEFINITIONS,TableView,TableRenderer,FluentSidebar,Menu,QuadrantColumnComponent,registerGanttPan,MarkdownStatusSync,TaskRendererComponent,SavedTaskFilterModal,ContentComponent,TopNavigation,FluentDataManager,FluentComponentManager,CalendarComponent,ViewComponentManager,FluentTaskView,HabitModal,PointsDashboard,snapshotViewSettings,AuthMiddleware,ProjectList,vaultFixture,moment}=await import(pathToFileURL(path.join(directory,'ui.mjs')));
+const {calendarWeekNumber,projectFolderContainer,getStatusIcon,ProjectFileManager,ProjectEditModal,ProjectCreateModal,openPeriodNote,attachDateTimePicker,QuickCaptureModal,getStatusText,DataflowOrchestrator,TaskPlanner,GanttComponent,TaskDetailsModal,TaskMetadataEditor,KanbanComponent,QuadrantComponent,QUADRANT_DEFINITIONS,TableView,TableRenderer,FluentSidebar,Menu,QuadrantColumnComponent,registerGanttPan,MarkdownStatusSync,TaskRendererComponent,SavedTaskFilterModal,ContentComponent,TopNavigation,FluentDataManager,FluentComponentManager,CalendarComponent,ViewComponentManager,FluentTaskView,HabitModal,PointsDashboard,snapshotViewSettings,AuthMiddleware,ProjectList,vaultFixture,moment}=await import(pathToFileURL(path.join(directory,'ui.mjs')));
 function environment(){
  const dom=new JSDOM('<body></body>',{url:'https://obsidian.invalid',pretendToBeVisual:true});installObsidianDom(dom.window);
- globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.HTMLElement=dom.window.HTMLElement;globalThis.Window=dom.window.Window;globalThis.Document=dom.window.Document;
+ globalThis.window=dom.window;globalThis.document=dom.window.document;globalThis.HTMLElement=dom.window.HTMLElement;globalThis.Window=dom.window.Window;globalThis.Event=dom.window.Event;globalThis.Document=dom.window.Document;
  const frames=new Map();let sequence=0;
  window.requestAnimationFrame=fn=>{frames.set(++sequence,fn);return sequence;};window.cancelAnimationFrame=id=>frames.delete(id);
  const tick=()=>{const pending=[...frames.values()];frames.clear();pending.forEach(fn=>fn());};
@@ -193,13 +200,13 @@ test('calendar next/previous/today update the existing header for all built-in p
 });
 test('projects overview leaves the sidebar project shortcuts enabled and selection coherent',()=>{
  const e=environment();const view=Object.create(FluentTaskView.prototype);let enabled,selected;
- Object.assign(view,{isInitializing:false,isLoading:false,loadError:null,currentViewId:'projects',viewState:{viewMode:'list'},tasks:[task('a')],filteredTasks:[task('a')],topNavigation:{updateAvailableModes(){},updateContext(){},setViewMode(){}},layoutManager:{updateTaskMark(){},setSidebarActiveItem(){},setActiveProject:value=>selected=value,sidebar:{setProjectListEnabled:value=>enabled=value}},selectionManager:{updateTaskCache(){}},componentManager:{getAvailableModesForView:()=>[],switchView(){}},ensureViewModeForView:()=> 'list'});
+ Object.assign(view,{app:e.app,plugin:e.plugin,loadedFilterKey:':projects',dataManager:{applyFilters:tasks=>tasks},isInitializing:false,isLoading:false,loadError:null,currentViewId:'projects',viewState:{viewMode:'list'},tasks:[task('a')],filteredTasks:[task('a')],topNavigation:{updateAvailableModes(){},updateContext(){},setViewMode(){},setActivePreset(){}},layoutManager:{updateTaskMark(){},setSidebarActiveItem(){},setActiveProject:value=>selected=value,sidebar:{setProjectListEnabled:value=>enabled=value}},selectionManager:{updateTaskCache(){}},componentManager:{getAvailableModesForView:()=>[],switchView(){}},ensureViewModeForView:()=> 'list'});
  view.updateView();assert.equal(enabled,true);assert.equal(selected,null);
  view.viewState.selectedProject='毕业设计';view.updateView();assert.equal(selected,'毕业设计');e.close();
 });
 test('an empty task cache does not replace the independent habit page with a task empty state',()=>{
  const e=environment();const view=Object.create(FluentTaskView.prototype);let switched=false,empty=false;
- Object.assign(view,{isInitializing:false,isLoading:false,loadError:null,currentViewId:'habit',viewState:{viewMode:'list'},tasks:[],filteredTasks:[],layoutManager:{updateTaskMark(){},setSidebarActiveItem(){},setActiveProject(){},sidebar:{setProjectListEnabled(){}}},selectionManager:{updateTaskCache(){}},componentManager:{getAvailableModesForView:()=>[],isContentBasedView:()=>false,switchView(){switched=true;},renderEmptyState(){empty=true;}},ensureViewModeForView:()=> 'list'});
+ Object.assign(view,{app:e.app,plugin:e.plugin,loadedFilterKey:':habit',dataManager:{applyFilters:tasks=>tasks},isInitializing:false,isLoading:false,loadError:null,currentViewId:'habit',viewState:{viewMode:'list'},tasks:[],filteredTasks:[],layoutManager:{updateTaskMark(){},setSidebarActiveItem(){},setActiveProject(){},sidebar:{setProjectListEnabled(){}}},selectionManager:{updateTaskCache(){}},componentManager:{getAvailableModesForView:()=>[],isContentBasedView:()=>false,switchView(){switched=true;},renderEmptyState(){empty=true;}},ensureViewModeForView:()=> 'list'});
  view.updateView();assert.equal(switched,true);assert.equal(empty,false);e.close();
 });
 test('settings refresh preserves view state while refreshing navigation, configuration and data',async()=>{
@@ -307,7 +314,7 @@ test('project Gantt bar drags and resize handles dispatch date changes instead o
  const params={app:e.app,taskGroupEl:group,dayWidth:50,preparedTasks:[{task:project,y:20,startX:100,width:150,isMilestone:false,level:0}],showTaskLabels:false,useMarkdownRenderer:false,parentComponent:renderer,handleTaskClick:()=>opened++,handleTaskContextMenu(){},onDateChange:(task,days,edge)=>changes.push({days,edge})};
  renderer.updateParams(params);
  const pointer=(type,x)=>new window.MouseEvent(type,{bubbles:true,button:0,clientX:x});
- group.querySelector('.gantt-task-bar').dispatchEvent(pointer('pointerdown',100));document.dispatchEvent(pointer('pointermove',200));document.dispatchEvent(pointer('pointerup',200));
+ group.querySelector('.gantt-task-bar').dispatchEvent(pointer('pointerdown',100));document.dispatchEvent(pointer('pointermove',200));assert.match(document.querySelector('.gantt-drag-date-hint').textContent,/2026-11-10.*2026-11-12/);document.dispatchEvent(pointer('pointerup',200));assert.equal(document.querySelector('.gantt-drag-date-hint'),null);
  assert.deepEqual(changes,[{days:2,edge:'move'}]);assert.equal(opened,0);
  renderer.updateParams(params);
  group.querySelector('[data-edge="end"]').dispatchEvent(pointer('pointerdown',250));document.dispatchEvent(pointer('pointermove',300));document.dispatchEvent(pointer('pointerup',300));
@@ -522,4 +529,100 @@ test('completion points stay in the habit total and are excluded from the points
  Object.assign(dashboard,{app:e.app,plugin:e.plugin,bodyEl:root,query:'',historyFilter:'all',snapshot:{manual:[{id:'manual',date:'2026-11-08',text:'Bonus',points:10}],ledger:[{id:'task:t:2026-11-08',source:'task',createdAt:Date.now(),label:'Task award',delta:2}],automaticTasks:{habitPaths:['Habits/Tasks.md'],days:[{date:'2026-11-08',supplement:3}]},summaries:[{path:'Habits/Tasks.md',name:'Completed task habit',entries:4,points:4,todayPoints:4}]}});
  dashboard.renderHistory();const panels=root.querySelectorAll('.tg-points-panel');assert.match(panels[0].textContent,/Bonus/);assert.doesNotMatch(panels[0].textContent,/Task award|Completed task habit/);
  assert.match(panels[1].textContent,/Completed task habit/);assert.equal(panels[1].querySelector('.tg-points-entry').children[1].textContent,'9');e.close();
+});
+
+
+test('project color and manual order persist in canonical notes without rewriting tasks', async () => {
+ const e=environment();
+ for(const name of ['Alpha','Beta','Gamma']) await e.app.vault.create(`Projects/${name}.md`,'---\n'+JSON.stringify({project:name})+'\n---\n- [ ] Keep original '+name);
+ const manager=new ProjectFileManager(e.app),before=[...e.text.entries()];
+ await manager.update('Beta',{color:'#abcdef'});await manager.reorder(['Gamma','Alpha','Beta']);
+ const reloaded=new ProjectFileManager(e.app);assert.equal(reloaded.find('Beta').color,'#abcdef');
+ assert.deepEqual(['Alpha','Beta','Gamma'].sort((a,b)=>reloaded.compareNames(a,b)),['Gamma','Alpha','Beta']);
+ assert.deepEqual([...e.text.entries()],before);await assert.rejects(()=>manager.update('Alpha',{color:'invalid'}));e.close();
+});
+
+test('dragging a project persists its drop order rather than assigning a task project tag', async()=>{
+ const e=environment();for(const name of ['A','B','C']){const file=await e.app.vault.create(`Projects/${name}.md`,'');e.metadata.set(file.path,{frontmatter:{project:name}});}
+ const manager=new ProjectFileManager(e.app),el=document.body.createDiv();let changed=false;manager.bindReorder(el,'A',()=>['A','B','C'],()=>changed=true);
+ el.getBoundingClientRect=()=>({top:0,height:40});const event=new window.Event('drop',{bubbles:true,cancelable:true});Object.defineProperties(event,{dataTransfer:{value:{getData:type=>type==='application/x-taskgenius-project'?'C':''}},clientY:{value:5}});el.dispatchEvent(event);await new Promise(resolve=>setTimeout(resolve,0));
+ assert.equal(changed,true);assert.deepEqual(manager.list().sort((a,b)=>a.order-b.order).map(p=>p.name),['C','A','B']);e.close();
+});
+
+test('view filters restore independent presets, advanced rules and workspace scope after reopening',()=>{
+ const e=environment(),view=Object.create(FluentTaskView.prototype);Object.assign(view,{app:e.app,plugin:e.plugin,workspaceId:'one',currentViewId:'inbox',isInitializing:false,viewState:{filters:{}},activeTaskPreset:null,topNavigation:{setActivePreset(id){this.id=id;}}});
+ view.restoreViewFilters();view.activeTaskPresetId='builtin-completed';view.liveFilterState={rootCondition:'all',filterGroups:[{id:'due',filters:[]}]};view.saveViewFilters();
+ view.currentViewId='calendar';view.restoreViewFilters();assert.equal(view.activeTaskPresetId,null);assert.equal(view.liveFilterState,null);view.activeTaskPresetId='builtin-todo';view.saveViewFilters();
+ view.currentViewId='inbox';view.restoreViewFilters();assert.equal(view.activeTaskPresetId,'builtin-completed');assert.equal(view.liveFilterState.filterGroups[0].id,'due');
+ view.workspaceId='two';view.restoreViewFilters();assert.equal(view.activeTaskPresetId,null);view.workspaceId='one';view.loadedFilterKey='';view.restoreViewFilters();assert.equal(view.topNavigation.id,'builtin-completed');e.close();
+});
+
+test('native date/time selectors support a date only, explicit midnight, and clearing',()=>{
+ const e=environment(),root=document.body.createDiv(),input=root.createEl('input');input.value='2026-11-09 08:15';let changed=0;input.addEventListener('change',()=>changed++);attachDateTimePicker(input,'Due date');
+ const date=root.querySelector('input[type=date]'),time=root.querySelector('input[type=time]');assert.equal(time.value,'08:15');
+ date.value='2026-11-12';date.dispatchEvent(new window.Event('change'));assert.equal(input.value,'2026-11-12 08:15');
+ time.value='00:00';time.dispatchEvent(new window.Event('change'));assert.equal(input.value,'2026-11-12 00:00');time.value='';time.dispatchEvent(new window.Event('change'));assert.equal(input.value,'2026-11-12');
+ date.value='';date.dispatchEvent(new window.Event('change'));assert.equal(input.value,'');assert.equal(time.disabled,true);assert.equal(changed,4);e.close();
+});
+
+test('daily-note destination is selected with a date picker and forwarded to capture options',()=>{
+ const e=environment();e.plugin.settings.quickCapture={targetType:'daily-note',dailyNoteSettings:{folder:'Journal',format:'YYYY-MM-DD'}};const capture=new QuickCaptureModal(e.app,e.plugin);capture.plugin=e.plugin;capture.taskMetadata={};capture.sanitizeFilePath=value=>value;capture.tempTargetFilePath='Journal/2026-11-09.md';const root=document.body.createDiv();capture.createTargetFileSelector(root);
+ const date=root.querySelector('input[type=date]');assert.ok(date);date.value='2026-10-31';date.dispatchEvent(new window.Event('change'));assert.equal(capture.taskMetadata.dailyNoteDate,'2026-10-31');assert.equal(capture.tempTargetFilePath,'Journal/2026-10-31.md');e.close();
+});
+
+test('periodic notes reuse existing folders, templates and ISO week years, creating once without overwriting',async()=>{
+ const e=environment(),opened=[];e.app.workspace.getLeaf=()=>({openFile:async file=>opened.push(file.path)});
+ const settings={};for(const [period,format] of [['daily','YYYY-MM-DD'],['weekly','GGGG-[W]WW'],['monthly','YYYY-MM'],['yearly','YYYY']])settings[period]={enabled:true,folder:`Journal/${period}`,format,template:'Templates/Period'};
+ e.text.set('.obsidian/plugins/periodic-notes/data.json',JSON.stringify(settings));await e.app.vault.create('Templates/Period.md','# {{title}}\n{{date:YYYY-MM-DD}}\nKeep original template');
+ const date=new Date(2027,0,1,12);for(const period of Object.keys(settings))await openPeriodNote(e.app,period,date);
+ assert.ok(e.files.has('Journal/weekly/2026-W53.md'));assert.match(e.text.get('Journal/daily/2027-01-01.md'),/# 2027-01-01/);
+ const file=e.files.get('Journal/daily/2027-01-01.md');e.text.set(file.path,'Existing diary');await Promise.all([openPeriodNote(e.app,'daily',date),openPeriodNote(e.app,'daily',date)]);assert.equal(e.text.get(file.path),'Existing diary');
+ assert.equal([...e.files.keys()].filter(path=>path==='Journal/weekly/2026-W53.md').length,1);assert.equal(opened.length,6);e.close();
+});
+
+test('calendar week title includes its week number and exposes all four period-note buttons',()=>{
+ const e=environment(),calendar=new CalendarComponent(e.app,e.plugin,document.body.createDiv());calendar.currentDate=moment('2026-11-09');calendar.currentViewMode='week';calendar.renderHeader();assert.match(calendar.dateDisplayEl.textContent,/Week 46/);assert.equal(calendar.headerEl.querySelectorAll('.calendar-period-notes button').length,4);calendar.containerEl.remove();e.close();
+});
+
+test('the legacy pause mark and pause names all resolve to the same pause icon',()=>{
+ assert.equal(getStatusIcon('archived'),getStatusIcon('paused'));assert.equal(getStatusIcon('pause'),getStatusIcon('paused'));assert.match(getStatusIcon('pause'),/M9 4H5/);
+});
+
+
+test('export actual planner DOM for the optional independent browser geometry check',async()=>{
+ if(!process.env.TG_LAYOUT_DIR)return;
+ const e=environment(),planner=new TaskPlanner(e.plugin,document.body.createDiv());planner.setTasks(Array.from({length:100},(_,index)=>task(`Backlog task ${index+1}`)));
+ const target=process.env.TG_LAYOUT_DIR;fs.mkdirSync(target,{recursive:true});fs.writeFileSync(path.join(target,'planner.html'),planner.containerEl.outerHTML);planner.unload();
+ e.plugin.settings.rewards={rewardItems:[],pointsLedger:[]};const points=new PointsDashboard(e.app,e.plugin,document.body.createDiv());points.onload();await new Promise(resolve=>setTimeout(resolve,0));
+ const date=moment().format('YYYY-MM-DD');points.snapshot={...points.snapshot,manual:[{id:'one',date,text:'Example bonus',points:10},{id:'two',date,text:'Example redemption',points:-20}],ledger:[],automaticTasks:{days:[],habitPaths:[]},summaries:[{path:'habit',name:'Example habit',points:30,todayPoints:10,entries:3,dailyPoints:{[date]:10}}]};points.activeTab='history';points.renderTabs();points.renderBody();fs.writeFileSync(path.join(target,'points.html'),points.containerEl.outerHTML);points.unload();e.close();
+});
+
+
+test('calendar weeks reset at January 1 and respect Monday-based boundaries',()=>{
+ assert.equal(calendarWeekNumber(new Date(2027,0,1)),1);assert.equal(calendarWeekNumber(new Date(2027,0,4)),2);assert.equal(calendarWeekNumber(new Date(2026,10,9)),46);assert.equal(calendarWeekNumber(new Date(2028,0,1)),1);
+});
+
+test('project folders move the same canonical note and preserve its task content and name',async()=>{
+ const e=environment(),file=await e.app.vault.create('Projects/Research.md','Keep all tasks');e.metadata.set(file.path,{frontmatter:{project:'Research'}});let moved;
+ e.app.fileManager.renameFile=async(note,path)=>{moved={from:note.path,to:path};const old=note.path,content=e.text.get(old),meta=e.metadata.get(old);e.files.delete(old);e.text.delete(old);e.metadata.delete(old);note.path=path;e.files.set(path,note);e.text.set(path,content);e.metadata.set(path,meta);};
+ const manager=new ProjectFileManager(e.app);await manager.update('Research',{folder:'Work/Study'});assert.deepEqual(moved,{from:'Projects/Research.md',to:'Projects/Work/Study/Research.md'});assert.equal(manager.find('Research').folder,'Work/Study');assert.equal(e.text.get(file.path),'Keep all tasks');await assert.rejects(()=>manager.update('Research',{folder:'../outside'}));e.close();
+});
+
+test('folder navigation expands and collapses without creating a project or changing task membership',()=>{
+ const e=environment(),root=document.body.createDiv(),folder=projectFolderContainer(root,e.app);folder('Work/Study').createSpan({text:'Research'});assert.equal(root.querySelectorAll('.tg-project-folder-row').length,2);const header=root.querySelector('button');header.click();assert.equal(header.getAttribute('aria-expanded'),'false');header.click();assert.equal(header.getAttribute('aria-expanded'),'true');assert.equal(e.files.size,0);e.close();
+});
+
+test('choosing a project shows its existing note as the task destination',async()=>{
+ const e=environment();const file=await e.app.vault.create('Projects/Work/Research.md','');e.metadata.set(file.path,{frontmatter:{project:'Research'}});const capture=new QuickCaptureModal(e.app,e.plugin);Object.assign(capture,{app:e.app,plugin:e.plugin,currentMode:'checkbox',taskMetadata:{project:'Research'}});const root=document.body.createDiv();capture.createTargetFileSelector(root);assert.equal(capture.tempTargetFilePath,file.path);assert.match(root.textContent,/Projects\/Work\/Research.md/);assert.equal(root.querySelector('[contenteditable=true]'),null);e.close();
+});
+
+test('points history date filters use inclusive last 7 or 30 local days and exclude future entries',()=>{
+ const e=environment(),page=new PointsDashboard(e.app,e.plugin,document.body.createDiv()),today=new Date();const date=delta=>{const d=new Date(today);d.setDate(d.getDate()+delta);return moment(d).format('YYYY-MM-DD');};page.historyFilter='week';assert.equal(page.historyDateMatches(date(-6)),true);assert.equal(page.historyDateMatches(date(-7)),false);assert.equal(page.historyDateMatches(date(1)),false);page.historyFilter='month';assert.equal(page.historyDateMatches(date(-29)),true);assert.equal(page.historyDateMatches(date(-30)),false);e.close();
+});
+
+
+test('zero habit points stay hidden and recent range filters sum daily contributions',()=>{
+ const e=environment();e.plugin.settings.rewards={rewardItems:[],pointsLedger:[]};const page=new PointsDashboard(e.app,e.plugin,document.body.createDiv());page.bodyEl=document.body.createDiv();page.scope=page.addChild(new (class {unload(){}})());page.activeTab='history';const today=moment().format('YYYY-MM-DD');
+ page.snapshot={manual:[],ledger:[],automaticTasks:{days:[],habitPaths:[]},summaries:[{name:'Zero habit',path:'zero',points:0,todayPoints:0,entries:1,dailyPoints:{}},{name:'Paid habit',path:'paid',points:100,todayPoints:10,entries:3,dailyPoints:{[today]:10,'2020-01-01':90}}]};
+ page.historyFilter='week';page.renderHistory();assert.doesNotMatch(page.bodyEl.textContent,/Zero habit/);assert.match(page.bodyEl.textContent,/Paid habit/);assert.doesNotMatch(page.bodyEl.textContent,/100/);assert.match(page.bodyEl.textContent,/10/);e.close();
 });

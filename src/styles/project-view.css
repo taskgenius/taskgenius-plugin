@@ -354,3 +354,8 @@
 	background: var(--background-modifier-hover);
 	color: var(--text-normal);
 }
+
+.tg-project-folder-row { display:flex; align-items:center; gap:6px; width:100%; background:transparent; border:0; box-shadow:none; color:var(--text-muted); padding:8px 4px; justify-content:flex-start; text-align:left; }
+.tg-project-folder-row svg { width:15px; height:15px; }
+.tg-project-folder-children { padding-left:14px; }
+.tg-project-folder-children[hidden] { display:none; }

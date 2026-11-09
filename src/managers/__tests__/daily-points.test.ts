@@ -33,3 +33,9 @@ test("bonus and reward descriptions remain intact, including debts and items wit
 	expect(pointListItems(values).map(item => item.text)).toEqual(values);
 	expect(pointListItems(values).map(item => item.amount)).toEqual([50, null, -2000, -4200]);
 });
+
+
+test("daily point deltas keep a weekly allowance when filtering a recent date range", () => {
+ const [summary] = calculateDailyHabitPoints([habit({ type: "repetition", frequency: "weekly", target: 3, bravoPoints: -10, records: { "2026-11-02": 3, "2026-11-03": 2, "2026-11-09": 1 } })], {});
+ expect(summary.points).toBe(-20);expect(summary.dailyPoints).toEqual({ "2026-11-02": 0, "2026-11-03": -20, "2026-11-09": 0 });
+});

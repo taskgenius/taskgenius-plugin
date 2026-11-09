@@ -1,3 +1,4 @@
+import { ProjectFileManager } from "@/managers/project-file-manager";
 import {
 	App,
 	Modal,
@@ -32,6 +33,7 @@ export type QuickCaptureMode = "checkbox" | "file";
  * Task metadata interface
  */
 export interface TaskMetadata {
+	dailyNoteDate?: string;
 	datePrecision?: Record<string, "date" | "datetime" | undefined>;
 	startDate?: Date;
 	dueDate?: Date;
@@ -207,7 +209,7 @@ export abstract class BaseQuickCaptureModal extends Modal {
 		) {
 			this.tempTargetFilePath = this.taskMetadata.customFileName;
 		} else if (settings.targetType === "daily-note") {
-			const dateStr = moment().format(settings.dailyNoteSettings.format);
+			const dateStr = moment(this.taskMetadata.dailyNoteDate || undefined).format(settings.dailyNoteSettings.format);
 			const pathWithDate = settings.dailyNoteSettings.folder
 				? `${settings.dailyNoteSettings.folder}/${dateStr}.md`
 				: `${dateStr}.md`;
@@ -619,6 +621,7 @@ export abstract class BaseQuickCaptureModal extends Modal {
 
 		const captureOptions = {
 			...this.plugin.settings.quickCapture,
+			dailyNoteDate: this.taskMetadata.dailyNoteDate,
 			project: this.currentMode === "checkbox" ? this.taskMetadata.project : undefined,
 			projectTagPrefixes: Object.values(this.plugin.settings.projectTagPrefix || {}).map(String),
 			targetFile,
@@ -663,8 +666,9 @@ export abstract class BaseQuickCaptureModal extends Modal {
 
 			// Resolve the actual file path
 			let resolvedPath = targetFile;
-			if (this.plugin.settings.quickCapture.targetType === "daily-note") {
-				const dateStr = moment().format(
+			if (this.taskMetadata.project) { resolvedPath = new ProjectFileManager(this.app).find(this.taskMetadata.project)?.file.path || targetFile; }
+			else if (this.plugin.settings.quickCapture.targetType === "daily-note") {
+				const dateStr = moment(this.taskMetadata.dailyNoteDate || undefined).format(
 					this.plugin.settings.quickCapture.dailyNoteSettings.format,
 				);
 				const folder =

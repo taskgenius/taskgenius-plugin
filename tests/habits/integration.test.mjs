@@ -413,3 +413,13 @@ test('native habit cards hide the duplicate date and legend, show habit icons an
  assert.equal(root.querySelector('.tg-native-habit-cards').dataset.columns,'3');assert.match(root.querySelector('.tg-native-habit-icon').textContent,/💪/);assert.equal(root.querySelector('.tg-native-heat-legend'),null);assert.equal(root.querySelector('.tg-native-habit-nav input[type=date]'),null);assert.ok(root.querySelector('.tg-habit-add'));assert.ok(root.querySelector('[aria-label="Missed habits"]'));
  cards.unload();dom.window.close();delete globalThis.document;delete globalThis.window;
 });
+
+
+test('ignore all past misses dismisses old notifications without changing records, scores or future misses',async()=>{
+ const f=vaultFixture(),config=settings();await f.app.vault.createFolder('Habits');
+ for(const name of ['Exercise','Read'])await f.app.vault.create(`Habits/${name}.md`,'---\n'+JSON.stringify({habit:true,name,type:'binary',frequency:'daily',startDate:'2026-11-01',records:{'2026-11-01':1},bravoPoints:10})+'\n---\n');
+ const store=new HabitStore(f.app,()=>config,async()=>{});assert.ok(missedInstances(store.getHabits(),date('2026-11-09')).length);
+ assert.equal(await store.ignoreAllPastMisses('2026-11-09'),2);assert.equal(missedInstances(store.getHabits(),date('2026-11-09')).length,0);
+ for(const h of store.getHabits()){assert.deepEqual(h.records,{'2026-11-01':1});assert.equal(f.metadata.get(h.path).frontmatter.bravoPoints,10);assert.equal(h.startDate,'2026-11-01');}
+ assert.ok(missedInstances(store.getHabits(),date('2026-11-10')).every(item=>item.dateKey==='2026-11-09'));assert.ok(missedInstances(store.getHabits(),date('2026-11-10')).length);
+});

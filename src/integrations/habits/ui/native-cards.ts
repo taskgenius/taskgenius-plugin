@@ -1,3 +1,4 @@
+import { calendarWeekNumber } from "@/utils/date/calendar-week";
 import { renderMissedNotification } from "./missed-notification";
 import { applyHabitIcon } from "./icon-suggest-modal";
 import { App, Component, Events, MarkdownRenderChild, Menu, Notice, setIcon } from "obsidian";
@@ -103,7 +104,7 @@ export class NativeHabitCards extends MarkdownRenderChild {
 			const total = isFlexible(habit) ? flexiblePeriodTotal(habit, this.selectedDate) : value;
 			const goal = max ? limitOf(habit) : habit.type === "binary" && !isFlexible(habit) ? 1 : habit.target;
 			const readout = card.createDiv({ cls: "tg-native-habit-goal" });
-			readout.setText(`${max ? t("At most") : t("At least")}: ${formatValue(total)} / ${formatValue(goal)}${habit.unit ? ` ${habit.unit}` : ""}${isFlexible(habit) ? ` · ${habit.frequency === "flexibleWeekly" ? t("This week") : t("This month")}` : ""}`);
+			readout.setText(`${max ? t("At most") : t("At least")}: ${formatValue(total)} / ${formatValue(goal)}${habit.unit ? ` ${habit.unit}` : ""}${isFlexible(habit) ? ` · ${habit.frequency === "flexibleWeekly" ? (t("This week") + " · W" + calendarWeekNumber(this.selectedDate)) : t("This month")}` : ""}`);
 			if (isFlexible(habit) && habit.dailyTarget) readout.createSpan({ text: ` · ${t("Daily goal")}: ${habit.dailyTarget}` });
 			if (isPausedOn(habit, key)) { controls.createSpan({ text: t("Paused") }); continue; }
 			if (habit.type === "binary" && !isFlexible(habit)) {

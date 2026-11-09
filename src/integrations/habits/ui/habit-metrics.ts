@@ -1,3 +1,4 @@
+import { calendarWeekNumber } from "@/utils/date/calendar-week";
 import {
 	App,
 	debounce,
@@ -1256,7 +1257,7 @@ export class HabitMetrics extends MarkdownRenderChild {
 					v: rate ?? 0,
 					tip: [
 						habit.name,
-						t("Week of {date}", { date: this.formatDate(column.start, true) }),
+						t("Week of {date}", { date: this.formatDate(column.start, true) }) + " · W" + calendarWeekNumber(column.start),
 						rate === null ? t("Not due") : `${rate}%`,
 					],
 				});

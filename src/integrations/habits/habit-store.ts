@@ -282,6 +282,7 @@ export class HabitStore {
 			failed: this.readDateList(fm[k.failed]),
 			skipped: this.readDateList(fm[k.skipped]),
 			ignoredMisses: this.readDateList(fm.ignoredMisses),
+			ignoredMissesBefore: this.readDateString(fm.ignoredMissesBefore),
 			stopped: fm[k.stopped] === true,
 			stopDate: this.readDateString(fm[k.stopDate]),
 			records: this.readRecords(fm[k.records]),
@@ -1097,8 +1098,8 @@ export class HabitStore {
 		await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
 			const fm = frontmatter as Record<string, unknown>;
 			const latest = this.parseFile(file, fm);
-			const current = { ...habit, ...latest, records: this.readRecords(fm[k.records]), reschedules: this.readReschedules(fm[k.reschedules]), ignoredMisses: this.readDateList(fm.ignoredMisses) };
-			if (!isRescheduleEligible(current) || from >= toDateKey(new Date()) || !isDue(current, new Date(`${from}T00:00:00`)) || isComplete(current, from) || current.ignoredMisses?.includes(from) || !isRescheduleTargetOpen(current, to) || (current.records[to] || 0) > 0) throw new Error(t("That day is already due or has a record. Choose another day."));
+			const current = { ...habit, ...latest, records: this.readRecords(fm[k.records]), reschedules: this.readReschedules(fm[k.reschedules]), ignoredMisses: this.readDateList(fm.ignoredMisses), ignoredMissesBefore: this.readDateString(fm.ignoredMissesBefore) };
+			if (!isRescheduleEligible(current) || from >= toDateKey(new Date()) || !isDue(current, new Date(`${from}T00:00:00`)) || isComplete(current, from) || current.ignoredMisses?.includes(from) || (current.ignoredMissesBefore && from < current.ignoredMissesBefore) || !isRescheduleTargetOpen(current, to) || (current.records[to] || 0) > 0) throw new Error(t("That day is already due or has a record. Choose another day."));
 			const reschedules = this.readReschedules(fm[k.reschedules]).filter(
 				(r) => r.from !== from,
 			);
@@ -1108,6 +1109,20 @@ export class HabitStore {
 		new Notice(
 			t('Rescheduled "{name}" to {date}.', { name: habit.name, date: to }),
 		);
+	}
+
+	/** Dismiss old reminders without changing any records, scores or future due days. */
+	async ignoreAllPastMisses(today = toDateKey(new Date())): Promise<number> {
+		let count = 0;
+		for (const habit of this.getHabits()) {
+			const file = this.fileForHabit(habit); if (!file) continue;
+			await this.app.fileManager.processFrontMatter(file, fm => {
+				const previous = this.readDateString(fm.ignoredMissesBefore);
+				fm.ignoredMissesBefore = previous > today ? previous : today;
+			});
+			count++;
+		}
+		return count;
 	}
 
 	async ignoreMissedDay(habit: HabitDefinition, dateKey: string): Promise<void> {

@@ -141,6 +141,7 @@ export interface HabitReschedule {
  */
 export interface HabitDefinition {
 	ignoredMisses?: string[];
+	ignoredMissesBefore?: string;
 	/** Path of the backing note. Used as a stable identifier. */
 	path: string;
 	/** Display name, taken from the note's basename. */

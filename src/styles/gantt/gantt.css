@@ -515,3 +515,5 @@
 .gantt-task-item:hover .gantt-resize-handle { opacity: 1; }
 
 .gantt-scroll-container.is-panning { cursor: grabbing; user-select: none; }
+
+.gantt-drag-date-hint { position: fixed; z-index: 10000; pointer-events: none; padding: 6px 10px; border-radius: 6px; background: var(--background-secondary); color: var(--text-normal); box-shadow: var(--shadow-s); border: 1px solid var(--background-modifier-border); font-variant-numeric: tabular-nums; }

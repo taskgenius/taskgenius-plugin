@@ -61,3 +61,7 @@ habits-*-jest.json
 # Local UI audit verification
 /audit-*.log
 /audit-*.json
+
+# Independent local browser layout artifacts
+/output/playwright/
+/.playwright-cli/

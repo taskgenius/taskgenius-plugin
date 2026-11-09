@@ -1,5 +1,5 @@
 import { t as ht } from "@/integrations/habits/i18n";
-import { Setting } from "obsidian";
+import { Setting, Notice } from "obsidian";
 import { TaskProgressBarSettingTab } from "@/setting";
 import { t } from "@/translations/helper";
 import { HabitList } from "@/components/features/habit/components/HabitSettingList";
@@ -30,6 +30,13 @@ export function renderHabitSettingsTab(
 			});
 	});
 
+	new Setting(containerEl).setName(t("Ignore all past missed habits")).setDesc(t("Dismiss reminders before today. Habit records and points stay unchanged."))
+		.addButton(button => button.setButtonText(t("Ignore past misses")).onClick(async () => {
+			button.setDisabled(true);
+			try { const integration = await settingTab.plugin.ensureHabitsIntegration(); await integration.store.ignoreAllPastMisses(); integration.events.trigger("settings-changed"); new Notice(t("Past missed habit reminders ignored.")); }
+			catch (error) { new Notice(String(error)); }
+			finally { button.setDisabled(false); }
+		}));
 	const habitContainer = containerEl.createDiv({
 		cls: "habit-settings-container",
 	});

@@ -45,7 +45,7 @@ export class PointsDashboard extends Component {
 		if (this.settingsMode) new SearchComponent(tools).setPlaceholder(t("Search bonuses, rewards and records"))
 			.onChange(value => { this.query = value.toLocaleLowerCase().trim(); this.renderBody(); });
 		const filter = tools.createEl("select", { attr: { "aria-label": t("Filter") } });
-		for (const [value, label] of [["all", "All"], ["today", "Today"], ["positive", "Points earned"], ["negative", "Points spent"]]) filter.createEl("option", { value, text: t(label) });
+		for (const [value, label] of [["all", "All"], ["today", "Today"], ["week", "Last 7 days"], ["month", "Last 30 days"], ["positive", "Points earned"], ["negative", "Points spent"]]) filter.createEl("option", { value, text: t(label) });
 		this.registerDomEvent(filter, "change", () => { this.historyFilter = filter.value; this.renderBody(); });
 		this.bodyEl = this.containerEl.createDiv({ cls: "tg-points-body" });
 		this.renderTabs();
@@ -158,6 +158,14 @@ export class PointsDashboard extends Component {
 		}
 		this.button(shop, t("Add reward"), () => this.editReward());
 	}
+	private historyDateMatches(date: string): boolean {
+		const today = localPointDate();
+		if (this.historyFilter === "today") return date === today;
+		if (!["week", "month"].includes(this.historyFilter)) return true;
+		const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - (this.historyFilter === "week" ? 6 : 29));
+		return date >= localPointDate(cutoff) && date <= today;
+	}
+	private historyAmountMatches(amount: number): boolean { return (this.historyFilter !== "positive" || amount > 0) && (this.historyFilter !== "negative" || amount < 0); }
 	private renderHistory() {
 		const snapshot = this.snapshot!;
 		const panel = this.panel(t("Points history"));
@@ -165,23 +173,26 @@ export class PointsDashboard extends Component {
 
 			...snapshot.manual.map(item => ({ id: item.id, date: item.date, label: item.text, amount: item.points, manual: true })),
 			...snapshot.ledger.filter(item => item.source !== "task").map(item => ({ id: item.id, date: pointLedgerDate(item), label: item.label, amount: item.delta, manual: false })),
-		].filter(item => this.matches(`${item.date} ${item.label}`) && (this.historyFilter !== "today" || item.date === localPointDate()) && (this.historyFilter !== "positive" || item.amount > 0) && (this.historyFilter !== "negative" || item.amount < 0)).sort((a, b) => b.date.localeCompare(a.date));
+		].filter(item => this.matches(`${item.date} ${item.label}`) && this.historyDateMatches(item.date) && this.historyAmountMatches(item.amount)).sort((a, b) => b.date.localeCompare(a.date));
 		for (const record of records) {
 			const row = panel.createDiv({ cls: "tg-points-entry" });
 			const detail = row.createDiv(); detail.createDiv({ text: record.label }); detail.createDiv({ cls: "tg-points-date", text: record.date });
 			row.createDiv({ cls: record.amount < 0 ? "tg-points-delta is-negative" : "tg-points-delta", text: `${record.amount > 0 ? "+" : ""}${numberText(record.amount)}` });
-			if (record.manual) this.button(row, t("Delete"), () => this.confirm(t("Delete this points record?"), () => pointsService(this.plugin).deleteRecord(record.id)));
+			if (record.manual) this.button(detail, t("Delete"), () => this.confirm(t("Delete this points record?"), () => pointsService(this.plugin).deleteRecord(record.id)));
 		}
 		if (!records.length) panel.createDiv({ cls: "tg-points-empty", text: t("No matching records") });
 		const habits = this.panel(t("Habit points"));
-		const completionPoints = snapshot.automaticTasks.days.filter(day => this.historyFilter !== "today" || day.date === localPointDate()).reduce((sum, day) => sum + day.supplement, 0) + snapshot.ledger.filter(item => item.source === "task" && (this.historyFilter !== "today" || pointLedgerDate(item) === localPointDate())).reduce((sum, item) => sum + item.delta, 0);
-		if (!snapshot.automaticTasks.habitPaths.length && completionPoints && this.matches(t("Completed tasks"))) {
+		const completionPoints = snapshot.automaticTasks.days.filter(day => this.historyDateMatches(day.date)).reduce((sum, day) => sum + day.supplement, 0) + snapshot.ledger.filter(item => item.source === "task" && this.historyDateMatches(pointLedgerDate(item))).reduce((sum, item) => sum + item.delta, 0);
+		if (!snapshot.automaticTasks.habitPaths.length && completionPoints && this.historyAmountMatches(completionPoints) && this.matches(t("Completed tasks"))) {
 			const row = habits.createDiv({ cls: "tg-points-entry" }); row.createDiv({ text: t("Completed tasks") }); row.createDiv({ text: numberText(completionPoints) });
 		}
 		for (const item of snapshot.summaries.filter(item => this.matches(item.name))) {
+			const base = ["week", "month"].includes(this.historyFilter) ? Object.entries(item.dailyPoints || {}).filter(([date]) => this.historyDateMatches(date)).reduce((sum, [, points]) => sum + points, 0) : this.historyFilter === "today" ? item.todayPoints : item.points;
+			const amount = roundPoints(base + (snapshot.automaticTasks.habitPaths[0] === item.path ? completionPoints : 0));
+			if (!amount || !this.historyAmountMatches(amount)) continue;
 			const row = habits.createDiv({ cls: "tg-points-entry" });
 			row.createDiv({ text: `${item.name} · ${item.entries} ${t("check-ins")}` });
-			row.createDiv({ text: numberText((this.historyFilter === "today" ? item.todayPoints : item.points) + (snapshot.automaticTasks.habitPaths[0] === item.path ? completionPoints : 0)) });
+			row.createDiv({ text: numberText(amount) });
 		}
 	}
 	private renderRules() {

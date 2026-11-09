@@ -1,3 +1,5 @@
+import { calendarWeekNumber } from "@/utils/date/calendar-week";
+import { openPeriodNote, NotePeriod } from "@/managers/period-notes";
 import { isProjectCalendarEntry } from "@/utils/task/project-calendar";
 /**
  * CalendarComponent - Enhanced calendar view using @taskgenius/calendar
@@ -164,6 +166,13 @@ export class CalendarComponent extends Component {
 		super.onload();
 		this.processTasks();
 		this.render();
+		this.registerDomEvent(this.containerEl, "click", event => {
+			const target = (event.target as Element).closest(".tg-date-number, .tg-time-header-cell");
+			if (!target) return;
+			const dated = target.closest<HTMLElement>("[data-date]");
+			const value = dated?.dataset.date;
+			if (value) { event.stopPropagation(); void this.openNote("daily", moment(value, "YYYY-MM-DD", true).toDate()); }
+		});
 
 		// Listen for calendar views configuration changes
 		this.registerEvent(
@@ -331,7 +340,10 @@ export class CalendarComponent extends Component {
 
 	private updateDateHeader = (date?: Date): void => {
 		if (date) this.currentDate = moment(date);
-		if (this.dateDisplayEl) this.dateDisplayEl.textContent = this.getCurrentDateDisplay();
+		if (this.dateDisplayEl) {
+			const mode = this.getCustomViewConfig(this.currentViewMode)?.baseViewType || this.currentViewMode;
+			this.dateDisplayEl.textContent = this.getCurrentDateDisplay() + (mode === "week" ? ` · ${t("Week")} ${calendarWeekNumber(this.currentDate.toDate(), this.getEffectiveFirstDayOfWeek())}` : "");
+		}
 	};
 
 	public refreshConfiguration(): void { this.render(); }
@@ -361,6 +373,13 @@ export class CalendarComponent extends Component {
 		const dateDisplay = this.headerEl.createSpan("calendar-current-date");
 		this.dateDisplayEl = dateDisplay;
 		this.updateDateHeader();
+		dateDisplay.setAttribute("role", "button"); dateDisplay.tabIndex = 0;
+		const openCurrent = () => { const mode = this.getCustomViewConfig(this.currentViewMode)?.baseViewType || this.currentViewMode; void this.openNote(mode === "year" ? "yearly" : mode === "month" ? "monthly" : mode === "week" || mode === "agenda" ? "weekly" : "daily", this.currentDate.toDate()); };
+		dateDisplay.onclick = openCurrent; dateDisplay.onkeydown = event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openCurrent(); } };
+		const notes = this.headerEl.createDiv("calendar-period-notes");
+		for (const [period, label] of [["daily", "Daily note"], ["weekly", "Weekly note"], ["monthly", "Monthly note"], ["yearly", "Yearly note"]] as const) {
+			new ButtonComponent(notes).setButtonText(t(label)).onClick(() => void this.openNote(period, this.currentDate.toDate()));
+		}
 
 		// View switcher - segmented control style
 		const viewGroup = this.headerEl.createDiv("calendar-view-switcher");
@@ -952,12 +971,6 @@ export class CalendarComponent extends Component {
 	 * Based on CalendarEventComponent implementation in event-renderer.ts
 	 */
 	private handleTGRenderEvent(ctx: EventRenderContext) {
-		console.log(
-			"[Calendar] handleTGRenderEvent called",
-			ctx.event.id,
-			ctx.viewType,
-		);
-
 		// First render the default content
 		ctx.defaultRender();
 
@@ -1538,6 +1551,9 @@ export class CalendarComponent extends Component {
 	/**
 	 * Handle single click on a date cell (month view)
 	 */
+	private async openNote(period: NotePeriod, date: Date): Promise<void> {
+		try { await openPeriodNote(this.app, period, date); } catch (error) { new Notice(String(error)); }
+	}
 	private handleDateClick(date: Date) {
 		// Allow event bubbling for other interactions
 		// This maintains compatibility with existing click behavior

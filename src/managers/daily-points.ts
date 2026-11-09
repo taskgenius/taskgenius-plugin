@@ -11,6 +11,7 @@ export interface HabitPointSummary {
 	units: number;
 	points: number;
 	todayPoints: number;
+	dailyPoints: Record<string, number>;
 	entries: number;
 	source: "habit" | "rule" | "default";
 }
@@ -65,9 +66,15 @@ export function calculateDailyHabitPoints(
 			return roundPoints([...periods.values()].reduce((sum, units) => sum + Math.max(0, units - allowance) * rate, 0));
 		};
 		const points = total(records);
+		const cumulative = new Map<string, number>(), dailyPoints: Record<string, number> = {};
+		for (const entry of records.slice().sort((a, b) => a.day.localeCompare(b.day))) {
+			const key = periodKey(entry.day, frequency), previous = cumulative.get(key) || 0;
+			const units = previous + (count ? 1 : Math.max(0, entry.value)); cumulative.set(key, units);
+			dailyPoints[entry.day] = roundPoints((dailyPoints[entry.day] || 0) + (Math.max(0, units - allowance) - Math.max(0, previous - allowance)) * rate);
+		}
 		return [{ name: habit.name, path: habit.path, rate, entries: records.length,
 			units: roundPoints(records.reduce((sum, entry) => sum + (count ? 1 : entry.value), 0)),
-			points, todayPoints: roundPoints(points - total(records.filter(entry => entry.day !== today))),
+			points, dailyPoints, todayPoints: roundPoints(points - total(records.filter(entry => entry.day !== today))),
 			source: hasOverride ? "habit" as const : rule ? "rule" as const : "default" as const }];
 	});
 }

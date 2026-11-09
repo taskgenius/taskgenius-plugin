@@ -43,7 +43,7 @@ describe("saved filters through the real task filtering pipeline", () => {
 	function apply(id: string, items = rows) {
 		const app = new App() as any; app.vault.getMarkdownFiles = () => [];
 		const plugin = { app, settings: { taskStatuses: { completed: "x|X", inProgress: "/", abandoned: "-", planned: "?", notStarted: " " },
-			viewConfiguration: [{ id: "table", name: "Table", hideCompletedAndAbandonedTasks: true, filterRules: {} }], globalFilterRules: {} } } as any;
+			viewConfiguration: [{ id: "table", name: "Table", hideCompletedAndAbandonedTasks: true, filterRules: {} }], globalFilterRules: { advancedFilter: { rootCondition: "all", filterGroups: [{ id: "old-global", groupCondition: "all", filters: [{ id: "impossible", property: "content", condition: "contains", value: "never matches any task" }] }] } } } } as any;
 		const preset = defaultSavedFilters().find(preset => preset.id === id)!;
 		const manager = new FluentDataManager(plugin, () => "table", () => ({ activeTaskPreset: preset.options, liveFilterState: null, currentFilterState: null, viewStateFilters: {}, selectedProject: undefined, searchQuery: "", filterInputValue: "" }), () => false);
 		return manager.applyFilters(items).map(task => task.id);

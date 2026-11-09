@@ -10,9 +10,11 @@ export function getTaskGeniusIcon() {
 }
 
 export function getStatusIcon(
-	status: "notStarted" | "inProgress" | "completed" | "abandoned" | "planned"
+	status: "notStarted" | "inProgress" | "completed" | "abandoned" | "planned" | "archived" | "paused" | "pause"
 ) {
 	switch (status) {
+		case "archived": case "paused": case "pause":
+			return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 4H5V20H9V4ZM19 4H15V20H19V4Z" fill="#A1A1A1"/></svg>`;
 		case "notStarted":
 			return `<svg width="100" height="100" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3Z" stroke="#A1A1A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 4"/>

@@ -2058,9 +2058,6 @@ const translations = {
 		"Choose the default display mode for all views. This affects how tasks are displayed when you first open a view or create a new view.",
 	"List View": "List View",
 	"Tree View": "Tree View",
-	"Global Filter Configuration": "Global Filter Configuration",
-	"Configure global filter rules that apply to all Views by default. Individual Views can override these settings.":
-		"Configure global filter rules that apply to all Views by default. Individual Views can override these settings.",
 	"Cancelled Date": "Cancelled Date",
 	"Depends On": "Depends On",
 	"Task IDs separated by commas": "Task IDs separated by commas",
@@ -3376,6 +3373,22 @@ const translations = {
 	"This task no longer exists. Refresh the task list.": "This task no longer exists. Refresh the task list.",
 	"Enter a valid date, optionally followed by HH:mm.": "Enter a valid date, optionally followed by HH:mm.",
 	"Task writer is unavailable": "Task writer is unavailable",
+	"Project color": "Project color",
+	"Manual order": "Manual order",
+	"Daily note date": "Daily note date",
+	"Weekly note": "Weekly note",
+	"Monthly note": "Monthly note",
+	"Yearly note": "Yearly note",
+	"Ignore all past missed habits": "Ignore all past missed habits",
+	"Dismiss reminders before today. Habit records and points stay unchanged.": "Dismiss reminders before today. Habit records and points stay unchanged.",
+	"Ignore past misses": "Ignore past misses",
+	"Past missed habit reminders ignored.": "Past missed habit reminders ignored.",
+	"Parent folder": "Parent folder",
+	"Projects root": "Projects root",
+	"New parent folder (optional)": "New parent folder (optional)",
+	"Folder name": "Folder name",
+	"Enter a valid folder name.": "Enter a valid folder name.",
+	"View filter": "View filter",
 };
 
 export default translations;

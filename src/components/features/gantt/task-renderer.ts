@@ -164,6 +164,7 @@ export class TaskRendererComponent extends Component {
 					class: "gantt-task-milestone", // Base class
 				},
 			});
+			if (task.metadata.projectPlan && /^#[0-9a-f]{6}$/i.test(String(task.metadata.projectColor))) taskElement.style.setProperty("fill", String(task.metadata.projectColor));
 			// Add status and priority classes safely
 			if (task.status && task.status.trim()) {
 				taskElement.classList.add(`status-${task.status.trim()}`);
@@ -245,6 +246,7 @@ export class TaskRendererComponent extends Component {
 					class: "gantt-task-bar", // Base class
 				},
 			});
+			if (task.metadata.projectPlan && /^#[0-9a-f]{6}$/i.test(String(task.metadata.projectColor))) taskElement.style.setProperty("fill", String(task.metadata.projectColor));
 			// Add status and priority classes safely
 			if (task.status && task.status.trim()) {
 				taskElement.classList.add(`status-${task.status.trim()}`);
@@ -352,9 +354,25 @@ export class TaskRendererComponent extends Component {
 				const edge = ((event.target as Element).getAttribute("data-edge") || "move") as ProjectDateEdge;
 				const start = event.clientX, dayWidth = this.params?.dayWidth || 50;
 				const doc = group.ownerDocument;
+				this.cancelDrag?.();
+				const hint = doc.createElement("div"); hint.className = "gantt-drag-date-hint"; hint.setAttribute("role", "status"); doc.body.appendChild(hint);
+				const startDate = new Date(task.metadata.startDate!), endDate = new Date(task.metadata.dueDate!);
+				const format = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 				let days = 0;
+				const updateHint = (x: number, y: number) => {
+					const first = new Date(startDate), last = new Date(endDate);
+					if (edge !== "end") first.setDate(first.getDate() + days);
+					if (edge !== "start") last.setDate(last.getDate() + days);
+					hint.textContent = `${format(first)} → ${format(last)}`;
+					hint.style.left = `${Math.min(x + 12, Math.max(8, (doc.defaultView?.innerWidth || 1000) - 270))}px`; hint.style.top = `${Math.max(8, y - 38)}px`;
+				};
+				updateHint(event.clientX, event.clientY);
 				const move = (next: PointerEvent) => {
 					days = Math.round((next.clientX - start) / dayWidth);
+					const duration = Math.max(0, Math.round((endDate.getTime() - startDate.getTime()) / 86400000));
+					if (edge === "start") days = Math.min(days, duration);
+					if (edge === "end") days = Math.max(days, -duration);
+					updateHint(next.clientX, next.clientY);
 					if (edge === "move") group.setAttribute("transform", `translate(${days * dayWidth},0)`);
 					else {
 						const rect = group.querySelector(".gantt-task-bar");
@@ -364,7 +382,7 @@ export class TaskRendererComponent extends Component {
 						rect?.setAttribute("width", String(width + (edge === "start" ? -delta : delta)));
 					}
 				};
-				const cleanup = () => { doc.removeEventListener("pointermove", move); doc.removeEventListener("pointerup", up); doc.removeEventListener("pointercancel", cancel); this.cancelDrag = undefined; };
+				const cleanup = () => { hint.remove(); doc.removeEventListener("pointermove", move); doc.removeEventListener("pointerup", up); doc.removeEventListener("pointercancel", cancel); this.cancelDrag = undefined; };
 				const cancel = () => { cleanup(); group.removeAttribute("transform"); this.render(); };
 				const up = () => { cleanup(); group.removeAttribute("transform"); if (days) { this.ignoreClickUntil = Date.now() + 400; this.params?.onDateChange?.(task, days, edge); } };
 				this.cancelDrag = cleanup;

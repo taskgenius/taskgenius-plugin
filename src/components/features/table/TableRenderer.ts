@@ -770,29 +770,11 @@ export class TableRenderer extends Component {
 		const statusIcon = statusContainer.createSpan("task-table-status-icon");
 		const status = cell.value as string;
 
-		switch (status) {
-			case "x":
-			case "X":
-				setIcon(statusIcon, "check-circle");
-				statusContainer.addClass("completed");
-				break;
-			case "/":
-			case ">":
-				setIcon(statusIcon, "clock");
-				statusContainer.addClass("in-progress");
-				break;
-			case "-":
-				setIcon(statusIcon, "x-circle");
-				statusContainer.addClass("abandoned");
-				break;
-			case "?":
-				setIcon(statusIcon, "help-circle");
-				statusContainer.addClass("planned");
-				break;
-			default:
-				setIcon(statusIcon, "circle");
-				statusContainer.addClass("not-started");
-		}
+		const configured = Object.entries(this.plugin.settings.taskStatuses || {}).find(([, marks]) => String(marks).split("|").includes(status))?.[0];
+		const group = configured || ({ x: "completed", X: "completed", "/": "inProgress", ">": "inProgress", "-": "abandoned", "?": "planned", " ": "notStarted", a: "archived" } as Record<string, string>)[status] || "archived";
+		const appearance: Record<string, [string, string]> = { completed: ["check-circle", "completed"], inProgress: ["clock", "in-progress"], abandoned: ["x-circle", "abandoned"], planned: ["help-circle", "planned"], notStarted: ["circle", "not-started"], archived: ["pause", "paused"], paused: ["pause", "paused"], pause: ["pause", "paused"] };
+		const [icon, cls] = appearance[group] || appearance.archived;
+		setIcon(statusIcon, icon); statusContainer.addClass(cls);
 
 		// Add status text
 		const statusText = statusContainer.createSpan("task-table-status-text");

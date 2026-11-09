@@ -593,7 +593,7 @@ export function missedInstances(
 		let scanned = 0;
 		while (scanned < maxScan) {
 			const key = toDateKey(cursor);
-			if (key < startKey) {
+			if (key < startKey || habit.ignoredMissesBefore && key < habit.ignoredMissesBefore) {
 				break;
 			}
 			if (

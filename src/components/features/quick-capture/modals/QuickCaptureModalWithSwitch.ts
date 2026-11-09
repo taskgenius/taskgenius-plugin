@@ -1,3 +1,5 @@
+import { ProjectFileManager } from "@/managers/project-file-manager";
+import { attachDateTimePicker } from "@/utils/date/date-time-picker";
 import { parseOptionalDateTime, formatOptionalDateTime } from "@/utils/date/optional-date-time";
 import {
 	App,
@@ -316,6 +318,15 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 	 * Create target file selector
 	 */
 	private createTargetFileSelector(container: HTMLElement): void {
+		const project = this.taskMetadata.project?.trim();
+		if (project && this.currentMode !== "file") {
+			const manager = new ProjectFileManager(this.app), file = manager.find(project)?.file;
+			const slug = project.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "-");
+			this.tempTargetFilePath = file?.path || `${manager.folder}/${slug}.md`;
+			container.createDiv({ cls: "quick-capture-section-title", text: t("Capture to:") });
+			container.createDiv({ cls: "quick-capture-target", text: this.tempTargetFilePath });
+			return;
+		}
 		const targetFileContainer = container.createDiv({
 			cls: "quick-capture-target-container",
 		});
@@ -336,6 +347,18 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 			},
 			text: this.tempTargetFilePath,
 		});
+
+		if (this.plugin.settings.quickCapture.targetType === "daily-note") {
+			const day = targetFileContainer.createEl("input", { type: "date", attr: { "aria-label": t("Daily note date") } });
+			day.value = this.taskMetadata.dailyNoteDate || moment().format("YYYY-MM-DD");
+			day.addEventListener("change", () => {
+				if (!moment(day.value, "YYYY-MM-DD", true).isValid()) return;
+				this.taskMetadata.dailyNoteDate = day.value;
+				const settings = this.plugin.settings.quickCapture.dailyNoteSettings;
+				this.tempTargetFilePath = this.sanitizeFilePath(`${settings.folder ? settings.folder + "/" : ""}${moment(day.value).format(settings.format)}.md`);
+				targetFileEl.textContent = this.tempTargetFilePath;
+			});
+		}
 
 		// Only add file suggest for fixed file type
 		if (this.plugin.settings.quickCapture.targetType === "fixed") {
@@ -427,6 +450,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 				});
 			text.inputEl.type = getInputType();
 			this.startDateInput = text.inputEl;
+			attachDateTimePicker(text.inputEl, t("Start Date"));
 		});
 
 		// Due Date
@@ -456,6 +480,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 				});
 			text.inputEl.type = getInputType();
 			this.dueDateInput = text.inputEl;
+			attachDateTimePicker(text.inputEl, t("Due Date"));
 		});
 
 		// Scheduled Date
@@ -487,6 +512,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 				});
 			text.inputEl.type = getInputType();
 			this.scheduledDateInput = text.inputEl;
+			attachDateTimePicker(text.inputEl, t("Scheduled Date"));
 		});
 	}
 
@@ -523,7 +549,9 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 			text.setPlaceholder(t("Project name"))
 				.setValue(this.taskMetadata.project || "")
 				.onChange((value) => {
-					this.taskMetadata.project = value || undefined;
+					this.taskMetadata.project = value.trim() || undefined;
+					if (!this.taskMetadata.project) this.initializeTargetFile();
+					this.updateTargetDisplay();
 					this.updatePreview();
 				});
 		});
@@ -936,7 +964,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 		value?: Date,
 	): void {
 		if (!input) return;
-		input.value = this.formatDateInputValue(value);
+		input.value = this.formatDateInputValue(value); input.dispatchEvent(new Event("tg-date-updated"));
 	}
 
 	private formatDateInputValue(value?: Date): string {

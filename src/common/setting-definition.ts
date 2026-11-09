@@ -937,8 +937,6 @@ export interface TaskProgressBarSettings {
 	defaultViewMode: "list" | "tree"; // Global default view mode for all views
 	viewConfiguration: ViewConfig[]; // Manages order, visibility, basic info, AND filter rules
 
-	// Global Filter Settings
-	globalFilterRules: ViewFilterRule; // Global filter rules that apply to all Views by default
 
 	// Review Settings
 	reviewSettings: Record<string, ProjectReviewSetting>;
@@ -1378,8 +1376,6 @@ export const DEFAULT_SETTINGS: TaskProgressBarSettings = {
 	enableDynamicMetadataPositioning: false, // Enable intelligent metadata positioning by default
 	defaultViewMode: "list", // Global default view mode for all views
 
-	// Global Filter Defaults
-	globalFilterRules: {}, // Empty global filter rules by default
 
 	viewConfiguration: [
 		{

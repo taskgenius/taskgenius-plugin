@@ -1,11 +1,11 @@
 {
 	"name": "task-genius",
-	"version": "9.13.7",
+	"version": "9.13.8",
 	"description": "Comprehensive task management plugin for Obsidian with progress bars, task status cycling, and advanced task tracking features.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
-		"build": "pnpm check:i18n && pnpm check:release && tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"build": "node scripts/patch-calendar.cjs --check && pnpm check:i18n && pnpm check:release && tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json manifest-beta.json versions.json",
 		"e-t": "cross-env node scripts/extract-translations.cjs",
 		"g-l": "cross-env node scripts/generate-locale-files.cjs",
@@ -25,7 +25,7 @@
 		"release:beta:dry": "node scripts/smart-beta-release.mjs --dry-run",
 		"check:i18n": "node scripts/check-settings-i18n.cjs && node scripts/check-habits-i18n.cjs",
 		"check:release": "node scripts/check-release-version.cjs",
-		"build:release": "pnpm --filter esbuild-plugin-inline-worker build && pnpm --filter @taskgenius/calendar build && pnpm build",
+		"build:release": "node scripts/patch-calendar.cjs && pnpm --filter esbuild-plugin-inline-worker build && pnpm --filter @taskgenius/calendar build && pnpm build",
 		"test:habits": "node --test tests/habits/*.test.mjs",
 		"check:habits-css": "node scripts/scope-habits-css.mjs",
 		"test:ui": "node --test tests/ui-audit/*.test.mjs"

@@ -2,7 +2,7 @@ import { App, Modal, Notice, Setting, TFile, TFolder, Menu } from "obsidian";
 import { Task } from "@/types/task";
 import { t } from "@/translations/helper";
 
-export interface ProjectFileInfo { name: string; file: TFile; archived: boolean; description: string; dueDate?: string; startDate?: string; }
+export interface ProjectFileInfo { name: string; file: TFile; archived: boolean; description: string; dueDate?: string; startDate?: string; color?: string; order?: number; folder?: string; }
 
 /** Markdown project notes are the canonical home for project tasks and settings. */
 export class ProjectFileManager {
@@ -14,7 +14,7 @@ export class ProjectFileManager {
 		return this.app.vault.getMarkdownFiles().filter(file => !/(^|\/)(templates?|模板)(\/|$)/i.test(file.path)).flatMap(file => {
 			const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
 			if (typeof fm?.project !== "string" || !fm.project.trim() || /\{\{|<%/.test(fm.project)) return [];
-			return [{ name: fm.project.trim(), file, archived: fm.archived === true || fm.status === "archived", description: String(fm.description || ""), dueDate: typeof fm.dueDate === "string" ? fm.dueDate : undefined }];
+			return [{ name: fm.project.trim(), file, archived: fm.archived === true || fm.status === "archived", description: String(fm.description || ""), dueDate: typeof fm.dueDate === "string" ? fm.dueDate : undefined, startDate: typeof fm.startDate === "string" ? fm.startDate : undefined, color: /^#[0-9a-f]{6}$/i.test(fm.projectColor) ? fm.projectColor : undefined, order: Number.isFinite(fm.projectOrder) ? fm.projectOrder : undefined, folder: this.parentFolder(file) }];
 		});
 	}
 
@@ -25,7 +25,8 @@ export class ProjectFileManager {
 		// MetadataCache may not have indexed a just-created note yet. Resolve its
 		// deterministic path directly so the first task can be moved immediately.
 		const slug = clean.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "-");
-		const file = this.app.vault.getAbstractFileByPath(`${this.folder}/${slug}.md`);
+		const matches = this.app.vault.getMarkdownFiles().filter(file => file.path.startsWith(this.folder + "/") && file.path.split("/").pop() === `${slug}.md`);
+		const file = this.app.vault.getAbstractFileByPath(`${this.folder}/${slug}.md`) || (matches.length === 1 ? matches[0] : null);
 		if (!(file instanceof TFile)) return undefined;
 		const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
 		return {
@@ -34,21 +35,23 @@ export class ProjectFileManager {
 			archived: fm?.archived === true || fm?.status === "archived",
 			description: String(fm?.description || ""),
 			dueDate: typeof fm?.dueDate === "string" ? fm.dueDate : undefined,
+			folder: this.parentFolder(file), color: fm?.projectColor, order: fm?.projectOrder,
 		};
 	}
 
-	async create(name: string, description = ""): Promise<ProjectFileInfo | null> {
+	async create(name: string, description = "", parent = ""): Promise<ProjectFileInfo | null> {
 		const clean = name.trim();
 		if (!clean) return null;
 		const existing = this.find(clean);
 		if (existing) return existing;
-		await this.ensureFolder(this.folder);
+		const destinationFolder = this.projectFolder(parent);
+		await this.ensureFolder(destinationFolder);
 		const slug = clean.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "-");
-		const path = `${this.folder}/${slug}.md`;
+		const path = `${destinationFolder}/${slug}.md`;
 		if (this.app.vault.getAbstractFileByPath(path)) { new Notice(t("A project file already exists at that path.")); return null; }
 		const body = `---\nproject: ${JSON.stringify(clean)}\nstatus: active\narchived: false\ndescription: ${JSON.stringify(description)}\n---\n\n# ${clean}\n\n## ${t("Project Gantt")}\n\n## ${t("Tasks")}\n\n`;
 		const file = await this.app.vault.create(path, body);
-		return { name: clean, file, archived: false, description };
+		return { name: clean, file, archived: false, description, folder: parent };
 	}
 
 	async setArchived(name: string, archived: boolean): Promise<boolean> {
@@ -66,18 +69,72 @@ export class ProjectFileManager {
 		return true;
 	}
 
-	async update(name: string, values: { name?: string; description?: string; dueDate?: string; startDate?: string }): Promise<boolean> {
+	async update(name: string, values: { name?: string; description?: string; dueDate?: string; startDate?: string; color?: string; order?: number; folder?: string }): Promise<boolean> {
 		const project = this.find(name); if (!project) return false;
 		const nextName = values.name?.trim() || project.name;
 		const conflict = this.find(nextName);
 		if (conflict && conflict.file.path !== project.file.path) throw new Error(t("A project with that name already exists."));
+		if (values.folder !== undefined && values.folder !== this.parentFolder(project.file)) {
+			const folder = this.projectFolder(values.folder), destination = `${folder}/${project.file.path.split("/").pop()}`;
+			const occupied = this.app.vault.getAbstractFileByPath(destination);
+			if (occupied && occupied !== project.file) throw new Error(t("A project file already exists at that path."));
+			await this.ensureFolder(folder); await this.app.fileManager.renameFile(project.file, destination);
+		}
 		await this.app.fileManager.processFrontMatter(project.file, fm => {
 			fm.project = nextName;
+			if (values.color !== undefined) { if (/^#[0-9a-f]{6}$/i.test(values.color)) fm.projectColor = values.color; else if (!values.color) delete fm.projectColor; else throw new Error("Invalid project color"); }
+			if (values.order !== undefined && Number.isFinite(values.order)) fm.projectOrder = values.order;
 			if (values.description !== undefined) fm.description = values.description;
 			if (values.startDate !== undefined) { if (values.startDate) fm.startDate = values.startDate; else delete fm.startDate; }
 			if (values.dueDate !== undefined) { if (values.dueDate) fm.dueDate = values.dueDate; else delete fm.dueDate; }
 		});
 		return true;
+	}
+
+	/** Reorder canonical notes without touching their task content. */
+	async reorder(names: string[]): Promise<void> {
+		const records = this.list();
+		for (const [order, name] of [...new Set(names)].entries()) {
+			const record = records.find(project => project.name === name);
+			if (!record || record.order === order) continue;
+			await this.app.fileManager.processFrontMatter(record.file, fm => { fm.projectOrder = order; });
+		}
+	}
+
+	compareNames(a: string, b: string): number {
+		const records = this.list();
+		return (records.find(p => p.name === a)?.order ?? Number.MAX_SAFE_INTEGER) - (records.find(p => p.name === b)?.order ?? Number.MAX_SAFE_INTEGER) || a.localeCompare(b);
+	}
+
+	bindReorder(el: HTMLElement, name: string, ordered: () => string[], changed: () => void): void {
+		el.draggable = true;
+		el.addEventListener("dragstart", event => { event.stopPropagation(); event.dataTransfer?.setData("application/x-taskgenius-project", name); });
+		el.addEventListener("dragover", event => { if (event.dataTransfer?.types.includes("application/x-taskgenius-project")) { event.preventDefault(); event.stopPropagation(); } });
+		el.addEventListener("drop", event => {
+			const source = event.dataTransfer?.getData("application/x-taskgenius-project");
+			if (!source || source === name) return;
+			event.preventDefault(); event.stopPropagation();
+			const names = ordered().filter(value => value !== source), index = names.indexOf(name);
+			if (index < 0) return;
+			const after = event.clientY > el.getBoundingClientRect().top + el.getBoundingClientRect().height / 2;
+			names.splice(index + Number(after), 0, source);
+			void this.reorder(names).then(changed).catch(error => new Notice(String(error)));
+		});
+	}
+
+	parentFolder(file: TFile): string {
+		const directory = file.path.split("/").slice(0, -1).join("/");
+		return directory.startsWith(this.folder + "/") ? directory.slice(this.folder.length + 1) : "";
+	}
+	private projectFolder(parent: string): string {
+		const clean = parent.trim().replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+		if (clean.split("/").some(part => part === ".." || part === "." || /[:*?"<>|]/.test(part))) throw new Error(t("Enter a valid folder name."));
+		return this.folder + (clean ? "/" + clean : "");
+	}
+	folderNames(): string[] {
+		const loaded = this.app.vault.getAllLoadedFiles?.() || [];
+		const folders = loaded.filter(file => file instanceof TFolder && file.path.startsWith(this.folder + "/")).map(file => file.path.slice(this.folder.length + 1));
+		return [...new Set([...folders, ...this.list().map(project => project.folder || "")])].filter(Boolean).sort();
 	}
 
 	async addTask(name: string, content: string): Promise<boolean> {
@@ -216,20 +273,27 @@ export class ProjectFileManager {
 		const existing = this.app.vault.getAbstractFileByPath(path);
 		if (existing instanceof TFolder) return;
 		if (existing) throw new Error(t("The project folder path is occupied by a file."));
-		await this.app.vault.createFolder(path);
+		const parts = path.split("/");
+		for (let index = 1; index <= parts.length; index++) {
+			const directory = parts.slice(0, index).join("/");
+			if (!this.app.vault.getAbstractFileByPath(directory)) await this.app.vault.createFolder(directory);
+		}
 	}
 }
 
 export class ProjectCreateModal extends Modal {
 	constructor(app: App, private manager: ProjectFileManager, private onSave: () => void) { super(app); }
 	onOpen() {
-		this.setTitle(t("New project")); let name = "", description = "";
+		this.setTitle(t("New project")); const folder = projectFolderPicker(this.contentEl, this.manager, ""); let name = "", description = "", color = "#5985b1";
 		new Setting(this.contentEl).setName(t("Project name")).addText(text => text.onChange(value => name = value));
 		new Setting(this.contentEl).setName(t("Description")).addText(text => text.onChange(value => description = value));
+		const colorSetting = new Setting(this.contentEl).setName(t("Project color"));
+		const picker = colorSetting.controlEl.createEl("input", { type: "color", attr: { "aria-label": t("Project color") } }); picker.value = "#5985b1";
+		picker.addEventListener("input", () => color = picker.value);
 		new Setting(this.contentEl).addButton(button => button.setButtonText(t("Create project")).setCta().onClick(async () => {
 			if (!name.trim()) { new Notice(t("Enter a project name.")); return; }
 			button.setDisabled(true);
-			try { if (await this.manager.create(name, description)) { this.onSave(); this.close(); } }
+			try { if (await this.manager.create(name, description, folder())) { if (color) await this.manager.update(name, { color }); this.onSave(); this.close(); } }
 			catch (error) { new Notice(String(error)); }
 			finally { button.setDisabled(false); }
 		}));
@@ -255,8 +319,13 @@ export class ProjectEditModal extends Modal {
 	constructor(app: App, private manager: ProjectFileManager, private project: ProjectFileInfo, private onSave: () => void) { super(app); }
 	onOpen() {
 		this.setTitle(t("Edit project details"));
+		const folder = projectFolderPicker(this.contentEl, this.manager, this.project.folder || "");
 		let description = this.project.description;
 		let name = this.project.name;
+		let color = this.project.color || "#5985b1";
+		const colorSetting = new Setting(this.contentEl).setName(t("Project color"));
+		const picker = colorSetting.controlEl.createEl("input", { type: "color", attr: { "aria-label": t("Project color") } }); picker.value = color || "#5985b1";
+		picker.addEventListener("input", () => color = picker.value);
 		new Setting(this.contentEl).setName(t("Project name")).addText(text => text.setValue(name).onChange(value => name = value));
 		let dueDate = this.project.dueDate || "";
 		let startDate = String(this.app.metadataCache.getFileCache(this.project.file)?.frontmatter?.startDate || "");
@@ -265,7 +334,7 @@ export class ProjectEditModal extends Modal {
 		new Setting(this.contentEl).setName(t("Due date")).addText(text => { text.inputEl.type = "date"; text.setValue(dueDate).onChange(value => dueDate = value); });
 		new Setting(this.contentEl).addButton(button => button.setButtonText(t("Save")).setCta().onClick(async () => {
 			button.setDisabled(true);
-			try { if (await this.manager.update(this.project.name, { name, description, dueDate, startDate })) { this.onSave(); this.close(); } }
+			try { if (await this.manager.update(this.project.name, { name, description, dueDate, startDate, color, folder: folder() })) { this.onSave(); this.close(); } }
 			catch (error) { new Notice(String(error)); }
 			finally { button.setDisabled(false); }
 		}));
@@ -303,4 +372,16 @@ export class ProjectArchiveModal extends Modal {
 			.addButton(button => button.setButtonText(t("Restore project")).onClick(async () => { await this.manager.setArchived(project.name, false); this.onChange(); this.onOpen(); }))
 			.addButton(button => button.setButtonText(t("Delete project")).setWarning().onClick(() => new ProjectDeleteModal(this.app, this.manager, project, () => { this.onChange(); this.onOpen(); }).open()));
 	}
+}
+
+
+function projectFolderPicker(root: HTMLElement, manager: ProjectFileManager, current: string): () => string {
+	let selected = current, added = "";
+	new Setting(root).setName(t("Parent folder")).addDropdown(dropdown => {
+		dropdown.addOption("", t("Projects root"));
+		for (const folder of [...new Set([current, ...manager.folderNames()])].filter(Boolean)) dropdown.addOption(folder, folder);
+		dropdown.setValue(current).onChange(value => selected = value);
+	});
+	new Setting(root).setName(t("New parent folder (optional)")).addText(text => text.setPlaceholder(t("Folder name")).onChange(value => added = value.trim()));
+	return () => added || selected;
 }

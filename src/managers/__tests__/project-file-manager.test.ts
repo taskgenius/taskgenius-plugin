@@ -143,3 +143,11 @@ describe("project Markdown files", () => {
 		expect(files.get("Notes.md")?.text).toBe(original);
 	});
 });
+
+
+test("daily capture writes the selected diary date instead of always using today", async () => {
+ const { app, files } = createVaultHarness();
+ app.vault.getFileByPath = (path: string) => files.get(path)?.file || null;
+ await saveCapture(app, "- [ ] On the selected day", { targetType: "daily-note", dailyNoteDate: "2026-12-25", appendToFile: "append", dailyNoteSettings: { folder: "Journal", format: "YYYY-MM-DD", template: "" } });
+ expect(files.get("Journal/2026-12-25.md")?.text).toContain("On the selected day");
+});

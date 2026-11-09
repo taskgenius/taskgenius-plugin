@@ -1,3 +1,5 @@
+import { createEmbeddableMarkdownEditor, EmbeddableMarkdownEditor } from "@/editor-extensions/core/markdown-editor";
+import "@/styles/quick-capture.css";
 import { App, Modal, ButtonComponent, Notice } from "obsidian";
 import type { Task } from "@/types/task";
 import type TaskProgressBarPlugin from "@/index";
@@ -7,13 +9,14 @@ import { t } from "@/translations/helper";
 /** Shared editor for task cards and tasks in ordinary Markdown notes. */
 export class TaskDetailsModal extends Modal {
 	private task: Task;
+	private markdownEditor?: EmbeddableMarkdownEditor;
 	private metadataEditor?: TaskMetadataEditor;
 	private closed = false;
 	private saving = false;
 	constructor(app: App, private plugin: TaskProgressBarPlugin, task: Task, private onTaskUpdated?: (task: Task) => Promise<void>) {
 		super(app);
 		this.task = { ...task, content: typeof task.content === "string" ? task.content : "", metadata: structuredClone(task.metadata || { tags: [], children: [] }) };
-		this.modalEl.addClass("task-details-modal", "tg-task-editor-modal"); this.setTitle(t("Edit Task"));
+		this.modalEl.addClass("task-details-modal", "tg-task-editor-modal", "quick-capture-modal", "full"); this.setTitle(t("Edit Task"));
 	}
 	async onOpen(): Promise<void> {
 		this.closed = false;
@@ -28,12 +31,24 @@ export class TaskDetailsModal extends Modal {
 			this.task = { ...latest, content: latest.content || "", metadata: structuredClone(latest.metadata || { tags: [], children: [] }) };
 		}
 		const root = this.contentEl; root.empty();
-		const layout = root.createDiv({ cls: "tg-task-editor-layout" });
-		const content = layout.createDiv({ cls: "tg-task-editor-content" });
-		content.createEl("label", { text: t("Task content") });
-		const input = content.createEl("textarea", { attr: { "aria-label": t("Task content") } }); input.value = this.task.content;
-		input.addEventListener("input", () => { this.task.content = input.value; });
-		this.metadataEditor = new TaskMetadataEditor(layout.createDiv({ cls: "tg-task-editor-fields" }), this.app, this.plugin, false);
+		const layout = root.createDiv({ cls: "quick-capture-layout tg-task-editor-layout" });
+		const fields = layout.createDiv({ cls: "quick-capture-config-panel tg-task-editor-fields" });
+		fields.createDiv({ cls: "quick-capture-section-title", text: t("Task Properties") });
+		const content = layout.createDiv({ cls: "quick-capture-editor-panel tg-task-editor-content" });
+		content.createDiv({ cls: "quick-capture-section-title", text: t("Task Content") });
+		const editor = content.createDiv({ cls: "quick-capture-modal-editor" });
+		if ((this.app as any).embedRegistry) {
+			this.markdownEditor = createEmbeddableMarkdownEditor(this.app, editor, {
+				value: this.task.content,
+				onChange: () => { if (this.markdownEditor) this.task.content = this.markdownEditor.value; },
+				onEnter: (_editor, mod) => { if (mod) { void this.save(); return true; } return false; },
+				onEscape: () => this.close(),
+			});
+		} else {
+			const input = editor.createEl("textarea", { attr: { "aria-label": t("Task content") } }); input.value = this.task.content;
+			input.addEventListener("input", () => { this.task.content = input.value; });
+		}
+		this.metadataEditor = new TaskMetadataEditor(fields.createDiv(), this.app, this.plugin, false);
 		this.metadataEditor.load(); this.metadataEditor.showTask(this.task);
 		this.metadataEditor.onMetadataChange = event => {
 			if (["content","status","completed"].includes(event.field)) (this.task as any)[event.field] = event.value;
@@ -63,5 +78,5 @@ export class TaskDetailsModal extends Modal {
 		} catch (error) { new Notice(String(error)); }
 		finally { this.saving = false; }
 	}
-	onClose(): void { this.closed = true; this.metadataEditor?.unload(); this.metadataEditor = undefined; this.contentEl.empty(); }
+	onClose(): void { this.closed = true; this.markdownEditor?.unload(); this.markdownEditor = undefined; this.metadataEditor?.unload(); this.metadataEditor = undefined; this.contentEl.empty(); }
 }
