@@ -833,13 +833,15 @@ export class FluentTaskView extends ItemView {
 			cls: "tg-fluent-main-container",
 		});
 
-		// Top navigation
-		const topNavEl = mainContainer.createDiv({
-			cls: "tg-fluent-top-nav",
-		});
-		// Use the host view's title bar so every control stays in one place.
-		const headerTitle = this.headerEl?.querySelector(".view-header-title-container");
-		if (headerTitle) headerTitle.replaceChildren(topNavEl);
+		// Phone controls live in the view so they are available even when the
+		// host title bar is hidden.
+		const navigationParent = Platform.isPhone
+			? mainContainer.createDiv({ cls: "tg-fluent-phone-toolbar" })
+			: mainContainer;
+		const topNavEl = navigationParent.createDiv({ cls: "tg-fluent-top-nav" });
+		if (!Platform.isPhone) {
+			this.headerEl?.querySelector(".view-header-title-container")?.replaceChildren(topNavEl);
+		}
 		this.registerDomEvent(topNavEl, "pointerdown", event => event.stopPropagation());
 		this.register(() => topNavEl.remove());
 

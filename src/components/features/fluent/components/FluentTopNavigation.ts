@@ -275,8 +275,9 @@ export class TopNavigation extends Component {
 		this.cycleSelectorContainer.hide();
 
 		// Notification button
-		const notificationBtn = rightSection.createDiv({
+		const notificationBtn = rightSection.createEl("button", {
 			cls: "fluent-nav-icon-button",
+			attr: { "aria-label": t("Notifications") },
 		});
 		setIcon(notificationBtn, "bell");
 		const badge = notificationBtn.createDiv({
@@ -293,8 +294,9 @@ export class TopNavigation extends Component {
 		);
 
 		// Settings button
-		const settingsBtn = rightSection.createDiv({
+		const settingsBtn = rightSection.createEl("button", {
 			cls: "fluent-nav-icon-button",
+			attr: { "aria-label": t("Settings") },
 		});
 		// Share the host action strip rather than creating two separated icon groups.
 		const actions = this.containerEl.closest(".view-header")?.querySelector(".view-actions");
@@ -316,7 +318,7 @@ export class TopNavigation extends Component {
 	) {
 		const tab = container.createEl("button", {
 			cls: ["fluent-view-tab", "clickable-icon"],
-			attr: { "data-mode": mode },
+			attr: { "data-mode": mode, "aria-label": label },
 		});
 
 		if (mode === this.currentViewMode) {

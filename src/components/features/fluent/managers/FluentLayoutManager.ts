@@ -146,13 +146,9 @@ export class FluentLayoutManager extends Component {
 	 * Create sidebar toggle button in header
 	 */
 	createSidebarToggle(): void {
-		const headerBtns = !Platform.isPhone
-			? (this.headerEl?.querySelector(
-					".view-header-nav-buttons",
-				) as HTMLElement | null)
-			: (this.headerEl?.querySelector(
-					".view-header-left",
-				) as HTMLElement);
+		const headerBtns = Platform.isPhone
+			? this.rootContainerEl.querySelector<HTMLElement>(".tg-fluent-phone-toolbar")
+			: this.headerEl?.querySelector<HTMLElement>(".view-header-nav-buttons");
 
 		if (!headerBtns) {
 			console.warn("[FluentLayout] header buttons container not found");
@@ -172,6 +168,9 @@ export class FluentLayoutManager extends Component {
 			.setTooltip(t("Toggle Sidebar"))
 			.setClass("clickable-icon")
 			.onClick(() => this.toggleSidebar());
+
+		btn.buttonEl.setAttribute("aria-label", t("Toggle Sidebar"));
+		if (Platform.isPhone) return;
 
 		this.registerEvent(
 			this.plugin.app.workspace.on(
@@ -294,16 +293,9 @@ export class FluentLayoutManager extends Component {
 			cls: "drawer-overlay",
 		});
 		this.drawerOverlay.hide();
-		this.registerDomEvent(
-			this.drawerOverlay,
-			"click",
-			() => {
-				this.closeMobileDrawer();
-			},
-			{
-				once: true,
-			},
-		);
+		this.registerDomEvent(this.drawerOverlay, "click", () => {
+			this.closeMobileDrawer();
+		});
 	}
 
 	/**

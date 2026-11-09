@@ -52,3 +52,28 @@
 .tg-habits-surface .tg-native-habits { max-width: none; width: 100%; box-sizing: border-box; }
 .tg-habits-surface .tg-native-habit-nav .habits-missed-button { inset: auto; margin: 0; }
 .tg-habits-surface :is(.tg-native-habit-card,.habits-compact-row).is-done:hover { opacity: .42; }
+
+@media (max-width: 520px) {
+	.tg-habits-surface :is(.tg-native-habit-cards, .habits-compact-list)[data-columns] {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.tg-habits-surface :is(.tg-native-habit-nav, .habits-compact-nav, .tg-native-habit-controls, .habits-compact-controls) {
+		display: flex;
+		flex-wrap: wrap;
+		min-width: 0;
+	}
+
+	.tg-habits-surface .tg-native-habit-nav {
+		justify-content: flex-start;
+	}
+
+	.tg-habits-surface .tg-habit-add {
+		margin-inline-start: auto;
+	}
+
+	.tg-habits-surface :is(.tg-native-habit-nav, .habits-compact-nav, .tg-native-habit-controls, .habits-compact-controls) button {
+		min-width: 40px;
+		min-height: 40px;
+	}
+}

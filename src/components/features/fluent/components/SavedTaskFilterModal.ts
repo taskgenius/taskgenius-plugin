@@ -9,6 +9,7 @@ export class SavedTaskFilterModal extends Modal {
 	constructor(app: App, private plugin: TaskProgressBarPlugin, private query: string,
 		private onSave: (id: string) => void, private existing?: PresetTaskFilter) { super(app); }
 	onOpen(): void {
+		this.modalEl.addClass("tg-saved-filter-modal");
 		this.setTitle(t(this.existing ? "Edit saved filter" : "New saved filter"));
 		let name = this.existing?.name || "", relation = this.existing?.options.relation || "AND";
 		let advanced = this.existing?.options.advancedFilterQuery || this.query;

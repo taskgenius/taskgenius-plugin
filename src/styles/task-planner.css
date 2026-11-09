@@ -20,3 +20,23 @@
 .tg-planner-weekday { position: sticky; top: 0; background: var(--background-primary); z-index: 1; }
 .tg-planner-day { min-width: 0; box-sizing: border-box; }
 @media(max-width: 650px) { .tg-planner-layout { grid-template-columns: minmax(120px, 30%) minmax(0, 1fr); gap: 8px; } .tg-planner-day { padding: 3px; } }
+
+@media (max-width: 520px) {
+	.tg-task-planner {
+		padding: 8px;
+	}
+
+	.tg-planner-layout {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: minmax(60px, min(25%, 140px)) minmax(0, 1fr);
+	}
+
+	.tg-planner-calendar {
+		grid-template-columns: repeat(7, minmax(64px, 1fr));
+		overscroll-behavior: contain;
+	}
+
+	.tg-planner-nav button {
+		min-height: 40px;
+	}
+}
