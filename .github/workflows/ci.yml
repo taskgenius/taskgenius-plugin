@@ -45,5 +45,11 @@ jobs:
             - name: Build
               run: pnpm build:release
 
+            - name: Run habits tests
+              run: pnpm test:habits
+
+            - name: Run UI regression tests
+              run: pnpm test:ui
+
             - name: Run tests
               run: pnpm exec jest --runInBand --passWithNoTests

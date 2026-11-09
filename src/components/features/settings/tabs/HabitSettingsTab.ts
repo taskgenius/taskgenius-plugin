@@ -1,3 +1,4 @@
+import { t as ht } from "@/integrations/habits/i18n";
 import { Setting } from "obsidian";
 import { TaskProgressBarSettingTab } from "@/setting";
 import { t } from "@/translations/helper";
@@ -22,6 +23,10 @@ export function renderHabitSettingsTab(
 			.onChange(async (value) => {
 				settingTab.plugin.settings.habit.enableHabits = value;
 				settingTab.applySettingsUpdate();
+				if (value) {
+					const integration = await settingTab.plugin.ensureHabitsIntegration();
+					integration.events.trigger("settings-changed");
+				}
 			});
 	});
 
@@ -29,8 +34,19 @@ export function renderHabitSettingsTab(
 		cls: "habit-settings-container",
 	});
 
-	// Habit List
-	displayHabitList(settingTab, habitContainer);
+	// Keep the settings navigation and layout owned by Task Genius.
+	void settingTab.plugin.ensureHabitsIntegration().then(integration => {
+		if (!habitContainer.isConnected) return;
+		integration.renderSettings(habitContainer.createDiv());
+		if (settingTab.plugin.settings.habit.habits?.length) {
+			const legacy = habitContainer.createEl("details", {cls: "tg-habits-legacy"});
+			legacy.createEl("summary", {text: ht("Existing Task Genius habits")});
+			displayHabitList(settingTab, legacy);
+		}
+	}).catch(error => {
+		habitContainer.createEl("p", {text: ht("Unable to load habits. Check the console for details.")});
+		console.error("Task Genius habit settings", error);
+	});
 }
 
 function displayHabitList(

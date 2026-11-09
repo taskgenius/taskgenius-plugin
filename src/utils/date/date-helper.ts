@@ -1,3 +1,4 @@
+import { calendarWeekNumber } from "./calendar-week";
 export class DateHelper {
 	public dateToX(date: Date, startDate: Date, dayWidth: number): number {
 		if (!startDate) return 0;
@@ -51,14 +52,5 @@ export class DateHelper {
 		return result;
 	}
 
-	// ISO 8601 week number calculation
-	public getWeekNumber(d: Date): number {
-		d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-		d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7)); // Set to Thursday of the week
-		const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-		const weekNo = Math.ceil(
-			((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7
-		);
-		return weekNo;
-	}
+	public getWeekNumber(date: Date): number { return calendarWeekNumber(date); }
 }

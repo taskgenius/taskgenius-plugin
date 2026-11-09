@@ -24,6 +24,7 @@ export interface BaseTask {
 
 /** Standard task metadata interface */
 export interface StandardTaskMetadata {
+	datePrecision?: Record<string, "date" | "datetime" | undefined>;
 	/** Creation date (optional) */
 	createdDate?: number;
 	/** Start date for the task (Tasks plugin compatible) */
@@ -55,6 +56,7 @@ export interface StandardTaskMetadata {
 	area?: string;
 	/** Priority level (1-5, higher is more important) */
 	priority?: number;
+	points?: number;
 
 	/** Parent task ID for hierarchical tasks */
 	parent?: string;

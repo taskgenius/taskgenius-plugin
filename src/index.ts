@@ -1,3 +1,5 @@
+import { snapshotViewSettings } from "./services/view-settings-signature";
+import { TaskGeniusHabits } from "./integrations/habits/task-genius-host";
 import {
 	addIcon,
 	Editor,
@@ -78,6 +80,7 @@ import "./styles/task-status.css";
 import "./styles/task-selection.css";
 import "./styles/quadrant/quadrant.css";
 import "./styles/onboarding.css";
+import "./styles/points-dashboard.css";
 import "./styles/universal-suggest.css";
 import "./styles/noise.css";
 import "./styles/changelog.css";
@@ -97,6 +100,7 @@ import { TaskGeniusIconManager } from "./managers/icon-manager";
 import { monitorTaskCompletedExtension } from "./editor-extensions/task-operations/completion-monitor";
 import { sortTasksInDocument } from "./commands/sortTaskCommands";
 import { taskGutterExtension } from "./editor-extensions/task-operations/gutter-marker";
+import { MarkdownStatusSync } from "./services/markdown-status-sync";
 import { autoDateManagerExtension } from "./editor-extensions/date-time/date-manager";
 import { taskMarkCleanupExtension } from "./editor-extensions/task-operations/mark-cleanup";
 import { IcsManager } from "./managers/ics-manager";
@@ -156,6 +160,26 @@ export default class TaskProgressBarPlugin extends Plugin {
 	rewardManager: RewardManager;
 
 	habitManager: HabitManager;
+	habitsIntegration?: TaskGeniusHabits;
+	private viewSettingsSignature = "";
+	async ensureHabitsIntegration(): Promise<TaskGeniusHabits> {
+		if (this.settings.habit.enableHabits && !this.habitManager) {
+			this.habitManager = this.addChild(new HabitManager(this));
+		}
+		if (!this.habitsIntegration) {
+			this.habitsIntegration = new TaskGeniusHabits(this);
+			this.addChild(this.habitsIntegration);
+		}
+		const integration = this.habitsIntegration;
+		try { await integration.ready; return integration; }
+		catch (error) {
+			if (this.habitsIntegration === integration) {
+				this.removeChild(integration);
+				this.habitsIntegration = undefined;
+			}
+			throw error;
+		}
+	}
 
 	// Task timer manager and exporter
 	taskTimerManager: TaskTimerManager;
@@ -222,6 +246,7 @@ export default class TaskProgressBarPlugin extends Plugin {
 	async onload() {
 		console.time("[Task Genius] onload");
 		await this.loadSettings();
+		this.addChild(new MarkdownStatusSync(this));
 
 		// Initialize version manager first
 		this.versionManager = new VersionManager(this.app, this);
@@ -405,8 +430,7 @@ export default class TaskProgressBarPlugin extends Plugin {
 			});
 
 			if (this.settings.habit.enableHabits) {
-				this.habitManager = new HabitManager(this);
-				this.addChild(this.habitManager);
+				await this.ensureHabitsIntegration();
 			}
 
 			// Initialize ICS manager if sources are configured
@@ -490,9 +514,9 @@ export default class TaskProgressBarPlugin extends Plugin {
 		this.initializeWriteAPI();
 		this.initializeOnCompletionManager();
 
-		if (this.settings.rewards.enableRewards) {
-			this.initializeRewardManager();
-		}
+		// Points are part of the built-in dashboard even when random rewards are
+		// disabled. RewardManager owns both point awards and optional rewards.
+		this.initializeRewardManager();
 
 		this.scheduleExtendedCommands();
 
@@ -1891,6 +1915,9 @@ export default class TaskProgressBarPlugin extends Plugin {
 	async loadSettings() {
 		const savedData = await this.loadData();
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, savedData);
+		this.settings.rewards = { ...DEFAULT_SETTINGS.rewards, ...savedData?.rewards,
+			rewardItems: savedData?.rewards?.rewardItems || DEFAULT_SETTINGS.rewards.rewardItems.map(item => ({ ...item })),
+			pointsLedger: savedData?.rewards?.pointsLedger || [] };
 		this.settings.changelog = Object.assign(
 			{
 				enabled: true,
@@ -1911,6 +1938,25 @@ export default class TaskProgressBarPlugin extends Plugin {
 
 		// Migrate settings to new formats
 		migrateSettings(this.settings);
+		this.settings.enableIndexer = true;
+		if (this.settings.fileFilter?.scopeControls) this.settings.fileFilter.scopeControls.inlineTasksEnabled = true;
+		if ((this.settings.interfaceRevision || 0) < 9134) {
+			for (const view of this.settings.viewConfiguration || []) {
+				if (view.specificConfig?.viewType !== "table") continue;
+				const widths = view.specificConfig.columnWidths;
+				if (!widths) continue;
+				if (widths.status === 80) widths.status = 64;
+				if (widths.content === 300) widths.content = 420;
+				if (widths.priority === 100) widths.priority = 72;
+			}
+			this.settings.interfaceRevision = 9134;
+		}
+		this.settings.viewConfiguration = this.settings.viewConfiguration.filter(view => view.id !== "rewards");
+		for (const view of this.settings.viewConfiguration || []) {
+			if (view.id === "review") view.visible = false;
+			if (view.id === "points" && ["Points", "积分", "Points and rewards", "积分与奖励"].includes(view.name)) view.name = t("Points and rewards");
+			if (view.id === "gantt" && ["计划", "Gantt", "Gantt Chart", "Planning", "Project plans", "项目计划"].includes(view.name)) view.name = t("Project Gantt");
+		}
 
 		// Repair and validate status cycles
 		if (this.settings.statusCycles) {
@@ -1921,6 +1967,7 @@ export default class TaskProgressBarPlugin extends Plugin {
 
 		// Migrate old inheritance settings to new structure
 		this.migrateInheritanceSettings(savedData);
+		this.viewSettingsSignature = snapshotViewSettings(this.settings);
 	}
 
 	private migrateInheritanceSettings(savedData: any) {
@@ -1961,6 +2008,11 @@ export default class TaskProgressBarPlugin extends Plugin {
 			);
 		} catch {}
 		await this.saveData(this.settings);
+		const viewSignature = snapshotViewSettings(this.settings);
+		if (viewSignature !== this.viewSettingsSignature) {
+			this.viewSettingsSignature = viewSignature;
+			this.app.workspace.trigger("task-genius:view-config-changed", {reason:"settings-saved"});
+		}
 	}
 
 	async loadViews() {
@@ -2095,8 +2147,8 @@ export default class TaskProgressBarPlugin extends Plugin {
 		}
 		for (const leaf of this.app.workspace.getLeavesOfType("fluent-task-genius-view")) {
 			const view = leaf.view as any;
-			view.layoutManager?.sidebar?.render();
-			await view.dataManager?.loadTasks(false);
+			if (typeof view.refreshSettings === "function") await view.refreshSettings();
+			else { view.layoutManager?.sidebar?.render(); await view.dataManager?.loadTasks(false); }
 		}
 	}
 

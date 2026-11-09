@@ -9,7 +9,7 @@ import {
 import { Task } from "@/types/task";
 import { TaskListItemComponent } from "./listItem"; // Re-import needed components
 import { ViewMode, getViewSettingOrDefault } from "@/common/setting-definition"; // 导入 SortCriterion
-import { tasksToTree } from "@/utils/ui/tree-view-utils"; // Re-import needed utils
+import { tasksToTree, buildVisibleTaskTree } from "@/utils/ui/tree-view-utils"; // Re-import needed utils
 import { TaskTreeItemComponent } from "./treeItem"; // Re-import needed components
 import { t } from "@/translations/helper";
 import TaskProgressBarPlugin from "@/index";
@@ -90,10 +90,20 @@ export class ContentComponent extends Component {
 	private selectedProjectForView: string | null = null; // Keep track if a specific project is filtered (for project view)
 	private focusFilter: string | null = null; // Keep focus filter if needed
 	private isTreeView: boolean = false;
+	private externallyFiltered = false;
+	private searchQuery = "";
+	public setSearchQuery(query: string): void {
+		if (this.searchQuery === query) return;
+		this.searchQuery = query; this.pendingForceRefresh = true;
+		this.debounceRefreshTaskList();
+	}
 	private isRendering: boolean = false; // Guard against concurrent renders
 	private pendingForceRefresh: boolean = false; // Track if a force refresh is pending
 	private pendingVisibilityRetry: boolean = false; // Queue a retry when container becomes visible
 	private visibilityRetryCount: number = 0; // Limit visibility retry loop
+	private refreshFrame: number | null = null;
+	private visibilityRetryTimer: number | null = null;
+	private disposed = false;
 	private lastAllTasksSignature = "";
 	private lastNotFilteredTasksSignature = "";
 	constructor(
@@ -106,6 +116,7 @@ export class ContentComponent extends Component {
 	}
 
 	onload() {
+		this.disposed = false;
 		// Create main content container
 		this.containerEl = this.parentEl.createDiv({ cls: "task-content" });
 
@@ -123,6 +134,22 @@ export class ContentComponent extends Component {
 
 		// Set up intersection observer for lazy loading
 		this.initializeVirtualList();
+		if (typeof ResizeObserver !== "undefined") {
+			const observer = new ResizeObserver(() => {
+				if (this.pendingForceRefresh && this.isContainerVisible()) this.debounceRefreshTaskList();
+			});
+			observer.observe(this.containerEl);
+			this.register(() => observer.disconnect());
+		}
+		this.registerEvent(this.app.workspace.on("active-leaf-change", () => {
+			if (this.pendingForceRefresh) this.debounceRefreshTaskList();
+		}));
+	}
+
+	public onShown(): void {
+		if (this.disposed) return;
+		this.pendingForceRefresh = true;
+		this.debounceRefreshTaskList();
 	}
 
 	private createContentHeader() {
@@ -217,6 +244,10 @@ export class ContentComponent extends Component {
 	}
 
 	private toggleViewMode() {
+		if (this.topNavigation) {
+			this.topNavigation.selectViewMode(this.isTreeView ? "list" : "tree");
+			return;
+		}
 		this.isTreeView = !this.isTreeView;
 		const viewToggleBtn = this.headerEl.querySelector(
 			".view-toggle-btn"
@@ -234,6 +265,7 @@ export class ContentComponent extends Component {
 	public setIsTreeView(isTree: boolean) {
 		if (this.isTreeView !== isTree) {
 			this.isTreeView = isTree;
+			this.pendingForceRefresh = true;
 			const viewToggleBtn = this.headerEl?.querySelector(
 				".view-toggle-btn"
 			) as HTMLElement;
@@ -311,6 +343,7 @@ export class ContentComponent extends Component {
 	 * Apply grouping to filtered tasks
 	 */
 	private applyGrouping() {
+		this.cleanupGroupRenderers();
 		if (this.groupByDimension === "none") {
 			this.taskGroups = [];
 			return;
@@ -367,7 +400,7 @@ export class ContentComponent extends Component {
 		sectionEl.setAttribute("data-level", level.toString());
 
 		// Restore expanded state from localStorage
-		group.isExpanded = getGroupExpandedState(this.currentViewId, group.key);
+		group.isExpanded = !!this.searchQuery.trim() || getGroupExpandedState(this.currentViewId, group.key);
 
 		// Section header
 		const headerEl = sectionEl.createDiv({
@@ -537,19 +570,24 @@ export class ContentComponent extends Component {
 	 * Cleanup group renderers
 	 */
 	private cleanupGroupRenderers() {
-		this.taskGroups.forEach((group) => {
-			if (group.renderer) {
-				this.removeChild(group.renderer);
-				group.renderer = undefined;
+		const cleanup = (groups: TaskGroup[]) => {
+			for (const group of groups) {
+				if (group.children) cleanup(group.children);
+				if (group.renderer) { this.removeChild(group.renderer); group.renderer = undefined; }
 			}
-		});
+		};
+		cleanup(this.taskGroups);
 	}
 
 	public setTasks(
 		tasks: Task[],
 		notFilteredTasks: Task[],
-		forceRefresh: boolean = false
+		forceRefresh: boolean = false,
+		externallyFiltered: boolean = false
 	) {
+		if (this.externallyFiltered !== externallyFiltered) forceRefresh = true;
+		this.externallyFiltered = externallyFiltered;
+		if (tasks.length && this.taskListEl && !this.taskListEl.querySelector(".task-item, .task-tree-item, .task-group, .group-section")) forceRefresh = true;
 		const updateSignatures = () => {
 			this.lastAllTasksSignature = this.computeTaskSignature(tasks);
 			this.lastNotFilteredTasksSignature =
@@ -560,7 +598,6 @@ export class ContentComponent extends Component {
 		if (forceRefresh) {
 			console.log("ContentComponent: Forced refresh requested");
 			// Cancel any ongoing rendering if force refresh is requested
-			this.isRendering = false;
 			this.pendingForceRefresh = true;
 			this.allTasks = tasks;
 			this.notFilteredTasks = notFilteredTasks;
@@ -574,20 +611,13 @@ export class ContentComponent extends Component {
 			return;
 		}
 
-		// If a force refresh is pending, skip non-forced updates
-		if (this.pendingForceRefresh) {
-			console.log(
-				"ContentComponent: Skipping non-forced update, force refresh is pending"
-			);
-			return;
-		}
-
 		const nextAllSignature = this.computeTaskSignature(tasks);
 		const nextNotFilteredSignature =
 			this.computeTaskSignature(notFilteredTasks);
 		if (
 			nextAllSignature === this.lastAllTasksSignature &&
-			nextNotFilteredSignature === this.lastNotFilteredTasksSignature
+			nextNotFilteredSignature === this.lastNotFilteredTasksSignature &&
+			!this.pendingForceRefresh
 		) {
 			console.log(
 				"ContentComponent: Task signatures unchanged, skipping refresh"
@@ -610,6 +640,7 @@ export class ContentComponent extends Component {
 	// Updated method signature
 	public setViewMode(viewId: ViewMode, project?: string | null) {
 		const previousViewId = this.currentViewId;
+		const sameContext = previousViewId === viewId && this.selectedProjectForView === (project ?? null);
 		this.currentViewId = viewId;
 		this.selectedProjectForView = project === undefined ? null : project;
 
@@ -618,9 +649,10 @@ export class ContentComponent extends Component {
 		let title = t(viewConfig.name);
 
 		this.titleEl.setText(title);
+		if (sameContext) return;
 
 		// Re-initialize view mode for the new view
-		this.initializeViewMode();
+		if (previousViewId !== viewId) this.initializeViewMode();
 
 		// Re-initialize Group By for the new view
 		this.initializeGroupBy();
@@ -642,6 +674,10 @@ export class ContentComponent extends Component {
 	 * Set the TopNavigation reference and register buttons
 	 */
 	public setTopNavigation(nav: TopNavigation | null): void {
+		if (this.topNavigation === nav) {
+			if (nav) { this.registerGroupByButton(); this.registerWorkingOnButtons(); }
+			return;
+		}
 		// Unregister old buttons if exists
 		if (this.topNavigation) {
 			this.unregisterGroupByButton();
@@ -818,7 +854,7 @@ export class ContentComponent extends Component {
 
 	private applyFilters() {
 		// Call the centralized filter utility
-		this.filteredTasks = filterTasks(
+		this.filteredTasks = this.externallyFiltered ? [...this.allTasks] : filterTasks(
 			this.allTasks,
 			this.currentViewId,
 			this.plugin,
@@ -835,6 +871,7 @@ export class ContentComponent extends Component {
 				this.plugin.settings
 			);
 		} else {
+			const collator = new Intl.Collator(undefined, {usage:"sort", sensitivity:"base", numeric:true});
 			// Default sorting: completed tasks last, then by priority, due date, content,
 			// with lowest-priority tie-breakers: filePath -> line
 			this.filteredTasks.sort((a, b) => {
@@ -853,11 +890,7 @@ export class ContentComponent extends Component {
 				if (dueA !== dueB) return dueA - dueB;
 
 				// Content compare (case-insensitive numeric aware)
-				const collator = new Intl.Collator(undefined, {
-					usage: "sort",
-					sensitivity: "base",
-					numeric: true,
-				});
+
 				const contentCmp = collator.compare(
 					a.content ?? "",
 					b.content ?? ""
@@ -921,16 +954,23 @@ export class ContentComponent extends Component {
 
 	private isContainerVisible(): boolean {
 		if (!this.containerEl) return false;
-		const inDom = document.body.contains(this.containerEl);
+		const inDom = this.containerEl.isConnected;
 		if (!inDom) return false;
 		if (!this.containerEl.isShown()) return false;
 		const rect = this.containerEl.getBoundingClientRect();
 		return rect.width > 0 && rect.height > 0;
 	}
 
-	private debounceRefreshTaskList = debounce(this.refreshTaskList, 150);
+	private debounceRefreshTaskList = () => {
+		if (this.disposed || this.refreshFrame !== null) return;
+		this.refreshFrame = window.requestAnimationFrame(() => {
+			this.refreshFrame = null;
+			if (!this.disposed) this.refreshTaskList();
+		});
+	};
 
 	private refreshTaskList() {
+		if (this.disposed) return;
 		console.log("refreshing");
 		// Defer rendering if container is not visible yet (e.g., view hidden during init)
 		if (!this.isContainerVisible()) {
@@ -938,6 +978,8 @@ export class ContentComponent extends Component {
 			if (!this.pendingVisibilityRetry) {
 				this.pendingVisibilityRetry = true;
 				const tryAgain = () => {
+					this.visibilityRetryTimer = null;
+					if (this.disposed) return;
 					if (this.isContainerVisible()) {
 						this.pendingVisibilityRetry = false;
 						this.visibilityRetryCount = 0;
@@ -949,7 +991,7 @@ export class ContentComponent extends Component {
 					}
 					if (this.visibilityRetryCount < 30) {
 						this.visibilityRetryCount++;
-						setTimeout(tryAgain, 100);
+						this.visibilityRetryTimer = window.setTimeout(tryAgain, 100);
 					} else {
 						this.pendingVisibilityRetry = false;
 						this.visibilityRetryCount = 0;
@@ -969,6 +1011,7 @@ export class ContentComponent extends Component {
 			return;
 		}
 
+		this.pendingForceRefresh = false;
 		this.isRendering = true;
 
 		// Capture scroll state to mitigate scrollbar jumping
@@ -1016,12 +1059,8 @@ export class ContentComponent extends Component {
 			const renderTarget = document.createDocumentFragment();
 
 			if (this.isTreeView) {
-				const taskMap = new Map<string, Task>();
-				// Add all non-filtered tasks to the taskMap
-				this.notFilteredTasks.forEach((task) =>
-					taskMap.set(task.id, task)
-				);
-				this.rootTasks = tasksToTree(this.filteredTasks); // Calculate root tasks
+				const { taskMap, roots } = buildVisibleTaskTree(this.filteredTasks);
+				this.rootTasks = roots;
 				// Sort roots according to view's sort criteria (fallback to sensible defaults)
 				const viewSortCriteria =
 					this.plugin.settings.viewConfiguration.find(
@@ -1085,15 +1124,8 @@ export class ContentComponent extends Component {
 			// Restore scroll state after render
 			this.restoreScrollState(prevScrollState);
 		} finally {
-			// Reset rendering flag after completion
-			setTimeout(() => {
-				this.isRendering = false;
-				// If a refresh was queued during rendering, process it now
-				if (this.pendingForceRefresh) {
-					this.pendingForceRefresh = false;
-					this.refreshTaskList();
-				}
-			}, 50); // Small delay to prevent immediate re-entry
+			this.isRendering = false;
+			if (this.pendingForceRefresh) this.debounceRefreshTaskList();
 		}
 	}
 
@@ -1208,18 +1240,9 @@ export class ContentComponent extends Component {
 		const start = this.nextRootTaskIndex;
 		const end = Math.min(start + countToLoad, this.rootTasks.length);
 
-		// Make sure all non-filtered tasks are in the taskMap
-		this.notFilteredTasks.forEach((task) => {
-			if (!taskMap.has(task.id)) {
-				taskMap.set(task.id, task);
-			}
-		});
-
 		for (let i = start; i < end; i++) {
 			const rootTask = this.rootTasks[i];
-			const childTasks = this.notFilteredTasks.filter(
-				(task) => task.metadata.parent === rootTask.id
-			);
+			const childTasks = (rootTask.metadata.children || []).map(id => taskMap.get(id)).filter((task): task is Task => !!task);
 
 			const treeComponent = new TaskTreeItemComponent(
 				rootTask,
@@ -1680,6 +1703,11 @@ export class ContentComponent extends Component {
 	}
 
 	onunload() {
+		this.disposed = true;
+		if (this.refreshFrame !== null) window.cancelAnimationFrame(this.refreshFrame);
+		if (this.visibilityRetryTimer !== null) window.clearTimeout(this.visibilityRetryTimer);
+		this.refreshFrame = null;
+		this.visibilityRetryTimer = null;
 		// Unregister Group By button from TopNavigation
 		this.unregisterGroupByButton();
 

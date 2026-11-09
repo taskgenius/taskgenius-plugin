@@ -177,44 +177,7 @@ export function renderInterfaceSettingsTab(
 				});
 			});
 
-		// Max Other Views before overflow threshold
-		new Setting(fluentSettingsContainer)
-			.setName(t("Max other views before overflow"))
-			.setDesc(
-				t(
-					"Number of 'Other Views' to show before grouping the rest into an overflow menu (ellipsis)"
-				)
-			)
-			.addText((text) => {
-				const current =
-					settingTab.plugin.settings.fluentView?.fluentConfig
-						?.maxOtherViewsBeforeOverflow ?? 5;
-				text.setPlaceholder("5")
-					.setValue(String(current))
-					.onChange(async (value) => {
-						const n = parseInt(value, 10);
-						if (!isNaN(n) && n >= 1 && n <= 50) {
-							if (!settingTab.plugin.settings.fluentView) {
-								settingTab.plugin.settings.fluentView = {
-									enableFluent: false,
-								};
-							}
-							if (
-								!settingTab.plugin.settings.fluentView
-									.fluentConfig
-							) {
-								settingTab.plugin.settings.fluentView.fluentConfig =
-									{
-										enableWorkspaces: true,
-										defaultWorkspace: "default",
-									};
-							}
-							settingTab.plugin.settings.fluentView.fluentConfig.maxOtherViewsBeforeOverflow =
-								n;
-							await settingTab.plugin.saveSettings();
-						}
-					});
-			});
+
 	};
 
 	// Initial render of Fluent-specific settings

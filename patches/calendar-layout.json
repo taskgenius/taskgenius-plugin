@@ -1,0 +1,99 @@
+{
+  "upstream": "taskgenius/calendar@3cb570633ae01ab569b26a956639fc167da398ba",
+  "files": [
+    {
+      "file": "src/renderers/TimeRenderer.ts",
+      "baseline": "f905eca7e49da57256610aff857f2a83a561664fffd30b7008c4c72df4dd55eb",
+      "result": "9561d07116f2559ffbd97193cafdeb017e6b841e3588f71ee681427e2a584542",
+      "steps": [
+        {
+          "before": "\n    for (const col of columns) {\n      const cell = createElement(\"div\", \"tg-time-header-cell\");\n\n      // Build filter context\n      const dayOfWeek = this.adapter.day(col.date);\n",
+          "after": "\n    for (const col of columns) {\n      const cell = createElement(\"div\", \"tg-time-header-cell\");\n      cell.dataset[\"date\"] = col.dateStr;\n\n      // Build filter context\n      const dayOfWeek = this.adapter.day(col.date);\n"
+        },
+        {
+          "before": "  ): HTMLElement {\n    const col = createElement(\"div\", \"tg-day-column\");\n    col.dataset[\"date\"] = colData.dateStr;\n\n    // Set height via CSS custom property for dynamic time slots\n    if (timeSlots && timeSlots.length > 0) {\n",
+          "after": "  ): HTMLElement {\n    const col = createElement(\"div\", \"tg-day-column\");\n    col.dataset[\"date\"] = colData.dateStr;\n    col.dataset[\"visibleHours\"] = JSON.stringify((timeSlots || []).map(slot => slot.hour));\n\n    // Set height via CSS custom property for dynamic time slots\n    if (timeSlots && timeSlots.length > 0) {\n"
+        },
+        {
+          "before": "    const layout = this.engine.calculateLayout(events, colData.dateStr);\n\n    for (const item of layout) {\n      const eventEl = this.renderEventBlock(\n        item,\n        dragController,\n",
+          "after": "    const layout = this.engine.calculateLayout(events, colData.dateStr);\n\n    for (const item of layout) {\n      // Layout and hit testing must use the same compressed clock when hours are hidden.\n      if (timeSlots) {\n        const pixels = (minute: number) => timeSlots.reduce((sum, slot) => sum + Math.max(0, Math.min(60, minute - slot.hour * 60)) / 60 * this.theme.cellHeight, 0);\n        const top = pixels(item.startMin), end = pixels(item.endMin);\n        if (end <= top) continue;\n        item.top = top; item.height = Math.max(1, end - top);\n      }\n      const eventEl = this.renderEventBlock(\n        item,\n        dragController,\n"
+        },
+        {
+          "before": "    }\n\n    return col;\n  }\n\n  private renderEventBlock(\n",
+          "after": "    }\n\n    return col;\n  }\n\n  /** Update in place: the clock must not rerender or interrupt an active drag. */\n  updateCurrentTime(container: HTMLElement, timeFilter?: (hour: number) => TimeFilterResult): void {\n    container.querySelectorAll(\".tg-now-line\").forEach(line => line.remove());\n    const now = new Date(), date = this.adapter.format(this.adapter.create(now), this.dateFormats.date);\n    const column = Array.from(container.querySelectorAll<HTMLElement>(\".tg-day-column\")).find(col => col.dataset[\"date\"] === date);\n    const slots = this.engine.generateTimeSlots(timeFilter), index = slots.findIndex(slot => slot.hour === now.getHours());\n    if (!column || index < 0) return;\n    const line = createElement(\"div\", \"tg-now-line\");\n    line.setAttribute(\"aria-label\", `${String(now.getHours()).padStart(2, \"0\")}:${String(now.getMinutes()).padStart(2, \"0\")}`);\n    line.style.top = `${(index + now.getMinutes() / 60) * this.theme.cellHeight}px`;\n    column.appendChild(line);\n  }\n\n  private renderEventBlock(\n"
+        },
+        {
+          "before": "\n    // Use transform for GPU-accelerated positioning\n    // translateX uses percentage for responsive width positioning\n    el.style.transform = `translate(${item.leftPercent}%, ${item.top}px)`;\n    el.style.width = `calc(${item.widthPercent}% - 2px)`;\n    el.style.height = `${item.height}px`;\n    el.style.backgroundColor = bgColor;\n",
+          "after": "\n    // Use transform for GPU-accelerated positioning\n    // translateX uses percentage for responsive width positioning\n    el.style.left = `${item.leftPercent}%`;\n    el.style.transform = `translateY(${item.top}px)`;\n    el.style.width = `calc(${item.widthPercent}% - 2px)`;\n    el.style.height = `${item.height}px`;\n    el.style.backgroundColor = bgColor;\n"
+        }
+      ]
+    },
+    {
+      "file": "src/views/TimeView.ts",
+      "baseline": "10fa830f6e1a7e04a1277450b4be841567cad60683278fb34e07d42d4c047ac8",
+      "result": "b20721d65d42e4d7d18abdc34ccb27b3bf5e1834454baf213fd49114bb57630c",
+      "steps": [
+        {
+          "before": "  protected engine!: TimeEngine<T>;\n  protected renderer!: TimeRenderer<T>;\n  protected timeViewType: ViewType = \"week\";\n\n  /**\n   * Initialize the view with context and create engine/renderer\n",
+          "after": "  protected engine!: TimeEngine<T>;\n  protected renderer!: TimeRenderer<T>;\n  protected timeViewType: ViewType = \"week\";\n  private nowTimer: ReturnType<typeof setInterval> | undefined;\n  override onUnmount(): void { if (this.nowTimer) clearInterval(this.nowTimer); this.nowTimer = undefined; super.onUnmount(); }\n\n  /**\n   * Initialize the view with context and create engine/renderer\n"
+        },
+        {
+          "before": "        | undefined,\n      this.context.config.view.timeFormatter as TimeFormatter | undefined,\n    );\n  }\n\n  /**\n",
+          "after": "        | undefined,\n      this.context.config.view.timeFormatter as TimeFormatter | undefined,\n    );\n    if (this.nowTimer) clearInterval(this.nowTimer);\n    const updateClock = () => this.renderer.updateCurrentTime(container, this.context.config.view.timeFilter as ((hour: number) => TimeFilterResult) | undefined);\n    updateClock(); this.nowTimer = setInterval(updateClock, 60_000);\n  }\n\n  /**\n"
+        }
+      ]
+    },
+    {
+      "file": "src/styles/time.css",
+      "baseline": "911b15eea607c0173a361c86861f8c64ad9b7f74528fac28911d814982c7079a",
+      "result": "a84c1d69427b0e767894d2021d8d7d5d0bc0abc237a03c42e65ba703e5db4165",
+      "steps": [
+        {
+          "before": "    pointer-events: none;\n    box-sizing: border-box;\n}\n",
+          "after": "    pointer-events: none;\n    box-sizing: border-box;\n}\n\n.tg-now-line { position:absolute; left:0; right:0; height:2px; background:#e5484d; z-index:70; pointer-events:none; }\n"
+        }
+      ]
+    },
+    {
+      "file": "src/core/DragController.ts",
+      "baseline": "af1dd4d9c76303964ca9e11824a9ee03ccd1cddb8dfa793dfde50f3ca8934809",
+      "result": "e8c5126f060933b6fe56819387c25ca5da141166926e576a0c1628bc18d6791c",
+      "steps": [
+        {
+          "before": "    const rect = col.getBoundingClientRect();\n    const relY = e.clientY - rect.top;\n\n    const rawMins = (relY / this.cellHeight) * 60;\n    const snapMinutes = this.config.dateOnly\n      ? 1440 // Date-only mode: snap to full day (24 hours)\n      : this.config.snapMinutes || 15;\n",
+          "after": "    const rect = col.getBoundingClientRect();\n    const relY = e.clientY - rect.top;\n\n    const visible: number[] = JSON.parse(col.dataset[\"visibleHours\"] || \"[]\");\n    const row = Math.max(0, Math.min(visible.length - 1, Math.floor(relY / this.cellHeight)));\n    const rawMins = visible.length ? visible[row]! * 60 + Math.max(0, Math.min(60, (relY / this.cellHeight - row) * 60)) : (relY / this.cellHeight) * 60;\n    const snapMinutes = this.config.dateOnly\n      ? 1440 // Date-only mode: snap to full day (24 hours)\n      : this.config.snapMinutes || 15;\n"
+        },
+        {
+          "before": "    if (!col) return;\n\n    const startMin = this.adapter.hour(start) * 60 + this.adapter.minute(start);\n    const top = startMin * (this.cellHeight / 60);\n    const height =\n      this.adapter.diff(end, start, \"minute\") * (this.cellHeight / 60);\n\n    const ghost = createElement(\"div\", \"tg-ghost-event\");\n    setStyles(ghost, {\n",
+          "after": "    if (!col) return;\n\n    const startMin = this.adapter.hour(start) * 60 + this.adapter.minute(start);\n    const visible: number[] = JSON.parse(col.dataset[\"visibleHours\"] || \"[]\");\n    const pixels = (minute: number) => visible.length ? visible.reduce((sum, hour) => sum + Math.max(0, Math.min(60, minute - hour * 60)) / 60 * this.cellHeight, 0) : minute / 60 * this.cellHeight;\n    const top = pixels(startMin);\n    const height = pixels(startMin + this.adapter.diff(end, start, \"minute\")) - top;\n\n    const ghost = createElement(\"div\", \"tg-ghost-event\");\n    setStyles(ghost, {\n"
+        }
+      ]
+    },
+    {
+      "file": "src/core/InteractionController.ts",
+      "baseline": "00772cde1203ea64a31dfe5ec0e7a5e58db21916579b931145cfb080f265118e",
+      "result": "4555174dc53ba61461d8ea3ca7291f6ee837f9fc0c5d6aa0925503886dac3176",
+      "steps": [
+        {
+          "before": "\t\tconst cellHeight = this.config.theme.cellHeight;\n\t\tconst snapMinutes = this.config.draggable.snapMinutes;\n\n\t\tconst rawMinutes = (relY / cellHeight) * 60;\n\t\tconst snappedMinutes = Math.max(\n\t\t\t0,\n\t\t\tMath.min(1440, Math.round(rawMinutes / snapMinutes) * snapMinutes),\n",
+          "after": "\t\tconst cellHeight = this.config.theme.cellHeight;\n\t\tconst snapMinutes = this.config.draggable.snapMinutes;\n\n\t\tconst visible: number[] = JSON.parse(colEl.dataset[\"visibleHours\"] || \"[]\");\n\t\tconst row = Math.max(0, Math.min(visible.length - 1, Math.floor(relY / cellHeight)));\n\t\tconst rawMinutes = visible.length ? visible[row]! * 60 + Math.max(0, Math.min(60, (relY / cellHeight - row) * 60)) : (relY / cellHeight) * 60;\n\t\tconst snappedMinutes = Math.max(\n\t\t\t0,\n\t\t\tMath.min(1440, Math.round(rawMinutes / snapMinutes) * snapMinutes),\n"
+        },
+        {
+          "before": "\t\t\t\tthis.adapter.hour(endDate) * 60 + this.adapter.minute(endDate);\n\n\t\t\tconst cellHeight = this.config.theme.cellHeight;\n\t\t\tconst top = (startMin / 60) * cellHeight;\n\t\t\tconst height = ((endMin - startMin) / 60) * cellHeight;\n\n\t\t\tconst preview = createElement(\"div\", \"tg-time-range-preview\");\n\t\t\tsetStyles(preview, {\n",
+          "after": "\t\t\t\tthis.adapter.hour(endDate) * 60 + this.adapter.minute(endDate);\n\n\t\t\tconst cellHeight = this.config.theme.cellHeight;\n\t\t\tconst visible: number[] = JSON.parse(col.dataset[\"visibleHours\"] || \"[]\");\n\t\t\tconst pixels = (minute: number) => visible.length ? visible.reduce((sum, hour) => sum + Math.max(0, Math.min(60, minute - hour * 60)) / 60 * cellHeight, 0) : minute / 60 * cellHeight;\n\t\t\tconst top = pixels(startMin);\n\t\t\tconst height = pixels(endMin) - top;\n\n\t\t\tconst preview = createElement(\"div\", \"tg-time-range-preview\");\n\t\t\tsetStyles(preview, {\n"
+        }
+      ]
+    },
+    {
+      "file": "src/engines/TimeEngine.ts",
+      "baseline": "8546bc9c54494322a123a2663bef9f004c3fc58e815d35921afba8d01b9661b2",
+      "result": "de9fddff464a7e410295866a12483a02c5837177d32ba13d4a1f7188545addf8",
+      "steps": [
+        {
+          "before": "\n    // Width multiplier determines how much each event extends into neighbor space\n    // Adjust based on column count for better visual balance\n    const widthMultiplier = numCols <= 3 ? 1.6 : numCols <= 5 ? 1.5 : 1.4;\n\n    for (const ev of group) {\n      const leftOffset = ev.colIndex * offsetPerCol;\n",
+          "after": "\n    // Width multiplier determines how much each event extends into neighbor space\n    // Adjust based on column count for better visual balance\n    const widthMultiplier = 1; // Keep overlapping tasks in adjacent lanes, never covering another task.\n\n    for (const ev of group) {\n      const leftOffset = ev.colIndex * offsetPerCol;\n"
+        }
+      ]
+    }
+  ]
+}

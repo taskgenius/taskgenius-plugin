@@ -8,7 +8,7 @@ import {
 } from "obsidian";
 import TaskProgressBarPlugin from "@/index";
 import { FluentSidebar } from "../components/FluentSidebar";
-import { TaskDetailsComponent } from "@/components/features/task/view/details";
+import { TaskDetailsModal } from "@/components/features/task/edit/TaskDetailsModal";
 import { Task } from "@/types/task";
 import { t } from "@/translations/helper";
 import { TG_LEFT_SIDEBAR_VIEW_TYPE } from "../../../../pages/LeftSidebarView";
@@ -37,28 +37,20 @@ import { RootFilterState } from "@/components/features/task/filter/ViewTaskFilte
 export class FluentLayoutManager extends Component {
 	// Layout state
 	public isSidebarCollapsed = false;
-	public isDetailsVisible = false;
 	public isMobileDrawerOpen = false;
 
 	// UI elements
 	private sidebarToggleBtn: HTMLElement | null = null;
 	private drawerOverlay: HTMLElement | null = null;
-	private detailsToggleBtn: HTMLElement | null = null;
-	private mobileDetailsOverlayHandler?: (e: MouseEvent) => void;
+	private editorModal: TaskDetailsModal | null = null;
 
 	// Components (non-leaves mode only)
 	public sidebar: FluentSidebar | null = null;
-	public detailsComponent: TaskDetailsComponent | null = null;
+
 
 	// Callbacks
 	private onSidebarNavigate?: (viewId: string) => void;
 	private onProjectSelect?: (projectId: string) => void;
-	private onTaskToggleComplete?: (task: Task) => void;
-	private onTaskEdit?: (task: Task) => void;
-	private onTaskUpdate?: (
-		originalTask: Task,
-		updatedTask: Task,
-	) => Promise<void>;
 	private onFilterReset?: () => void;
 	private getLiveFilterState?: () => RootFilterState | null;
 	private leaf: WorkspaceLeaf;
@@ -89,19 +81,6 @@ export class FluentLayoutManager extends Component {
 	 */
 	setOnProjectSelect(callback: (projectId: string) => void): void {
 		this.onProjectSelect = callback;
-	}
-
-	/**
-	 * Set task callbacks for details component
-	 */
-	setTaskCallbacks(callbacks: {
-		onTaskToggleComplete: (task: Task) => void;
-		onTaskEdit: (task: Task) => void;
-		onTaskUpdate: (originalTask: Task, updatedTask: Task) => Promise<void>;
-	}): void {
-		this.onTaskToggleComplete = callbacks.onTaskToggleComplete;
-		this.onTaskEdit = callbacks.onTaskEdit;
-		this.onTaskUpdate = callbacks.onTaskUpdate;
 	}
 
 	/**
@@ -161,43 +140,6 @@ export class FluentLayoutManager extends Component {
 
 		// Add sidebar as a child component for proper lifecycle management
 		this.addChild(this.sidebar);
-	}
-
-	/**
-	 * Initialize details component (non-leaves mode only)
-	 */
-	initializeDetailsComponent(): void {
-		if (this.useSideLeaves()) {
-			console.log(
-				"[FluentLayout] Using workspace side leaves: skip in-view details panel",
-			);
-			return;
-		}
-
-		// Initialize details component (hidden by default)
-		this.detailsComponent = new TaskDetailsComponent(
-			this.rootContainerEl,
-			this.app,
-			this.plugin,
-		);
-		this.addChild(this.detailsComponent);
-		this.detailsComponent.load();
-
-		// Set up callbacks
-		this.detailsComponent.onTaskToggleComplete = (task: Task) =>
-			this.onTaskToggleComplete?.(task);
-		this.detailsComponent.onTaskEdit = (task: Task) =>
-			this.onTaskEdit?.(task);
-		this.detailsComponent.onTaskUpdate = async (
-			originalTask: Task,
-			updatedTask: Task,
-		) => {
-			await this.onTaskUpdate?.(originalTask, updatedTask);
-		};
-		this.detailsComponent.toggleDetailsVisibility = (visible: boolean) => {
-			this.toggleDetailsVisibility(visible);
-		};
-		this.detailsComponent.setVisible(this.isDetailsVisible);
 	}
 
 	/**
@@ -371,87 +313,7 @@ export class FluentLayoutManager extends Component {
 	 * - Non-leaves mode: Toggle internal details component
 	 * - Mobile: Overlay with backdrop
 	 */
-	toggleDetailsVisibility(visible: boolean): void {
-		this.isDetailsVisible = visible;
-
-		if (this.useSideLeaves()) {
-			// In side-leaf mode, reveal/collapse the right details pane
-			const ws = this.app.workspace;
-			if (visible) {
-				// Try to expand right split if it's collapsed
-				if (ws.rightSplit?.collapsed) {
-					ws.rightSplit.expand();
-				}
-			} else {
-				ws.rightSplit.collapse();
-			}
-
-			// Update header toggle visual state
-			if (this.detailsToggleBtn) {
-				this.detailsToggleBtn.toggleClass("is-active", visible);
-				this.detailsToggleBtn.setAttribute(
-					"aria-label",
-					visible ? t("Hide Details") : t("Show Details"),
-				);
-			}
-			return;
-		}
-
-		// Legacy/in-view mode
-		this.rootContainerEl?.toggleClass("details-visible", visible);
-		this.rootContainerEl?.toggleClass("details-hidden", !visible);
-
-		if (this.detailsComponent) {
-			this.detailsComponent.setVisible(visible);
-		}
-
-		if (this.detailsToggleBtn) {
-			this.detailsToggleBtn.toggleClass("is-active", visible);
-			this.detailsToggleBtn.setAttribute(
-				"aria-label",
-				visible ? t("Hide Details") : t("Show Details"),
-			);
-		}
-
-		// On mobile, add click handler to overlay to close details
-		if (Platform.isPhone && visible) {
-			// Use setTimeout to avoid immediate close on open
-			setTimeout(() => {
-				const overlayClickHandler = (e: MouseEvent) => {
-					// Check if click is on the overlay (pseudo-element area)
-					const detailsEl =
-						this.rootContainerEl?.querySelector(".task-details");
-					if (detailsEl && !detailsEl.contains(e.target as Node)) {
-						this.toggleDetailsVisibility(false);
-						document.removeEventListener(
-							"click",
-							overlayClickHandler,
-						);
-					}
-				};
-				document.addEventListener("click", overlayClickHandler);
-				this.mobileDetailsOverlayHandler = overlayClickHandler;
-			}, 100);
-		} else if (
-			Platform.isPhone &&
-			!visible &&
-			this.mobileDetailsOverlayHandler
-		) {
-			document.removeEventListener(
-				"click",
-				this.mobileDetailsOverlayHandler,
-			);
-			delete this.mobileDetailsOverlayHandler;
-		}
-	}
-
-	/**
-	 * Store details toggle button reference
-	 */
-	setDetailsToggleBtn(btn: HTMLElement): void {
-		this.detailsToggleBtn = btn;
-		this.detailsToggleBtn.toggleClass("is-active", this.isDetailsVisible);
-	}
+	closeTaskEditor(): void { this.editorModal?.close(); this.editorModal = null; }
 
 	/**
 	 * Check and auto-collapse sidebar on narrow screens (desktop only)
@@ -489,13 +351,10 @@ export class FluentLayoutManager extends Component {
 	 * Show task details in details panel
 	 */
 	showTaskDetails(task: Task): void {
-		if (this.useSideLeaves()) {
-			// In leaves mode, emit event to side leaf details view
-			// This will be handled by the main view's event emission
-			return;
-		}
-
-		this.detailsComponent?.showTaskDetails(task);
+		if (!task?.id) return;
+		this.editorModal?.close();
+		this.editorModal = new TaskDetailsModal(this.app, this.plugin, task);
+		this.editorModal.open();
 	}
 
 	/**
@@ -527,79 +386,9 @@ export class FluentLayoutManager extends Component {
 	 * - Reset filter button (conditional)
 	 */
 	createActionButtons(): void {
-		// Details toggle button
-		this.detailsToggleBtn = this.view.addAction(
-			"panel-right-dashed",
-			t("Details"),
-			() => {
-				this.toggleDetailsVisibility(!this.isDetailsVisible);
-			},
-		);
-
-		if (this.detailsToggleBtn) {
-			this.detailsToggleBtn.toggleClass("panel-toggle-btn", true);
-			this.detailsToggleBtn.toggleClass(
-				"is-active",
-				this.isDetailsVisible,
-			);
-		}
-
 		// Capture button
 		this.view.addAction("notebook-pen", t("Capture"), () => {
-			const modal = new QuickCaptureModal(
-				this.app,
-				this.plugin,
-				{},
-				true,
-			);
-			modal.open();
-		});
-
-		// Filter button
-		this.view.addAction("filter", t("Filter"), (e: MouseEvent) => {
-			if (Platform.isDesktop) {
-				const popover = new ViewTaskFilterPopover(
-					this.app,
-					undefined,
-					this.plugin,
-				);
-
-				// Set onClose callback for consistency (realtime event listeners handle the actual updates)
-				popover.onClose = (filterState) => {
-					// Realtime event listeners already handle filter changes
-					// This callback is kept for potential future extensions
-				};
-
-				// Load current filter state after popover is shown
-				setTimeout(() => {
-					const liveFilterState = this.getLiveFilterState?.();
-					if (liveFilterState && popover.taskFilterComponent) {
-						popover.taskFilterComponent.loadFilterState(
-							liveFilterState,
-						);
-					}
-				}, 100);
-
-				popover.showAtPosition({ x: e.clientX, y: e.clientY });
-			} else {
-				const modal = new ViewTaskFilterModal(
-					this.app,
-					this.leaf.id,
-					this.plugin,
-				);
-
-				modal.open();
-
-				// Load current filter state after modal is opened
-				setTimeout(() => {
-					const liveFilterState = this.getLiveFilterState?.();
-					if (liveFilterState && modal.taskFilterComponent) {
-						modal.taskFilterComponent.loadFilterState(
-							liveFilterState,
-						);
-					}
-				}, 100);
-			}
+			this.onSidebarNavigate?.("new-task");
 		});
 
 		// Update action buttons visibility
@@ -636,14 +425,5 @@ export class FluentLayoutManager extends Component {
 	/**
 	 * Clean up mobile event listeners
 	 */
-	onunload(): void {
-		if (Platform.isPhone && (this as any).mobileDetailsOverlayHandler) {
-			document.removeEventListener(
-				"click",
-				(this as any).mobileDetailsOverlayHandler,
-			);
-			delete (this as any).mobileDetailsOverlayHandler;
-		}
-		super.onunload();
-	}
+	onunload(): void { this.closeTaskEditor(); }
 }

@@ -12,6 +12,8 @@ import TaskProgressBarPlugin from "@/index";
 import { Task } from "@/types/task";
 import { t } from "@/translations/helper";
 import { Events, on } from "@/dataflow/events/Events";
+import { SavedTaskFilterModal } from "./SavedTaskFilterModal";
+import { savedTaskFilters } from "@/utils/task/saved-task-filters";
 
 export type ViewMode = "list" | "kanban" | "tree" | "calendar";
 
@@ -45,6 +47,19 @@ export class TopNavigation extends Component {
 	private searchInput: HTMLInputElement;
 	private currentViewMode: ViewMode = "list";
 	private notificationCount = 0;
+	private contextViewId = "inbox";
+	private searchQuery = "";
+	private activePresetId: string | null = null;
+	public updateContext(viewId: string): void {
+		this.contextViewId = viewId;
+		const label = this.containerEl.querySelector<HTMLElement>(".tg-active-filter-label");
+		if (label) label.hidden = !label.textContent || ["points", "rewards", "habit"].includes(viewId);
+
+		this.containerEl.show();
+		const taskContext = !["points", "rewards", "habit"].includes(viewId);
+		(this.containerEl.querySelector(".tg-quick-filter-button") as HTMLElement | null)?.toggle(taskContext);
+		if (this.searchInput) this.searchInput.placeholder = t(viewId === "habit" ? "Search habits" : viewId === "rewards" ? "Search rewards" : viewId === "points" ? "Search bonuses, rewards and records" : "Search tasks, projects ...");
+	}
 	private availableModes: ViewMode[] = ["list", "kanban", "tree", "calendar"];
 	private viewTabsContainer: HTMLElement | null = null;
 	private customButtonsContainer: HTMLElement | null = null;
@@ -52,6 +67,7 @@ export class TopNavigation extends Component {
 		string,
 		{ buttonEl: HTMLElement; config: CustomNavButton }
 	> = new Map();
+	private headerControls: HTMLElement | null = null;
 	private cycleSelectorContainer: HTMLElement | null = null;
 	private selectedCycleId: string | null = null;
 	private onCycleChange: ((cycleId: string | null) => void) | null = null;
@@ -61,7 +77,7 @@ export class TopNavigation extends Component {
 		plugin: TaskProgressBarPlugin,
 		private onSearch: (query: string) => void,
 		private onViewModeChange: (mode: ViewMode) => void,
-		private onFilterClick: () => void,
+		private onFilterClick: (presetId: string | null) => void,
 		private onSortClick: () => void,
 		private onSettingsClick: () => void,
 		availableModes?: ViewMode[],
@@ -169,18 +185,15 @@ export class TopNavigation extends Component {
 		}
 	}
 
+	onunload(): void { this.headerControls?.remove(); }
+
 	private render() {
+		this.headerControls?.remove();
+		this.headerControls = null;
 		this.containerEl.empty();
 		this.containerEl.addClass("fluent-top-navigation");
 
-		// Hide entire navigation if no view modes are available
-		if (this.availableModes.length === 0) {
-			this.containerEl.hide();
-			this.containerEl.toggleClass("other-view", true);
-			return;
-		}
-
-		this.containerEl.toggleClass("other-view", false);
+		this.containerEl.toggleClass("other-view", this.availableModes.length === 0);
 
 		// Show navigation when modes are available
 		this.containerEl.show();
@@ -196,9 +209,41 @@ export class TopNavigation extends Component {
 
 		new SearchComponent(searchContainer)
 			.setPlaceholder(t("Search tasks, projects ..."))
+			.setValue(this.searchQuery)
 			.onChange((value) => {
+				this.searchQuery = value;
 				this.onSearch(value);
 			});
+		this.searchInput = searchContainer.querySelector("input")!;
+		const filterButton = searchContainer.createEl("button", {
+			cls: "fluent-nav-icon-button tg-quick-filter-button",
+			attr: { "aria-label": t("Quick filters") },
+		});
+		setIcon(filterButton, "list-filter");
+		searchContainer.createSpan({ cls: "tg-active-filter-label", attr: { hidden: "" } });
+		filterButton.toggleClass("is-active", !!this.activePresetId);
+		this.registerDomEvent(filterButton, "click", (event) => {
+			const menu = new Menu();
+			const presets = savedTaskFilters(this.plugin.settings.taskFilter?.presetTaskFilters);
+			const apply = (id: string | null) => { this.activePresetId = id; filterButton.toggleClass("is-active", !!id); this.onFilterClick(id); };
+			menu.addItem(item => item.setTitle(t("New saved filter")).setIcon("plus").onClick(() => new SavedTaskFilterModal(this.plugin.app, this.plugin, this.searchQuery, apply).open()));
+			if (!presets.length) {
+				menu.addItem(item => item.setTitle(t("No saved filters")).setDisabled(true));
+			} else {
+				menu.addItem(item => item.setTitle(t("Clear quick filter")).setIcon("x").onClick(() => apply(null)));
+				menu.addSeparator();
+				for (const preset of presets) {
+					menu.addItem(item => item.setTitle(preset.name).setIcon("filter").setChecked(preset.id === this.activePresetId).onClick(() => apply(preset.id)));
+				}
+				const active = presets.find(preset => preset.id === this.activePresetId);
+				if (active) {
+					menu.addSeparator();
+					menu.addItem(item => item.setTitle(t("Edit saved filter")).setIcon("pencil").onClick(() => new SavedTaskFilterModal(this.plugin.app, this.plugin, this.searchQuery, apply, active).open()));
+					menu.addItem(item => item.setTitle(t("Delete saved filter")).setIcon("trash").onClick(async () => { this.plugin.settings.taskFilter.presetTaskFilters = presets.filter(preset => preset.id !== active.id); await this.plugin.saveSettings(); apply(null); }));
+				}
+			}
+			menu.showAtMouseEvent(event);
+		});
 
 		// Center section - View mode tabs
 		const centerSection = this.containerEl.createDiv({
@@ -210,6 +255,7 @@ export class TopNavigation extends Component {
 			cls: "fluent-view-tabs",
 		});
 		this.renderViewTabs();
+		if (this.availableModes.length === 0) centerSection.hide();
 
 		// Right section - Notifications and Settings
 		const rightSection = this.containerEl.createDiv({
@@ -220,6 +266,7 @@ export class TopNavigation extends Component {
 		this.customButtonsContainer = rightSection.createDiv({
 			cls: "fluent-nav-custom-buttons",
 		});
+		for (const button of this.customButtons.values()) this.customButtonsContainer.append(button.buttonEl);
 
 		// Cycle selector container (hidden by default)
 		this.cycleSelectorContainer = rightSection.createDiv({
@@ -249,6 +296,12 @@ export class TopNavigation extends Component {
 		const settingsBtn = rightSection.createDiv({
 			cls: "fluent-nav-icon-button",
 		});
+		// Share the host action strip rather than creating two separated icon groups.
+		const actions = this.containerEl.closest(".view-header")?.querySelector(".view-actions");
+		if (actions) {
+			actions.prepend(rightSection);
+			this.headerControls = rightSection;
+		}
 		setIcon(settingsBtn, "settings");
 		this.registerDomEvent(settingsBtn, "click", () =>
 			this.onSettingsClick(),
@@ -276,10 +329,14 @@ export class TopNavigation extends Component {
 		this.registerDomEvent(tab, "click", () => {
 			// Only trigger view change if switching to a different mode
 			if (this.currentViewMode !== mode) {
-				this.setViewMode(mode);
-				this.onViewModeChange(mode);
+				this.selectViewMode(mode);
 			}
 		});
+	}
+
+	public selectViewMode(mode: ViewMode): void {
+		this.setViewMode(mode);
+		this.onViewModeChange(mode);
 	}
 
 	public setViewMode(mode: ViewMode) {
@@ -354,7 +411,7 @@ export class TopNavigation extends Component {
 	}
 
 	private updateNotificationBadge() {
-		const badge = this.containerEl.querySelector(
+		const badge = (this.headerControls || this.containerEl).querySelector(
 			".fluent-notification-badge",
 		);
 		if (badge instanceof HTMLElement) {
@@ -367,6 +424,12 @@ export class TopNavigation extends Component {
 		}
 	}
 
+	public setActivePreset(id: string | null, advanced = false): void {
+		this.activePresetId = id;
+		const label = this.containerEl.querySelector<HTMLElement>(".tg-active-filter-label");
+		if (label) { label.textContent = id ? savedTaskFilters(this.plugin.settings.taskFilter?.presetTaskFilters).find(preset => preset.id === id)?.name || "" : advanced ? t("View filter") : ""; label.hidden = !label.textContent || ["points", "rewards", "habit"].includes(this.contextViewId); label.title = label.textContent || ""; }
+		this.containerEl.querySelector(".tg-quick-filter-button")?.classList.toggle("is-active", !!id);
+	}
 	public refresh() {
 		this.updateNotificationCount();
 	}
@@ -401,19 +464,21 @@ export class TopNavigation extends Component {
 					this.viewTabsContainer,
 					mode,
 					config.icon,
-					config.label,
+				t(config.label),
 				);
 			}
 		}
 	}
 
 	public updateAvailableModes(modes: ViewMode[]) {
+		if (modes.length === this.availableModes.length && modes.every((mode, i) => mode === this.availableModes[i])) return;
 		const wasEmpty = this.availableModes.length === 0;
 		this.availableModes = modes;
 
 		// Hide entire navigation if no modes available
 		if (modes.length === 0) {
-			this.containerEl.hide();
+			this.containerEl.show();
+			(this.containerEl.querySelector(".fluent-nav-center") as HTMLElement | null)?.hide();
 			this.containerEl.toggleClass("other-view", true);
 			return;
 		}
@@ -432,8 +497,7 @@ export class TopNavigation extends Component {
 		// If current mode is no longer available, switch to first available mode
 		if (!modes.includes(this.currentViewMode)) {
 			this.currentViewMode = modes[0];
-			// Notify about the mode change
-			this.onViewModeChange(this.currentViewMode);
+			// The owner resolves the mode after updating the available tabs.
 		}
 
 		// Update center section visibility (this should always be visible now since we handle empty modes above)
@@ -556,8 +620,10 @@ export class TopNavigation extends Component {
 		}
 
 		this.selectedCycleId = selectedCycleId;
-		this.renderCycleSelector();
-		this.cycleSelectorContainer.show();
+		const choices = (this.plugin.settings.statusCycles || []).filter(cycle => cycle.enabled && !/^default\s*cycle$|^默认周期$/i.test(cycle.name.trim()));
+		if (!choices.length) { this.cycleSelectorContainer.hide(); return; }
+		if (!choices.some(cycle => cycle.id === selectedCycleId)) this.selectedCycleId = null;
+		this.renderCycleSelector(); this.cycleSelectorContainer.show();
 	}
 
 	/**
@@ -657,7 +723,7 @@ export class TopNavigation extends Component {
 
 		// Get enabled cycles, sorted by priority
 		const enabledCycles = (this.plugin.settings.statusCycles || [])
-			.filter((c) => c.enabled)
+			.filter((c) => c.enabled && !/^default\s*cycle$|^默认周期$/i.test(c.name.trim()))
 			.sort((a, b) => a.priority - b.priority);
 
 		if (enabledCycles.length === 0) {

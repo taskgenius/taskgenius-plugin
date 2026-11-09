@@ -1,3 +1,4 @@
+import { buildVisibleTaskTree } from "@/utils/ui/tree-view-utils";
 import { App, Component } from "obsidian";
 import { Task } from "@/types/task";
 import { TaskListItemComponent } from "./listItem";
@@ -76,7 +77,8 @@ export class TaskListRendererComponent extends Component {
 				); // Show error
 				return;
 			}
-			this.renderTreeView(tasks, this.allTasksMap); // Pass the map
+			const visible = buildVisibleTaskTree(tasks);
+			this.renderTreeView([...visible.taskMap.values()], visible.taskMap); // Pass the map
 		} else {
 			this.renderListView(tasks);
 		}

@@ -1,3 +1,4 @@
+import { taskDatePrecisions } from "@/utils/date/optional-date-time";
 import { t as settingsText } from "@/translations/helper";
 import {
 	App,
@@ -734,6 +735,8 @@ export class TaskListItemComponent extends Component {
 			dateEl.classList.add(cssClass);
 		}
 
+		const precision = taskDatePrecisions(this.task)[`${type}Date`];
+		if (precision === "datetime" || precision !== "date" && (date.getHours() || date.getMinutes())) dateText += ` ${String(date.getHours()).padStart(2,"0")}:${String(date.getMinutes()).padStart(2,"0")}`;
 		dateEl.textContent = dateText;
 		dateEl.setAttribute("aria-label", date.toLocaleDateString());
 
@@ -970,10 +973,8 @@ export class TaskListItemComponent extends Component {
 			{ key: "cancelledDate", label: "Cancelled Date", icon: "x" },
 			{ key: "completedDate", label: "Completed Date", icon: "check" },
 			{ key: "priority", label: settingsText("Priority"), icon: "alert-triangle" },
-			{ key: "recurrence", label: settingsText("Recurrence"), icon: "repeat" },
 			{ key: "onCompletion", label: settingsText("On Completion"), icon: "flag" },
 			{ key: "dependsOn", label: "Depends On", icon: "link" },
-			{ key: "id", label: "Task ID", icon: "hash" },
 		];
 
 		// Filter out fields that already have values

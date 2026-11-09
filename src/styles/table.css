@@ -987,3 +987,7 @@
 .task-table-row-level-5 .task-table-cell:first-child {
 	padding-left: 12px; /* Reset to normal padding, let tree structure handle indentation */
 }
+
+.task-table-status { min-width: 84px; width: max-content; gap: 6px; }
+.task-table-status-text { white-space: nowrap; overflow: visible; text-overflow: clip; flex-shrink: 0; }
+.task-table-status-icon { flex: 0 0 16px; }

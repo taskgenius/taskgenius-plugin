@@ -1,3 +1,4 @@
+import { ProjectFileManager } from "@/managers/project-file-manager";
 import {
 	App,
 	Modal,
@@ -32,6 +33,10 @@ export type QuickCaptureMode = "checkbox" | "file";
  * Task metadata interface
  */
 export interface TaskMetadata {
+	points?: number;
+	dependsOn?: string[];
+	dailyNoteDate?: string;
+	datePrecision?: Record<string, "date" | "datetime" | undefined>;
 	startDate?: Date;
 	dueDate?: Date;
 	scheduledDate?: Date;
@@ -143,6 +148,7 @@ export abstract class BaseQuickCaptureModal extends Modal {
 		}
 
 		// If FileSource is disabled, force mode to checkbox
+		if (this.taskMetadata.project) { this.inlineModeAvailable = true; this.fileModeAvailable = false; this.currentMode = "checkbox"; }
 		if (this.currentMode === "file" && !this.fileModeAvailable) {
 			this.currentMode = "checkbox";
 		} else if (
@@ -205,7 +211,7 @@ export abstract class BaseQuickCaptureModal extends Modal {
 		) {
 			this.tempTargetFilePath = this.taskMetadata.customFileName;
 		} else if (settings.targetType === "daily-note") {
-			const dateStr = moment().format(settings.dailyNoteSettings.format);
+			const dateStr = moment(this.taskMetadata.dailyNoteDate || undefined).format(settings.dailyNoteSettings.format);
 			const pathWithDate = settings.dailyNoteSettings.folder
 				? `${settings.dailyNoteSettings.folder}/${dateStr}.md`
 				: `${dateStr}.md`;
@@ -518,6 +524,7 @@ export abstract class BaseQuickCaptureModal extends Modal {
 	 * Handle submit action
 	 */
 	protected async handleSubmit(): Promise<void> {
+		if (this.contentEl.querySelector('[aria-invalid="true"]')) { new Notice(t("Enter a valid date, optionally followed by HH:mm.")); return; }
 		const content =
 			this.capturedContent.trim() ||
 			this.markdownEditor?.value.trim() ||
@@ -616,6 +623,9 @@ export abstract class BaseQuickCaptureModal extends Modal {
 
 		const captureOptions = {
 			...this.plugin.settings.quickCapture,
+			dailyNoteDate: this.taskMetadata.dailyNoteDate,
+			project: this.currentMode === "checkbox" ? this.taskMetadata.project : undefined,
+			projectTagPrefixes: Object.values(this.plugin.settings.projectTagPrefix || {}).map(String),
 			targetFile,
 			targetType,
 			// For file mode, always replace
@@ -658,8 +668,9 @@ export abstract class BaseQuickCaptureModal extends Modal {
 
 			// Resolve the actual file path
 			let resolvedPath = targetFile;
-			if (this.plugin.settings.quickCapture.targetType === "daily-note") {
-				const dateStr = moment().format(
+			if (this.taskMetadata.project) { resolvedPath = new ProjectFileManager(this.app).find(this.taskMetadata.project)?.file.path || targetFile; }
+			else if (this.plugin.settings.quickCapture.targetType === "daily-note") {
+				const dateStr = moment(this.taskMetadata.dailyNoteDate || undefined).format(
 					this.plugin.settings.quickCapture.dailyNoteSettings.format,
 				);
 				const folder =
@@ -884,6 +895,8 @@ export abstract class BaseQuickCaptureModal extends Modal {
 			yamlLines.push(`scheduledDate: ${JSON.stringify(scheduledDate)}`);
 		if (priorityVal)
 			yamlLines.push(`priority: ${JSON.stringify(priorityVal)}`);
+		if (this.taskMetadata.points != null && Number.isFinite(this.taskMetadata.points)) yamlLines.push(`points: ${this.taskMetadata.points}`);
+		if (this.taskMetadata.dependsOn?.length) yamlLines.push(`dependsOn: ${JSON.stringify(this.taskMetadata.dependsOn)}`);
 		if (projectVal)
 			yamlLines.push(`project: ${JSON.stringify(projectVal)}`);
 		if (contextVal)

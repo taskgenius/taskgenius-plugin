@@ -23,7 +23,7 @@ import { getConfig } from "../common/task-parser-config";
 import { parseFileMeta } from "./parsers/FileMetaEntry";
 import { ConfigurableTaskParser } from "./core/ConfigurableTaskParser";
 import { MetadataParseMode } from "../types/TaskParserConfig";
-import { TimeParsingService } from "../services/time-parsing-service";
+import { TimeParsingService, DEFAULT_TIME_PARSING_CONFIG } from "../services/time-parsing-service";
 import type { EnhancedTimeParsingConfig } from "../types/time-parsing";
 
 /**
@@ -53,6 +53,8 @@ export class DataflowOrchestrator {
 
 	// Processing queue for throttling
 	private processingQueue = new Map<string, NodeJS.Timeout>();
+	private fileProcessing = new Map<string, Promise<void>>();
+	private disposed = false;
 	private readonly DEBOUNCE_DELAY = 300; // ms
 
 	// Lightweight bookkeeping for filter-based pruning/restoration
@@ -210,32 +212,8 @@ export class DataflowOrchestrator {
 		// Initialize ICS event source
 		this.icsSource = new IcsSource(app, () => this.plugin.getIcsManager());
 
-		// Initialize TimeParsingService with plugin settings
-		this.timeParsingService = new TimeParsingService(
-			this.plugin.settings?.timeParsing ||
-				({
-					enabled: true,
-					supportedLanguages: ["en", "zh"],
-					dateKeywords: {
-						start: ["start", "begin", "from"],
-						due: ["due", "deadline", "by", "until"],
-						scheduled: ["scheduled", "on", "at"],
-					},
-					removeOriginalText: true,
-					perLineProcessing: true,
-					realTimeReplacement: true,
-					timePatterns: {
-						singleTime: [],
-						timeRange: [],
-						rangeSeparators: ["-", "~", "～"],
-					},
-					timeDefaults: {
-						preferredFormat: "24h",
-						defaultPeriod: "AM",
-						midnightCrossing: "next-day",
-					},
-				} as EnhancedTimeParsingConfig),
-		);
+		// One shared built-in parser policy for capture, indexing and migrations.
+		this.timeParsingService = new TimeParsingService(DEFAULT_TIME_PARSING_CONFIG);
 
 		// Initialize FileSource (conditionally based on settings)
 		if (this.plugin.settings?.fileSource?.enabled) {
@@ -539,18 +517,14 @@ export class DataflowOrchestrator {
 						`[DataflowOrchestrator] WRITE_OPERATION_COMPLETE: ${path}, taskId: ${taskId}`,
 					);
 
-					// If we have a taskId, it means a specific task was updated
-					// We'll handle this through TASK_UPDATED event instead
-					if (!taskId) {
-						// No specific task, process the entire file
-						const file = this.vault.getAbstractFileByPath(
-							path,
-						) as TFile;
-						if (file) {
-							// Process immediately without debounce for WriteAPI operations
-							// Pass true to force cache invalidation
-							await this.processFileImmediate(file, true);
-						}
+					// A specific task id does not imply TASK_UPDATED will be emitted.
+					// Reparse the actual saved file for every completed write.
+					const file = this.vault.getAbstractFileByPath(path) as TFile | null;
+					if (file) {
+						const pending = this.processingQueue.get(path);
+						if (pending) clearTimeout(pending);
+						this.processingQueue.delete(path);
+						await this.processFileImmediate(file, true);
 					}
 				},
 			),
@@ -651,10 +625,25 @@ export class DataflowOrchestrator {
 	 * @param file The file to process
 	 * @param forceInvalidate Force cache invalidation (for WriteAPI operations)
 	 */
-	private async processFileImmediate(
+	public async refreshFile(filePath: string): Promise<void> {
+		const file = this.vault.getAbstractFileByPath(filePath) as TFile | null;
+		if (file) await this.processFileImmediate(file, true);
+	}
+
+	private async processFileImmediate(file: TFile, forceInvalidate = false): Promise<void> {
+		if (this.disposed) return;
+		const previous = this.fileProcessing.get(file.path) || Promise.resolve();
+		const next = previous.catch(() => {}).then(() => this.processFileSnapshot(file, forceInvalidate));
+		this.fileProcessing.set(file.path, next);
+		try { await next; }
+		finally { if (this.fileProcessing.get(file.path) === next) this.fileProcessing.delete(file.path); }
+	}
+
+	private async processFileSnapshot(
 		file: TFile,
 		forceInvalidate: boolean = false,
 	): Promise<void> {
+		if (this.disposed) return;
 		const filePath = file.path;
 
 		try {
@@ -665,7 +654,7 @@ export class DataflowOrchestrator {
 			// Step 2: Check cache and parse if needed
 			const rawCached = await this.storage.loadRaw(filePath);
 			const augmentedCached = await this.storage.loadAugmented(filePath);
-			const fileContent = await this.vault.cachedRead(file);
+			const fileContent = forceInvalidate ? await this.vault.read(file) : await this.vault.cachedRead(file);
 			console.log("[DataflowOrchestrator] processFileImmediate start", {
 				filePath,
 				forceInvalidate,
@@ -799,10 +788,9 @@ export class DataflowOrchestrator {
 					);
 					if (includeInlineParse) {
 						// Parse the file using workers (single-file path)
-						rawTasks = await this.workerOrchestrator.parseFileTasks(
-							file,
-							"high",
-						);
+						rawTasks = forceInvalidate
+							? await this.parseFile(file, projectData.tgProject, true)
+							: await this.workerOrchestrator.parseFileTasks(file, "high");
 					} else {
 						rawTasks = [];
 					}
@@ -837,7 +825,7 @@ export class DataflowOrchestrator {
 				augmentedTasks = await this.augmentor.merge(augmentContext);
 			}
 
-			if (!this.vault.getAbstractFileByPath(filePath)) return;
+			if (this.disposed || !this.vault.getAbstractFileByPath(filePath)) return;
 
 			// Step 3: Update repository (index + storage + events)
 			// Generate a unique sequence for this operation
@@ -917,7 +905,7 @@ export class DataflowOrchestrator {
 
 		// Update TimeParsingService configuration
 		if (settings.timeParsing && this.timeParsingService) {
-			this.timeParsingService.updateConfig(settings.timeParsing);
+			this.timeParsingService.updateConfig(DEFAULT_TIME_PARSING_CONFIG);
 		}
 
 		// Sync inheritance toggle to augmentor so it can respect disabling file frontmatter inheritance
@@ -1346,6 +1334,7 @@ export class DataflowOrchestrator {
 	private async parseFile(
 		file: TFile,
 		tgProject?: TgProject,
+		fresh = false,
 	): Promise<Task[]> {
 		const extension = file.extension.toLowerCase();
 
@@ -1354,7 +1343,7 @@ export class DataflowOrchestrator {
 
 		if (extension === "md") {
 			// Use ConfigurableTaskParser for markdown files
-			const content = await this.vault.cachedRead(file);
+			const content = fresh ? await this.vault.read(file) : await this.vault.cachedRead(file);
 			const fileCache = this.metadataCache.getFileCache(file);
 			const fileMetadata = fileCache?.frontmatter || {};
 
@@ -1865,6 +1854,7 @@ export class DataflowOrchestrator {
 	 * Cleanup resources
 	 */
 	async cleanup(): Promise<void> {
+		this.disposed = true;
 		// Clear all pending timeouts
 		for (const timeout of this.processingQueue.values()) {
 			clearTimeout(timeout);

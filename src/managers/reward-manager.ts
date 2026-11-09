@@ -8,6 +8,7 @@ import {
 	FilterNode,
 } from "../utils/task/filter-compatibility";
 import { Task } from "../types/task";
+import { resolveTaskPoints, taskCompletionTransactionId } from "./points-utils";
 
 export class RewardManager extends Component {
 	private plugin: TaskProgressBarPlugin;
@@ -24,10 +25,23 @@ export class RewardManager extends Component {
 			this.app.workspace.on(
 				"task-genius:task-completed",
 				(task: Task) => {
-					this.triggerReward(task);
+					void this.awardTaskPoints(task);
 				}
 			)
 		);
+	}
+
+	private async awardTaskPoints(task: Task): Promise<void> {
+		const settings = this.plugin.settings.rewards;
+		const ledger = settings.pointsLedger || (settings.pointsLedger = []);
+		const taskId = String(task.id || `${task.filePath}:${task.line}`);
+		const transactionId = taskCompletionTransactionId(task);
+		if (ledger.some(entry => entry.id === transactionId)) return;
+		const points = resolveTaskPoints(task, Number(settings.pointsPerTask ?? 0));
+		if (!Number.isFinite(points) || points === 0) return;
+		ledger.push({ id: transactionId, delta: points, label: task.content || task.originalMarkdown || "Task completed", createdAt: Date.now(), source: "task", taskId });
+		await this.plugin.saveSettings();
+		this.app.workspace.trigger("task-genius:points-updated");
 	}
 
 	/**

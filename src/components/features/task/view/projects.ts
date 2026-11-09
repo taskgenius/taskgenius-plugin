@@ -1,3 +1,4 @@
+import { projectFolderContainer } from "@/components/features/fluent/components/ProjectFolders";
 import {
 	App,
 	Component,
@@ -25,6 +26,7 @@ import {
 	ProgressData,
 } from "@/editor-extensions/ui-widgets/progress-bar-widget";
 import { QuickCaptureModal } from "@/components/features/quick-capture/modals/QuickCaptureModalWithSwitch";
+import { ProjectFileManager, ProjectCreateModal, ProjectArchiveModal, ProjectEditModal } from "@/managers/project-file-manager";
 
 interface SelectedProjects {
 	projects: string[];
@@ -33,6 +35,8 @@ interface SelectedProjects {
 }
 
 export class ProjectsComponent extends Component {
+	private searchQuery = "";
+	setSearchQuery(query: string): void { this.searchQuery = query.trim().toLocaleLowerCase(); }
 	// UI Elements
 	public containerEl: HTMLElement;
 	private projectsHeaderEl: HTMLElement;
@@ -181,6 +185,8 @@ export class ProjectsComponent extends Component {
 		const headerButtons = headerEl.createDiv({
 			cls: "projects-sidebar-header-btn-group",
 		});
+		new ExtraButtonComponent(headerButtons).setIcon("plus").setTooltip(t("New project")).onClick(() => new ProjectCreateModal(this.app, new ProjectFileManager(this.app), () => this.setTasks(this.sourceTasks, this.allTasks)).open());
+		new ExtraButtonComponent(headerButtons).setIcon("archive").setTooltip(t("Archived projects")).onClick(() => new ProjectArchiveModal(this.app, new ProjectFileManager(this.app), () => this.setTasks(this.sourceTasks, this.allTasks)).open());
 
 		// Add view toggle button for tree/list
 		const treeToggleBtn = headerButtons.createDiv({
@@ -351,18 +357,29 @@ export class ProjectsComponent extends Component {
 	private buildProjectsIndex() {
 		// Clear existing index
 		this.allProjectsMap.clear();
+		const projectFiles = new ProjectFileManager(this.app);
+		const projectNotes = projectFiles.list();
+		const archivedProjects = new Set(
+			projectNotes.filter(project => project.archived).map(project => project.name.toLocaleLowerCase()),
+		);
 
 		// Build a map of projects to task IDs using sourceTasks (filtered tasks)
 		// This ensures the sidebar only shows projects that have matching tasks
 		this.sourceTasks.forEach((task) => {
 			const effectiveProject = getEffectiveProject(task);
-			if (effectiveProject) {
+			if (effectiveProject && !archivedProjects.has(effectiveProject.toLocaleLowerCase())) {
 				if (!this.allProjectsMap.has(effectiveProject)) {
 					this.allProjectsMap.set(effectiveProject, new Set());
 				}
 				this.allProjectsMap.get(effectiveProject)?.add(task.id);
 			}
 		});
+		// Include active project notes even when a project has no tasks yet.
+		for (const project of projectNotes) {
+			if (!project.archived && !this.allProjectsMap.has(project.name) && (!this.searchQuery || project.name.toLocaleLowerCase().includes(this.searchQuery))) {
+				this.allProjectsMap.set(project.name, new Set());
+			}
+		}
 
 		// Build project tree if in tree view
 		if (this.isProjectTreeView) {
@@ -378,7 +395,7 @@ export class ProjectsComponent extends Component {
 		// Clear existing list
 		this.projectsListEl.empty();
 
-		if (this.isProjectTreeView && this.projectTree) {
+		if (this.isProjectTreeView && this.projectTree && !new ProjectFileManager(this.app).list().some(project => project.folder)) {
 			// Render as tree
 			if (this.projectTreeComponent) {
 				this.projectTreeComponent.unload();
@@ -439,8 +456,9 @@ export class ProjectsComponent extends Component {
 			// Sort projects alphabetically
 			const sortedProjects = Array.from(
 				this.allProjectsMap.keys(),
-			).sort();
+			).sort((a, b) => new ProjectFileManager(this.app).compareNames(a, b));
 
+			const folder = projectFolderContainer(this.projectsListEl, this.app);
 			// Render each project
 			sortedProjects.forEach((project) => {
 				// Get tasks for this project
@@ -459,15 +477,17 @@ export class ProjectsComponent extends Component {
 				}
 
 				// Create project item
-				const projectItem = this.projectsListEl.createDiv({
+				const projectItem = folder(new ProjectFileManager(this.app).find(project)?.folder || "").createDiv({
 					cls: "project-list-item",
 				});
 
+				new ProjectFileManager(this.app).bindReorder(projectItem, project, () => sortedProjects, () => { this.renderProjectsList(); void this.plugin.triggerViewUpdate(); });
 				// Project icon
 				const projectIconEl = projectItem.createDiv({
 					cls: "project-icon",
 				});
 				setIcon(projectIconEl, "folder");
+				const color = new ProjectFileManager(this.app).find(project)?.color; if (color) projectIconEl.style.color = color;
 
 				// Project name
 				const projectNameEl = projectItem.createDiv({
@@ -1186,6 +1206,15 @@ export class ProjectsComponent extends Component {
 
 	/** Create or update the tgProject info button in the right header */
 	private updateTgProjectPropsButton(selectedProject: string | null): void {
+		const manager = new ProjectFileManager(this.app);
+		const projectNote = selectedProject ? manager.find(selectedProject) : undefined;
+		if (projectNote && this.headerTopRightRowEl) {
+			this.teardownProjectPropsUI(); this.projectPropsBtnEl?.remove();
+			const button = this.headerTopRightRowEl.createDiv({ cls: "projects-props-btn", attr: { "aria-label": t("Edit project details") } });
+			setIcon(button, "pencil"); this.projectPropsBtnEl = button;
+			button.addEventListener("click", () => new ProjectEditModal(this.app, manager, projectNote, () => this.setTasks(this.sourceTasks, this.allTasks)).open());
+			return;
+		}
 		if (!this.headerTopRightRowEl) return;
 		// No selection: remove button and popover
 		if (!selectedProject) {

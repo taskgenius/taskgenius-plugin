@@ -350,13 +350,15 @@ export class QuadrantComponent extends Component {
 		if (!contentEl) return;
 
 		// Detect if we're on a mobile device for optimized settings
-		const isMobile =
-			!Platform.isDesktop ||
-			"ontouchstart" in window ||
-			navigator.maxTouchPoints > 0;
+		const isMobile = Platform.isMobile;
 
 		const sortable = new Sortable(contentEl, {
 			group: "quadrant-tasks",
+			draggable: ".tg-quadrant-card",
+			filter: "button, input, select, textarea, a",
+			preventOnFilter: false,
+			emptyInsertThreshold: 20,
+			delayOnTouchOnly: true,
 			animation: 150,
 			ghostClass: "tg-quadrant-card--ghost",
 			dragClass: "tg-quadrant-card--dragging",
@@ -451,109 +453,28 @@ export class QuadrantComponent extends Component {
 		if (!task) return;
 
 		try {
-			// Create a copy of the task for modification
-			const updatedTask = { ...task };
-
-			// Ensure metadata exists
-			if (!updatedTask.metadata) {
-				updatedTask.metadata = {
-					tags: [],
-					children: [],
-				};
-			}
-
-			// Update tags in metadata
-			const updatedTags = [...(updatedTask.metadata.tags || [])];
-
-			// Get tag names to remove (from source quadrant if provided, otherwise from config)
-			const tagsToRemove: string[] = [];
-
-			if (sourceQuadrant) {
-				// Remove tags from source quadrant (keep # prefix since metadata.tags includes #)
-				if (sourceQuadrant.urgentTag) {
-					tagsToRemove.push(sourceQuadrant.urgentTag);
-				}
-				if (sourceQuadrant.importantTag) {
-					tagsToRemove.push(sourceQuadrant.importantTag);
-				}
-			} else {
-				// Fallback: remove all urgent/important tags from config
-				const urgentTag = this.quadrantConfig.urgentTag || "#urgent";
-				const importantTag =
-					this.quadrantConfig.importantTag || "#important";
-				tagsToRemove.push(urgentTag);
-				tagsToRemove.push(importantTag);
-			}
-
-			// Remove existing urgent/important tags
-			const filteredTags = updatedTags.filter(
-				(tag) => !tagsToRemove.includes(tag)
-			);
-
-			// Add new tags based on target quadrant (keep # prefix since metadata.tags includes #)
-			if (quadrant.urgentTag) {
-				if (!filteredTags.includes(quadrant.urgentTag)) {
-					filteredTags.push(quadrant.urgentTag);
-				}
-			}
-			if (quadrant.importantTag) {
-				if (!filteredTags.includes(quadrant.importantTag)) {
-					filteredTags.push(quadrant.importantTag);
-				}
-			}
-
-			// Update tags in metadata
-			updatedTask.metadata.tags = filteredTags;
-
-			// Only update priority if using priority-based classification
+			const urgent = this.quadrantConfig.urgentTag || "#urgent";
+			const important = this.quadrantConfig.importantTag || "#important";
+			const normalize = (tag: string) => tag.replace(/^#/, "").toLowerCase();
+			const tags = (task.metadata?.tags || []).filter(tag => ![normalize(urgent), normalize(important)].includes(normalize(tag)) && !normalize(tag).startsWith("quadrant/"));
+			if (quadrant.id.startsWith("urgent-")) tags.push(urgent);
+			if (quadrant.id.endsWith("-important") && !quadrant.id.endsWith("-not-important")) tags.push(important);
+			// An explicit matrix placement must survive a near due date or keyword inference.
+			tags.push(`#quadrant/${quadrant.id}`);
+			const updatedTask: Task = { ...task, metadata: { ...task.metadata, tags } };
 			if (this.quadrantConfig.usePriorityForClassification) {
-				// Update priority based on quadrant
-				switch (quadrant.id) {
-					case "urgent-important":
-						updatedTask.metadata.priority = 5; // Highest
-						break;
-					case "not-urgent-important":
-						updatedTask.metadata.priority = 4; // High
-						break;
-					case "urgent-not-important":
-						updatedTask.metadata.priority = 3; // Medium
-						break;
-					case "not-urgent-not-important":
-						updatedTask.metadata.priority = 2; // Low
-						break;
-				}
+				updatedTask.metadata.priority = { "urgent-important": 5, "not-urgent-important": 3, "urgent-not-important": 4, "not-urgent-not-important": 2 }[quadrant.id];
 			}
-
-			// Store quadrant information in metadata using custom fields
-			if (!(updatedTask.metadata as any).customFields) {
-				(updatedTask.metadata as any).customFields = {};
-			}
-			(updatedTask.metadata as any).customFields.quadrant = quadrant.id;
-			(updatedTask.metadata as any).customFields.lastQuadrantUpdate =
-				Date.now();
-
-			// Call the onTaskUpdated callback if provided
-			if (this.params.onTaskUpdated) {
-				await this.params.onTaskUpdated(updatedTask);
-			}
-
-			// Update the task in our local array
-			const taskIndex = this.tasks.findIndex((t) => t.id === taskId);
-			if (taskIndex !== -1) {
-				this.tasks[taskIndex] = updatedTask;
-			}
-
-			// Show success feedback
-			this.showUpdateFeedback(task, quadrant);
-
-			// Refresh the view after a short delay to show the feedback
-			setTimeout(() => {
-				this.refresh();
-			}, 500);
+			if (!this.plugin.writeAPI) throw new Error("Task writer is unavailable");
+			const result = await this.plugin.writeAPI.updateTask({ taskId, updates: { metadata: updatedTask.metadata } });
+			if (!result.success) throw new Error(result.error || "Task update failed");
+			this.allTasks = this.allTasks.map(item => item.id === taskId ? updatedTask : item);
+			this.tasks = this.tasks.map(item => item.id === taskId ? updatedTask : item);
+			this.showUpdateFeedback(updatedTask, quadrant);
 		} catch (error) {
 			console.error("Failed to update task quadrant:", error);
 			this.showErrorFeedback(task, error);
-		}
+		} finally { this.refresh(); }
 	}
 
 	private showUpdateFeedback(_task: Task, quadrant: QuadrantDefinition) {
@@ -589,6 +510,8 @@ export class QuadrantComponent extends Component {
 	}
 
 	private determineTaskQuadrant(task: Task): string {
+		const explicit = (task.metadata?.tags || []).map(tag => tag.replace(/^#/, "")).find(tag => tag.startsWith("quadrant/"))?.slice(9);
+		if (explicit && QUADRANT_DEFINITIONS.some(quadrant => quadrant.id === explicit)) return explicit;
 		let isUrgent = false;
 		let isImportant = false;
 
@@ -679,7 +602,7 @@ export class QuadrantComponent extends Component {
 	}
 
 	public setTasks(tasks: Task[]) {
-		this.allTasks = [...tasks];
+		this.allTasks = tasks.map(task => ({ ...task, metadata: { ...task.metadata, tags: [...(task.metadata.tags || [])] } }));
 		this.applyFilters();
 	}
 

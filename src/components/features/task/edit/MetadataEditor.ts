@@ -1,3 +1,5 @@
+import { attachDateTimePicker } from "@/utils/date/date-time-picker";
+import { parseOptionalDateTime, formatOptionalDateTime, taskDatePrecisions } from "@/utils/date/optional-date-time";
 /**
  * Task Metadata Editor Component
  * Provides functionality to display and edit task metadata.
@@ -12,6 +14,7 @@ import {
 	TextAreaComponent,
 } from "obsidian";
 import { Task } from "@/types/task";
+import { renderTaskDependencies } from "./TaskDependencyPicker";
 import TaskProgressBarPlugin from "@/index";
 import { t } from "@/translations/helper";
 import {
@@ -65,6 +68,9 @@ export class TaskMetadataEditor extends Component {
 	 */
 	showTask(task: Task): void {
 		this.task = task;
+		this.task.content = typeof task.content === "string" ? task.content : "";
+		this.task.metadata ||= { tags: [], children: [] };
+		this.task.metadata.datePrecision = taskDatePrecisions(this.task);
 		this.container.empty();
 		this.container.addClass("task-metadata-editor");
 
@@ -179,16 +185,14 @@ export class TaskMetadataEditor extends Component {
 			"cancelledDate",
 			this.getDateString(this.task.metadata.cancelledDate)
 		);
-		this.createRecurrenceEditor(pane);
 	}
 
 	private populateDetailsTabContent(pane: HTMLElement): void {
+		this.createPointsEditor(pane);
 		this.createProjectEditor(pane);
 		this.createTagsEditor(pane);
 		this.createContextEditor(pane);
-		this.createOnCompletionEditor(pane);
 		this.createDependsOnEditor(pane);
-		this.createIdEditor(pane);
 	}
 
 	/**
@@ -204,6 +208,7 @@ export class TaskMetadataEditor extends Component {
 		});
 
 		// Project editor
+		this.createPointsEditor(metadataContainer);
 		this.createProjectEditor(metadataContainer);
 
 		// Tags editor
@@ -245,25 +250,31 @@ export class TaskMetadataEditor extends Component {
 		);
 
 		// Recurrence rule editor
-		this.createRecurrenceEditor(metadataContainer);
 
 		// New fields
-		this.createOnCompletionEditor(metadataContainer);
 		this.createDependsOnEditor(metadataContainer);
-		this.createIdEditor(metadataContainer);
+	}
+
+	private createPointsEditor(container: HTMLElement): void {
+		const field = container.createDiv({ cls: "field-container task-points-field" });
+		field.createEl("label", { text: t("Task points") });
+		const input = new TextComponent(field.createDiv());
+		input.setPlaceholder(t("Default points"));
+		input.inputEl.type = "number";
+		input.inputEl.min = "0";
+		input.setValue(this.task.metadata.points == null ? "" : String(this.task.metadata.points));
+		input.onChange(value => {
+			const trimmed = value.trim();
+			const points = Number(trimmed);
+			if (!trimmed || Number.isFinite(points)) this.notifyMetadataChange("points", trimmed === "" ? undefined : Math.max(0, points));
+		});
 	}
 
 	/**
 	 * Converts a date value to a string.
 	 */
 	private getDateString(dateValue: string | number | undefined): string {
-		if (dateValue === undefined) return "";
-		if (typeof dateValue === "number") {
-			// For numeric timestamps, prefer helper for correct display across timezones
-			return timestampToLocalDateString(dateValue);
-		}
-		// Already a YYYY-MM-DD string
-		return dateValue;
+		return formatOptionalDateTime(dateValue);
 	}
 
 	/**
@@ -310,7 +321,7 @@ export class TaskMetadataEditor extends Component {
 			.addOption("4", "⏫ " + t("High"))
 			.addOption("5", "🔺 " + t("Highest"))
 			.onChange((value) => {
-				this.notifyMetadataChange("priority", parseInt(value));
+				this.notifyMetadataChange("priority", value ? parseInt(value) : undefined);
 			});
 
 		priorityDropdown.selectEl.addClass("priority-select");
@@ -344,41 +355,15 @@ export class TaskMetadataEditor extends Component {
 		const fieldLabel = fieldContainer.createDiv({ cls: "field-label" });
 		fieldLabel.setText(label);
 
-		const dateInput = fieldContainer.createEl("input", {
-			cls: `date-input ${field}-input`,
-			type: "date",
-		});
-
-		if (value) {
-			// If already a YYYY-MM-DD string, use directly; else use helper for timestamp
-			const isDateString =
-				typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
-			if (isDateString) {
-				dateInput.value = value as string;
-			} else {
-				try {
-					const asNum =
-						typeof value === "number" ? value : Number(value);
-					dateInput.value = timestampToLocalDateString(
-						Number.isFinite(asNum) ? (asNum as number) : undefined
-					);
-				} catch (e) {
-					console.error(`Cannot parse date: ${value}`, e);
-				}
-			}
-		}
-
+		const dateInput = fieldContainer.createEl("input", { cls: `date-input ${field}-input`, type: "text", attr: { placeholder: "YYYY-MM-DD / YYYY-MM-DD HH:mm", "aria-label": label } });
+		dateInput.value = formatOptionalDateTime(this.task.metadata[field as keyof typeof this.task.metadata] as number, this.task.metadata.datePrecision?.[field]);
+		attachDateTimePicker(dateInput, label);
 		this.registerDomEvent(dateInput, "change", () => {
-			const dateValue = dateInput.value;
-			if (dateValue) {
-				// Use helper to convert local date string to UTC noon timestamp
-				const timestamp = localDateStringToTimestamp(dateValue);
-				if (timestamp !== undefined) {
-					this.notifyMetadataChange(field, timestamp);
-				}
-			} else {
-				this.notifyMetadataChange(field, undefined);
-			}
+			const value = dateInput.value.trim(), parsed = value ? parseOptionalDateTime(value) : null;
+			dateInput.setAttribute("aria-invalid", String(!!value && !parsed));
+			if (value && !parsed) return;
+			this.notifyMetadataChange("datePrecision", { ...this.task.metadata.datePrecision, [field]: parsed?.precision });
+			this.notifyMetadataChange(field, parsed?.timestamp);
 		});
 	}
 
@@ -393,17 +378,12 @@ export class TaskMetadataEditor extends Component {
 		fieldLabel.setText(t("Project"));
 
 		const effectiveProject = getEffectiveProject(this.task);
-		const isReadonly = isProjectReadonly(this.task);
+		const isReadonly = false;
 
 		const projectInput = new TextComponent(fieldContainer)
 			.setPlaceholder(t("Project name"))
 			.setValue(effectiveProject || "")
-			.setDisabled(isReadonly)
-			.onChange((value) => {
-				if (!isReadonly) {
-					this.notifyMetadataChange("project", value);
-				}
-			});
+			.setDisabled(isReadonly);
 
 		// Add visual indicator for tgProject - only show if no user-set project exists
 		if (
@@ -421,7 +401,7 @@ export class TaskMetadataEditor extends Component {
 		}
 
 		this.registerDomEvent(projectInput.inputEl, "blur", () => {
-			if (!isReadonly) {
+			if (projectInput.inputEl.value.trim() !== (effectiveProject || "").trim()) {
 				this.notifyMetadataChange(
 					"project",
 					projectInput.inputEl.value
@@ -476,9 +456,7 @@ export class TaskMetadataEditor extends Component {
 		const contextInput = new TextComponent(fieldContainer)
 			.setPlaceholder(t("e.g. @home, @work"))
 			.setValue(
-				Array.isArray(this.task.metadata.context)
-					? this.task.metadata.context.join(", ")
-					: ""
+				Array.isArray(this.task.metadata.context) ? this.task.metadata.context.join(", ") : this.task.metadata.context || ""
 			);
 
 		this.registerDomEvent(contextInput.inputEl, "blur", () => {
@@ -486,7 +464,7 @@ export class TaskMetadataEditor extends Component {
 				.split(",")
 				.map((ctx) => ctx.trim())
 				.filter((ctx) => ctx);
-			this.notifyMetadataChange("context", contexts);
+			this.notifyMetadataChange("context", contexts.join(", "));
 		});
 
 		new ContextSuggest(this.app, contextInput.inputEl, this.plugin);
@@ -588,28 +566,10 @@ export class TaskMetadataEditor extends Component {
 	 * Creates a dependsOn editor.
 	 */
 	private createDependsOnEditor(container: HTMLElement): void {
-		const fieldContainer = container.createDiv({
-			cls: "field-container dependson-container",
-		});
-		const fieldLabel = fieldContainer.createDiv({ cls: "field-label" });
-		fieldLabel.setText(t("Depends On"));
-
-		const dependsOnInput = new TextComponent(fieldContainer)
-			.setPlaceholder(t("Task IDs separated by commas"))
-			.setValue(
-				Array.isArray(this.task.metadata.dependsOn)
-					? this.task.metadata.dependsOn.join(", ")
-					: ""
-			);
-
-		this.registerDomEvent(dependsOnInput.inputEl, "blur", () => {
-			const dependsOnValue = dependsOnInput.inputEl.value;
-			const dependsOnArray = dependsOnValue
-				.split(",")
-				.map((id) => id.trim())
-				.filter((id) => id.length > 0);
-			this.notifyMetadataChange("dependsOn", dependsOnArray);
-		});
+		const task = this.task;
+		const root = container.createDiv({ cls: "field-container dependson-container" });
+		root.createDiv({ cls: "field-label", text: t("Depends On") });
+		renderTaskDependencies(this.app, this.plugin, root, task, ids => { if (this.task === task) this.notifyMetadataChange("dependsOn", ids); });
 	}
 
 	/**

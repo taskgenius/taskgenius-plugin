@@ -693,6 +693,8 @@ export class MinimalQuickCaptureModal extends Modal {
 
 				const captureOptions = {
 					...this.plugin.settings.quickCapture,
+					project: this.taskMetadata.project,
+					projectTagPrefixes: Object.values(this.plugin.settings.projectTagPrefix || {}).map(String),
 					targetFile:
 						this.taskMetadata.targetFile || this.getTargetFile(),
 					targetType: (this.taskMetadata.location || "fixed") as

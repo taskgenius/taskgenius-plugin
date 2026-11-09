@@ -1,3 +1,4 @@
+import { ProjectFileManager } from "@/managers/project-file-manager";
 import { Component, App } from "obsidian";
 import { TreeNode, ProjectNodeData } from "@/types/tree";
 import { TreeComponent } from "@/components/ui/tree/TreeComponent";
@@ -49,6 +50,9 @@ export class ProjectTreeComponent extends Component {
 						text: node.name,
 					});
 
+					const manager = new ProjectFileManager(this.app), color = manager.find(node.fullPath)?.color;
+					if (color) nameEl.style.color = color;
+					manager.bindReorder(contentEl, node.fullPath, () => manager.list().sort((a, b) => manager.compareNames(a.name, b.name)).map(project => project.name), () => { if (this.projectTree) this.setTree(this.projectTree, this.allTasks); void this.plugin.triggerViewUpdate(); });
 					// Task count badges
 					const countsEl = contentEl.createSpan({
 						cls: "project-tree-item-counts",
@@ -187,11 +191,13 @@ export class ProjectTreeComponent extends Component {
 	 * Set the project tree directly (instead of building from tasks)
 	 */
 	public setTree(tree: TreeNode<ProjectNodeData>, tasks: Task[]): void {
-		this.projectTree = tree;
+		const manager = new ProjectFileManager(this.app);
+		const ordered = (node: TreeNode<ProjectNodeData>): TreeNode<ProjectNodeData> => ({ ...node, children: node.children.map(ordered).sort((a, b) => manager.compareNames(a.fullPath, b.fullPath)) });
+		this.projectTree = ordered(tree);
 		this.allTasks = tasks;
 
 		// Set tree in component
-		this.treeComponent.setTree(tree);
+		this.treeComponent.setTree(this.projectTree);
 	}
 
 	/**

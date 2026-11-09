@@ -621,7 +621,7 @@ button.fluent-new-task-btn:hover {
 
 .bases-view .tg-kanban-filters,
 .tg-fluent-content .content-header,
-.tg-fluent-main-container:has(.fluent-top-navigation:not(.other-view))
+.workspace-leaf-content:has(.view-header .fluent-top-navigation:not(.other-view)) .tg-fluent-main-container
 	.tg-fluent-content
 	.tg-kanban-filters {
 	display: none;
@@ -1016,3 +1016,55 @@ button.fluent-new-task-btn:hover {
 	border-radius: 4px;
 	z-index: 1000;
 }
+
+/* Keep navigation inside Obsidian's existing title bar. */
+.view-header:has(.tg-fluent-top-nav) { height: auto; min-height: 48px; flex-wrap: wrap; }
+.view-header:has(.tg-fluent-top-nav) .view-header-title-container { flex: 1; min-width: 0; padding: 0; overflow: visible; }
+.view-header .tg-fluent-top-nav { width: 100%; min-width: 0; border: 0; background: transparent; }
+.view-header .fluent-top-navigation { height: auto; min-height: 42px; padding: 4px 8px; gap: 12px; flex-wrap: wrap; -webkit-app-region: no-drag; }
+.view-header .fluent-nav-left { flex: 1 1 220px; min-width: 140px; }
+.view-header .fluent-search-container { max-width: none; }
+.view-header .fluent-nav-center, .view-header .fluent-nav-right { flex-shrink: 0; }
+.view-header .fluent-view-tabs { display: flex; }
+.view-header .fluent-nav-center { display: flex; }
+
+.view-header .tg-fluent-top-nav { pointer-events: auto; }
+.tg-saved-filter-select { max-width: 180px; min-width: 92px; }
+
+.view-header:has(.tg-fluent-top-nav) { --icon-size: 16px; min-height: 38px; gap: 4px; }
+.view-header .fluent-top-navigation { min-height: 34px; padding: 0 4px; gap: 8px; background: transparent; }
+.view-header .fluent-nav-icon-button, .view-header .tg-quick-filter-button, .view-header .fluent-view-tab, .view-header .view-action, .view-header .fluent-nav-custom-button-wrapper .clickable-icon { height: 28px; min-height: 28px; width: 28px; padding: 5px; border: 0; border-radius: var(--radius-s); box-shadow: none; background: transparent; color: var(--icon-color); }
+.view-header .fluent-view-tab { width: auto; gap: 5px; padding: 5px 8px; }
+.view-header .fluent-view-tabs { padding: 0; background: transparent; }
+.view-header .fluent-nav-right { gap: 4px; }
+.view-header .fluent-search-container { align-items: center; }
+.view-header .fluent-nav-icon-button:hover, .view-header .fluent-view-tab:hover { background: var(--background-modifier-hover); color: var(--icon-color-hover); }
+.view-header .fluent-view-tab.is-active, .view-header .tg-quick-filter-button.is-active { background: var(--background-modifier-hover); color: var(--text-accent); }
+
+/* Both sidebar regions remain reachable, including empty drop targets. */
+.fluent-sidebar-content { min-height: 0; overflow-x: hidden; overscroll-behavior: contain; }
+.fluent-sidebar-content > .fluent-sidebar-section { flex-shrink: 0; }
+.fluent-sidebar-content .fluent-navigation-list { min-height: 28px; }
+.fluent-sidebar-rail { overflow-y: auto; min-height: 0; }
+
+/* One flat header surface, including Obsidian's own navigation/actions. */
+.view-header:has(.tg-fluent-top-nav) { flex-wrap: nowrap; padding: 0 8px; align-items: center; }
+.view-header:has(.tg-fluent-top-nav) :is(.view-header-nav-buttons, .view-actions, .panel-toggle-container, .panel-toggle-btn) {
+ background: transparent; border: 0; box-shadow: none; margin: 0; padding: 0; align-items: center; gap: 4px;
+}
+.view-header:has(.tg-fluent-top-nav) :is(.view-header-nav-buttons, .view-actions) { display: flex; flex-shrink: 0; height: 34px; }
+.view-header:has(.tg-fluent-top-nav) :is(.view-header-nav-buttons, .view-actions)::before,
+.view-header:has(.tg-fluent-top-nav) :is(.view-header-nav-buttons, .view-actions)::after { display: none; }
+.view-header:has(.tg-fluent-top-nav) .fluent-top-navigation { flex-wrap: nowrap; border: 0; box-shadow: none; }
+.view-header:has(.tg-fluent-top-nav) :is(.fluent-nav-right, .fluent-nav-custom-buttons) { display: flex; align-items: center; gap: 4px; }
+.view-header:has(.tg-fluent-top-nav) .fluent-nav-left { flex-basis: 100px; min-width: 80px; }
+
+.fluent-sidebar-rail > .fluent-rail-btn { flex-shrink: 0; }
+.view-header:has(.tg-fluent-top-nav) :is(.view-header-left, .view-header-title-container, .view-header-nav-buttons .clickable-icon) { border: 0; box-shadow: none; }
+
+.view-header .tg-active-filter-label { flex: 0 0 auto; max-width: none; overflow: visible; text-overflow: clip; }
+.view-header .fluent-search-container { min-width: 0; flex-wrap: nowrap; }
+
+.view-header .fluent-search-container > .search-input-container { flex: 1; min-width: 80px; }
+
+.view-header:has(.tg-fluent-top-nav) .fluent-nav-left { flex: 1 1 300px; min-width: min(100%, 300px); }

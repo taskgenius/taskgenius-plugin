@@ -1,4 +1,4 @@
-import { Component, Menu } from "obsidian";
+import { Component, Menu, setIcon } from "obsidian";
 import TaskProgressBarPlugin from "@/index";
 import { Task } from "@/types/task";
 
@@ -224,6 +224,9 @@ export class TaskStatusIndicator extends Component {
 			? `, next: ${context.nextStatus}`
 			: "";
 
+		this.element.querySelector(".task-status-indicator__icon")?.remove();
+		const paused = ["pause", "paused", "archived"].includes(this.normalizeStatus(context.displayName)) || (this.plugin.settings.taskStatuses?.archived || "").split("|").includes(context.currentMark);
+		if (paused) { const icon = this.element.createSpan({ cls: "task-status-indicator__icon" }); setIcon(icon, "pause"); this.element.insertBefore(icon, this.statusTextEl); }
 		this.statusTextEl.setText(context.displayName);
 		this.element.setAttribute("data-status", context.statusSlug);
 		this.element.setAttribute("data-status-mark", context.currentMark);
@@ -454,6 +457,7 @@ export class TaskStatusIndicator extends Component {
 	}
 
 	private formatStatusKey(key: string): string {
+		if (["archived", "paused", "pause"].includes(key.toLowerCase())) return "Paused";
 		return key
 			.replace(/([a-z])([A-Z])/g, "$1 $2")
 			.replace(/[-_]+/g, " ")

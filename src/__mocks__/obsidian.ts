@@ -144,6 +144,11 @@ export class TFile {
 	}
 }
 
+export class TFolder {
+	path: string;
+	constructor(path = "") { this.path = path; }
+}
+
 export class Notice {
 	constructor(message: string) {
 		// Mock implementation

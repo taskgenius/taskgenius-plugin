@@ -1,6 +1,7 @@
 import { App, getFrontMatterInfo, TFile } from "obsidian";
 import { QuickCaptureOptions } from "@/editor-extensions/core/quick-capture-panel";
 import { moment } from "obsidian";
+import { ProjectFileManager } from "@/managers/project-file-manager";
 
 /**
  * Get template file with automatic .md extension detection
@@ -100,8 +101,14 @@ export function processDateTemplates(filePath: string): string {
 export async function saveCapture(
 	app: App,
 	content: string,
-	options: QuickCaptureOptions
+	options: QuickCaptureOptions & { project?: string; projectTagPrefixes?: string[] }
 ): Promise<void> {
+	if (options.project?.trim() && /^\s*[-*+]\s+\[[^\]]*\]/.test(content)) {
+		const manager = new ProjectFileManager(app, options.projectTagPrefixes || ["project"]);
+		const project = await manager.create(options.project);
+		if (!project || !await manager.appendTaskBlock(project.name, content.split(/\r?\n/))) throw new Error("Could not save task to project note");
+		return;
+	}
 	const {
 		targetFile,
 		appendToFile,
@@ -115,7 +122,7 @@ export async function saveCapture(
 	// Determine the target file path based on target type
 	if (targetType === "daily-note" && dailyNoteSettings) {
 		// Generate daily note file path
-		const dateStr = moment().format(dailyNoteSettings.format);
+		const dateStr = moment(options.dailyNoteDate || undefined).format(dailyNoteSettings.format);
 		// For daily notes, the format might include path separators (e.g., YYYY-MM/YYYY-MM-DD)
 		// We need to preserve the path structure and only sanitize the final filename
 		const pathWithDate = dailyNoteSettings.folder

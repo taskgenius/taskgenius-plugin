@@ -1,3 +1,4 @@
+import { isProjectCalendarEntry } from "@/utils/task/project-calendar";
 import { Component, debounce } from "obsidian";
 import TaskProgressBarPlugin from "@/index";
 import { Task } from "@/types/task";
@@ -7,6 +8,9 @@ import { isDataflowEnabled } from "@/dataflow/createDataflow";
 import { Events, on } from "@/dataflow/events/Events";
 import { sortTasks } from "@/commands/sortTaskCommands";
 import { TaskTimerManager } from "@/managers/timer-manager";
+import { PresetTaskFilter } from "@/common/setting-definition";
+import { evaluateFilterNode, parseAdvancedFilterQuery } from "@/utils/task/filter-compatibility";
+import { buildProjectPlan } from "@/managers/project-plan";
 
 /**
  * FluentDataManager - Stateless data loading, filtering, and sorting executor
@@ -29,6 +33,18 @@ export class FluentDataManager extends Component {
 
 	// Batch operation state flag
 	private isBatchOperating = false;
+	private loadRequest = 0;
+	private disposed = false;
+	private listenersRegistered = false;
+	private pendingDataRefresh = false;
+
+	async finishInitialization(): Promise<void> {
+		if (this.disposed || !this.pendingDataRefresh) return;
+		this.pendingDataRefresh = false;
+		await this.loadTasks(false);
+	}
+
+	onunload(): void { this.disposed = true; this.loadRequest++; }
 
 	constructor(
 		private plugin: TaskProgressBarPlugin,
@@ -40,6 +56,7 @@ export class FluentDataManager extends Component {
 			selectedProject: string | undefined;
 			searchQuery: string;
 			filterInputValue: string;
+			activeTaskPreset: PresetTaskFilter["options"] | null;
 		},
 		private isInitializing: () => boolean,
 	) {
@@ -64,6 +81,8 @@ export class FluentDataManager extends Component {
 	 * Returns loaded tasks via callback
 	 */
 	async loadTasks(showLoading = true): Promise<void> {
+		if (this.disposed) return;
+		const request = ++this.loadRequest;
 		try {
 			console.log(
 				"[FluentData] loadTasks started, showLoading:",
@@ -84,7 +103,7 @@ export class FluentDataManager extends Component {
 				);
 				const queryAPI = this.plugin.dataflowOrchestrator.getQueryAPI();
 				console.log("[FluentData] Getting all tasks from queryAPI...");
-				loadedTasks = await queryAPI.getAllTasks();
+				loadedTasks = await queryAPI.getAllTasks(true);
 				console.log(
 					`[FluentData] Loaded ${loadedTasks.length} tasks from dataflow`,
 				);
@@ -99,17 +118,17 @@ export class FluentDataManager extends Component {
 			}
 
 			// Return loaded tasks via callback
-			this.onTasksLoaded?.(loadedTasks, null);
+			if (!this.disposed && request === this.loadRequest) this.onTasksLoaded?.(loadedTasks, null);
 		} catch (error) {
 			console.error("[FluentData] Failed to load tasks:", error);
 			const errorMessage =
 				(error as Error).message || "Failed to load tasks";
 			// Return error via callback
-			this.onTasksLoaded?.([], errorMessage);
+			if (!this.disposed && request === this.loadRequest) this.onTasksLoaded?.([], errorMessage);
 		} finally {
 			// Always notify loading complete
 			console.log("[FluentData] loadTasks complete");
-			this.onLoadingStateChanged?.(false);
+			if (!this.disposed && request === this.loadRequest) this.onLoadingStateChanged?.(false);
 		}
 	}
 
@@ -121,13 +140,17 @@ export class FluentDataManager extends Component {
 	applyFilters(tasks: Task[]): Task[] {
 		const viewId = this.getCurrentViewId();
 		const filterState = this.getCurrentFilterState();
+		if (viewId === "gantt") tasks = buildProjectPlan(this.plugin.app, tasks);
+		if (viewId === "calendar" || this.plugin.settings.viewConfiguration.find(view => view.id === viewId)?.specificConfig?.viewType === "calendar") tasks = tasks.filter(task => !isProjectCalendarEntry(this.plugin.app, task));
+		const query = filterState.filterInputValue || filterState.searchQuery || "";
+		const structuredQuery = /\b(?:AND|OR|NOT)\b|\b[\w-]+\s*:/i.test(query);
 
 		console.log(`[FluentData] applyFilters called for viewId: ${viewId}, total tasks: ${tasks.length}`);
 
 		// Build filter options
 		const filterOptions: any = {
-			textQuery:
-				filterState.filterInputValue || filterState.searchQuery || "",
+			textQuery: structuredQuery ? "" : query,
+			includeClosedTasks: !!filterState.activeTaskPreset,
 		};
 
 		// Always enable v2Filters for Working-on so the special filter runs
@@ -183,6 +206,76 @@ export class FluentDataManager extends Component {
 				filteredTasks,
 				filterOptions.v2Filters,
 			);
+		}
+
+		if (structuredQuery) {
+			try {
+				const tree = parseAdvancedFilterQuery(query);
+				filteredTasks = filteredTasks.filter(task => evaluateFilterNode(tree, task));
+			} catch { filteredTasks = []; }
+		}
+		const preset = filterState.activeTaskPreset;
+		if (preset) {
+			let presetTree: ReturnType<typeof parseAdvancedFilterQuery> | null = null;
+			try { if (preset.advancedFilterQuery?.trim()) presetTree = parseAdvancedFilterQuery(preset.advancedFilterQuery); }
+			catch { return []; }
+			const marks = this.plugin.settings.taskStatuses;
+			const split = (value?: string) => String(value || "").split("|").map(mark => mark.toLowerCase());
+			const inProgress = split(marks?.inProgress);
+			const completed = split(marks?.completed);
+			const abandoned = split(marks?.abandoned);
+			const planned = split(marks?.planned);
+			const notStarted = split(marks?.notStarted || " ");
+			const statusMatch = (task: Task) => {
+				const mark = String(task.status ?? " ").toLowerCase();
+				if (task.completed || completed.includes(mark)) return preset.includeCompleted;
+				if (abandoned.includes(mark)) return preset.includeAbandoned;
+				if (inProgress.includes(mark)) return preset.includeInProgress;
+				if (planned.includes(mark)) return preset.includePlanned;
+				if (notStarted.includes(mark)) return preset.includeNotStarted;
+				return preset.includeNotStarted;
+			};
+			const queryMatch = (task: Task) => {
+				const query = preset.advancedFilterQuery?.trim();
+				if (!query) return true;
+				const mark = String(task.status ?? " ").toLowerCase();
+				const statusName = task.completed || completed.includes(mark) ? "completed"
+					: abandoned.includes(mark) ? "abandoned"
+					: inProgress.includes(mark) ? "in-progress"
+					: planned.includes(mark) ? "planned"
+					: ["~", "="].includes(mark) || (this.plugin.settings.statusCycles || []).some(cycle => Object.entries(cycle.marks).some(([name, symbol]) => symbol === task.status && /pause|暂停/i.test(name))) ? "paused"
+					: "not-started";
+				return evaluateFilterNode(presetTree, { ...task, statusName });
+			};
+			const directMatches = new Set<string>();
+			for (const task of filteredTasks) {
+				const matchesQuery = queryMatch(task);
+				const matchesPreset = preset.filterMode === "EXCLUDE" ? !matchesQuery : matchesQuery;
+				if (statusMatch(task) && matchesPreset) directMatches.add(task.id);
+			}
+			const included = new Set(directMatches);
+			const allById = new Map(tasks.map(task => [task.id, task]));
+			for (const id of directMatches) {
+				const task = allById.get(id);
+				if (!task) continue;
+				const parentId = task.metadata?.parent;
+				if (preset.includeParentTasks && parentId) included.add(parentId);
+				if (preset.includeSiblingTasks && parentId) {
+					for (const sibling of tasks) if (sibling.metadata?.parent === parentId) included.add(sibling.id);
+				}
+				if (preset.includeChildTasks) {
+					const addChildren = (parent: Task) => {
+						for (const childId of parent.metadata?.children || []) {
+							if (included.has(childId)) continue;
+							included.add(childId);
+							const child = allById.get(childId);
+							if (child) addChildren(child);
+						}
+					};
+					addChildren(task);
+				}
+			}
+			filteredTasks = tasks.filter(task => included.has(task.id));
 		}
 
 		console.log(
@@ -400,8 +493,11 @@ export class FluentDataManager extends Component {
 	 * Notifies parent via onUpdateNeeded callback
 	 */
 	async registerDataflowListeners(): Promise<void> {
+		if (this.listenersRegistered || this.disposed) return;
+		this.listenersRegistered = true;
 		// Add debounced view update to prevent rapid successive refreshes
 		const debouncedViewUpdate = debounce(async () => {
+			if (this.disposed) return;
 			console.log("[FluentData] debouncedViewUpdate triggered");
 
 			// Skip update during batch operation to prevent list flashing
@@ -413,19 +509,23 @@ export class FluentDataManager extends Component {
 			}
 
 			if (!this.isInitializing()) {
+				this.pendingDataRefresh = false;
 				// Load tasks and notify parent
 				await this.loadTasks(false);
 				// Notify parent that data changed
-				this.onUpdateNeeded?.("dataflow");
+				if (!this.disposed) this.onUpdateNeeded?.("dataflow");
 			}
 		}, 500);
 
 		// Add debounced filter application
 		const debouncedApplyFilter = debounce(() => {
-			if (!this.isInitializing()) {
+			if (!this.disposed && !this.isInitializing()) {
 				this.onUpdateNeeded?.("filter-changed");
 			}
 		}, 400);
+
+		this.register(() => { (debouncedViewUpdate as any).cancel?.(); (debouncedApplyFilter as any).cancel?.(); });
+		const requestDataRefresh = () => { this.pendingDataRefresh = true; debouncedViewUpdate(); };
 
 		const scheduleFilterRefresh = () => {
 			if (this.isInitializing()) {
@@ -435,6 +535,14 @@ export class FluentDataManager extends Component {
 			// Re-use filter debounce so resorting happens once per burst
 			debouncedApplyFilter();
 		};
+
+		// Listen for cache ready event
+		this.registerEvent(
+			on(this.plugin.app, Events.CACHE_READY, async () => {
+				await this.loadTasks();
+				this.onUpdateNeeded?.("cache-ready");
+			}),
+		);
 
 		// Register dataflow event listeners
 		if (isDataflowEnabled(this.plugin)) {
@@ -468,20 +576,13 @@ export class FluentDataManager extends Component {
 				),
 			);
 
-			// Listen for cache ready event
-			this.registerEvent(
-				on(this.plugin.app, Events.CACHE_READY, async () => {
-					await this.loadTasks();
-					this.onUpdateNeeded?.("cache-ready");
-				}),
-			);
 
 			// Listen for task cache updates
 			this.registerEvent(
 				on(
 					this.plugin.app,
 					Events.TASK_CACHE_UPDATED,
-					debouncedViewUpdate,
+					requestDataRefresh,
 				),
 			);
 		} else {
@@ -489,7 +590,7 @@ export class FluentDataManager extends Component {
 			this.registerEvent(
 				this.plugin.app.workspace.on(
 					"task-genius:task-cache-updated",
-					debouncedViewUpdate,
+					requestDataRefresh,
 				),
 			);
 		}

@@ -5,7 +5,6 @@ import { ContentComponent } from "@/components/features/task/view/content";
 import { ForecastComponent } from "@/components/features/task/view/forecast";
 import { TagsComponent } from "@/components/features/task/view/tags";
 import { ProjectsComponent } from "@/components/features/task/view/projects";
-import { ReviewComponent } from "@/components/features/task/view/review";
 import { Habit } from "@/components/features/habit/habit";
 import { CalendarComponent } from "@/components/features/calendar";
 import { KanbanComponent } from "@/components/features/kanban/kanban";
@@ -23,6 +22,7 @@ import { t } from "@/translations/helper";
 import { ViewMode, TopNavigation } from "../components/FluentTopNavigation";
 import { TaskSelectionManager } from "@/components/features/task/selection/TaskSelectionManager";
 import { ErrorContext } from "@/types/fluent-types";
+import { PointsDashboard } from "@/components/features/rewards/PointsDashboard";
 
 type ManagedViewComponent = {
 	containerEl: HTMLElement;
@@ -76,13 +76,15 @@ const ERROR_CSS_CLASSES = {
  * - Render loading, error, and empty states
  */
 export class FluentComponentManager extends Component {
+	private searchQuery = "";
+	setSearchQuery(query: string): void { this.searchQuery = query; }
 	// View components
 	private contentComponent: ContentComponent;
 	private forecastComponent: ForecastComponent;
 	private tagsComponent: TagsComponent;
 	private projectsComponent: ProjectsComponent;
-	private reviewComponent: ReviewComponent;
 	private habitComponent: Habit;
+	private pointsComponent: PointsDashboard;
 	private calendarComponent: CalendarComponent;
 	private kanbanComponent: KanbanComponent;
 	private ganttComponent: GanttComponent;
@@ -288,38 +290,15 @@ export class FluentComponentManager extends Component {
 		this.parentView.addChild(this.projectsComponent);
 		this.projectsComponent.load();
 
-		// Initialize ReviewComponent
-		this.reviewComponent = new ReviewComponent(
-			this.contentArea,
-			this.app,
-			this.plugin,
-			{
-				onTaskSelected: (task) => {
-					if (task) this.viewHandlers.onTaskSelected(task);
-				},
-				onTaskCompleted: (task) => {
-					if (task) this.viewHandlers.onTaskCompleted(task);
-				},
-				onTaskUpdate: async (originalTask, updatedTask) => {
-					if (originalTask && updatedTask) {
-						await this.viewHandlers.onTaskUpdate(
-							originalTask,
-							updatedTask
-						);
-					}
-				},
-				onTaskContextMenu: (event, task) => {
-					if (task) this.viewHandlers.onTaskContextMenu(event, task);
-				},
-			}
-		);
-		this.parentView.addChild(this.reviewComponent);
-		this.reviewComponent.load();
 
 		// Initialize HabitComponent
-		this.habitComponent = new Habit(this.plugin, this.contentArea);
+		this.habitComponent = new Habit(this.plugin, this.contentArea, true);
 		this.parentView.addChild(this.habitComponent);
 		this.habitComponent.load();
+
+		this.pointsComponent = new PointsDashboard(this.app, this.plugin, this.contentArea);
+		this.parentView.addChild(this.pointsComponent);
+		this.pointsComponent.load();
 
 		// Initialize CalendarComponent
 		this.calendarComponent = new CalendarComponent(
@@ -404,51 +383,26 @@ export class FluentComponentManager extends Component {
 	 * Hide all components
 	 */
 	hideAllComponents(forceHideAll = false): void {
-		const isInitialHide = forceHideAll;
-
-		// Smart hiding - only hide currently visible component (unless initial hide)
-		if (!isInitialHide && this.currentVisibleComponent) {
-			console.log(
-				"[FluentComponent] Smart hide - only hiding current visible component"
-			);
-			this.currentVisibleComponent.containerEl?.hide();
-			this.currentVisibleComponent = null;
-		} else {
-			// Hide all components
-			console.log(
-				"[FluentComponent] Hiding all components",
-				isInitialHide ? "(initial hide)" : ""
-			);
-			this.contentComponent?.containerEl.hide();
-			this.forecastComponent?.containerEl.hide();
-			this.tagsComponent?.containerEl.hide();
-			this.projectsComponent?.containerEl.hide();
-			this.reviewComponent?.containerEl.hide();
-			this.habitComponent?.containerEl.hide();
-			this.calendarComponent?.containerEl.hide();
-			this.kanbanComponent?.containerEl.hide();
-			this.ganttComponent?.containerEl.hide();
-			this.viewComponentManager?.hideAllComponents();
-
-			// Hide two column views
-			this.twoColumnViewComponents.forEach((component) => {
-				component.containerEl.hide();
-			});
-
-			// Hide legacy containers
-			this.listContainer?.hide();
-			this.treeContainer?.hide();
-		}
-
-		// Hide cycle selector when hiding all components
-		if (this.topNavigation) {
-			this.topNavigation.hideCycleSelector();
-		}
+		for (const component of [this.contentComponent, this.forecastComponent, this.tagsComponent, this.projectsComponent, this.habitComponent, this.pointsComponent, this.calendarComponent, this.kanbanComponent, this.ganttComponent]) component?.containerEl?.hide();
+		this.viewComponentManager?.hideAllComponents();
+		for (const component of this.twoColumnViewComponents.values()) component.containerEl.hide();
+		this.listContainer?.hide(); this.treeContainer?.hide();
+		this.currentVisibleComponent = null;
+		this.topNavigation?.hideCycleSelector();
 	}
 
 	/**
 	 * Switch to a specific view
 	 */
+	refreshConfiguration(): void {
+		this.calendarComponent?.refreshConfiguration();
+		for (const component of this.twoColumnViewComponents.values()) {
+			this.parentView.removeChild(component);
+			component.containerEl.remove();
+		}
+		this.twoColumnViewComponents.clear();
+	}
+
 	switchView(
 		viewId: string,
 		tasks: Task[],
@@ -562,6 +516,10 @@ export class FluentComponentManager extends Component {
 			} else {
 				// Standard view types
 				switch (viewId) {
+					case "rewards":
+					case "points":
+						targetComponent = this.pointsComponent;
+						break;
 					case "habit":
 						targetComponent = this.habitComponent;
 						break;
@@ -587,7 +545,8 @@ export class FluentComponentManager extends Component {
 						}
 						break;
 					case "review":
-						targetComponent = this.reviewComponent;
+						targetComponent = this.projectsComponent;
+						modeForComponent = "projects";
 						break;
 					case "calendar":
 						targetComponent = this.calendarComponent;
@@ -641,10 +600,16 @@ export class FluentComponentManager extends Component {
 					`[FluentComponent] Setting view mode for ${viewId} to ${modeForComponent}`
 				);
 				targetComponent.setViewMode(modeForComponent as any, project);
+				if (targetComponent === this.contentComponent) {
+					this.contentComponent.setIsTreeView(viewMode === "tree");
+				}
 			}
 
 			// Set tasks on the component
-			if (typeof targetComponent.setTasks === "function") {
+			(targetComponent as ManagedViewComponent & { setSearchQuery?: (query: string) => void }).setSearchQuery?.(this.searchQuery);
+			if (targetComponent === this.contentComponent) {
+				this.contentComponent.setTasks(filteredTasks, tasks, false, true);
+			} else if (typeof targetComponent.setTasks === "function") {
 				// Special handling for components that need filtered + all tasks
 				// Tags view: uses filtered tasks for tag index (left sidebar), all tasks for tree view lookup
 				if (viewId === "tags") {
@@ -687,7 +652,7 @@ export class FluentComponentManager extends Component {
 			}
 
 			// Handle updateTasks method for table view adapter
-			if (typeof targetComponent.updateTasks === "function") {
+			if (typeof targetComponent.setTasks !== "function" && typeof targetComponent.updateTasks === "function") {
 				const filterOptions: any = {};
 				if (
 					currentFilterState &&
@@ -697,15 +662,10 @@ export class FluentComponentManager extends Component {
 					filterOptions.advancedFilter = currentFilterState;
 				}
 
-				targetComponent.updateTasks(
-					filterTasks(
-						tasks,
-						viewId as any,
-						this.plugin,
-						filterOptions
-					)
-				);
+				targetComponent.updateTasks(filteredTasks);
 			}
+
+			(targetComponent as ManagedViewComponent & { onShown?: () => void }).onShown?.();
 
 			// Refresh review settings if needed
 			if (
@@ -766,7 +726,7 @@ export class FluentComponentManager extends Component {
 					"[FluentComponent] Setting tasks to ContentComponent, filtered:",
 					filteredTasks.length
 				);
-				this.contentComponent.setTasks(filteredTasks, tasks);
+				this.contentComponent.setTasks(filteredTasks, tasks, false, true);
 				this.currentVisibleComponent = this.contentComponent;
 				break;
 
@@ -861,7 +821,7 @@ export class FluentComponentManager extends Component {
 					this.contentComponent?.setTasks?.(
 						filteredTasks,
 						tasks,
-						true
+						true, true
 					);
 					break;
 			}
@@ -886,7 +846,7 @@ export class FluentComponentManager extends Component {
 			forecast: this.forecastComponent,
 			tags: this.tagsComponent,
 			projects: this.contentComponent,
-			review: this.reviewComponent,
+			review: this.projectsComponent,
 			habit: this.habitComponent,
 			gantt: this.ganttComponent,
 			kanban: this.kanbanComponent,
@@ -1116,7 +1076,7 @@ export class FluentComponentManager extends Component {
 			projects: t("Projects"),
 			tags: t("Tags"),
 			forecast: t("Forecast"),
-			review: t("Review"),
+			review: t("Projects"),
 			habit: t("Habit"),
 			calendar: t("Calendar"),
 			kanban: t("Kanban"),
@@ -1178,9 +1138,10 @@ export class FluentComponentManager extends Component {
 	/**
 	 * Check if view is content-based (supports multiple view modes)
 	 */
-	private isContentBasedView(viewId: string): boolean {
+	public isContentBasedView(viewId: string): boolean {
 		const contentBasedViews = [
 			"inbox",
+			"working-on",
 			"today",
 			"upcoming",
 			"flagged",

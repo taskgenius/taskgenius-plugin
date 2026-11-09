@@ -89,7 +89,7 @@ const copyManifestPlugin = {
 
 const buildOptions = {
 	banner: {
-		js: banner,
+		js: banner + "\n/*! Habits integration: " + fs.readFileSync("src/integrations/habits/LICENSE", "utf8") + " */\n",
 	},
 	minify: prod ? true : false,
 	entryPoints: ["src/index.ts"],

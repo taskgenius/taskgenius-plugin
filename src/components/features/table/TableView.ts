@@ -76,9 +76,12 @@ export class TableView extends Component {
 		private plugin: TaskProgressBarPlugin,
 		private parentEl: HTMLElement,
 		private config: TableSpecificConfig,
-		private callbacks: TableViewCallbacks = {}
+		private callbacks: TableViewCallbacks = {},
+		private viewId = "table"
 	) {
 		super();
+		this.config.columnWidths ||= {};
+		this.config.visibleColumns ||= ["status", "content", "priority", "dueDate", "project"];
 		this.setupCallbacks();
 		this.initializeConfig();
 	}
@@ -104,7 +107,7 @@ export class TableView extends Component {
 			{
 				id: "rowNumber",
 				title: "#",
-				width: 60,
+				width: 44,
 				sortable: false,
 				resizable: false,
 				type: "number",
@@ -113,7 +116,7 @@ export class TableView extends Component {
 			{
 				id: "status",
 				title: t("Status"),
-				width: this.config.columnWidths.status || 80,
+				width: Math.max(112, this.config.columnWidths.status || 112),
 				sortable: this.config.sortableColumns,
 				resizable: this.config.resizableColumns,
 				type: "status",
@@ -122,7 +125,7 @@ export class TableView extends Component {
 			{
 				id: "content",
 				title: t("Content"),
-				width: this.config.columnWidths.content || 300,
+				width: this.config.columnWidths.content || 420,
 				sortable: this.config.sortableColumns,
 				resizable: this.config.resizableColumns,
 				type: "text",
@@ -131,7 +134,7 @@ export class TableView extends Component {
 			{
 				id: "priority",
 				title: t("Priority"),
-				width: this.config.columnWidths.priority || 100,
+				width: this.config.columnWidths.priority || 72,
 				sortable: this.config.sortableColumns,
 				resizable: this.config.resizableColumns,
 				type: "priority",
@@ -293,6 +296,10 @@ export class TableView extends Component {
 			this.app,
 			this.plugin
 		);
+		this.renderer.onColumnResize = (id, width) => {
+			this.config.columnWidths[id] = width;
+			this.saveColumnConfiguration();
+		};
 		this.addChild(this.renderer);
 
 		// Set up date change callback
@@ -387,6 +394,8 @@ export class TableView extends Component {
 	/**
 	 * Update the table with new task data
 	 */
+	public onShown(): void { this.refreshDisplay(); }
+
 	public updateTasks(tasks: Task[]) {
 		this.allTasks = tasks;
 		this.applyFiltersAndSort();
@@ -1145,7 +1154,7 @@ export class TableView extends Component {
 		if (this.plugin && this.plugin.settings) {
 			// Find the table view configuration
 			const tableViewConfig = this.plugin.settings.viewConfiguration.find(
-				(view) => view.id === "table"
+				(view) => view.id === this.viewId
 			);
 
 			if (tableViewConfig && tableViewConfig.specificConfig) {
@@ -1156,7 +1165,7 @@ export class TableView extends Component {
 						...this.config.visibleColumns,
 					];
 
-					// Save settings
+					tableConfig.columnWidths = { ...this.config.columnWidths };
 					this.plugin.saveSettings();
 				}
 			}

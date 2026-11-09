@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="780" viewBox="0 0 1080 780">
+<rect width="1080" height="780" fill="#1e1f22"/>
+<g font-family="Microsoft YaHei, sans-serif" fill="#e7e8ec">
+<text x="42" y="62" font-size="27" font-weight="700">积分与奖励</text>
+<text x="42" y="92" font-size="14" fill="#969ba8">签到、积累积分，再兑换你想要的奖励。</text>
+<rect x="910" y="39" width="128" height="40" rx="9" fill="#6279ad"/><text x="974" y="65" text-anchor="middle" font-size="14">＋ 记录积分</text>
+<rect x="42" y="120" width="322" height="118" rx="16" fill="#263a35" stroke="#3b6152"/>
+<text x="64" y="149" font-size="13" fill="#a4c7b8">可用积分</text><text x="64" y="205" font-size="43" font-weight="700" fill="#c3ead7">240</text>
+<rect x="380" y="120" width="322" height="118" rx="16" fill="#27292f" stroke="#393c44"/>
+<text x="402" y="149" font-size="13" fill="#969ba8">今日积分</text><text x="402" y="205" font-size="39" font-weight="700">实时更新</text>
+<rect x="718" y="120" width="320" height="118" rx="16" fill="#27292f" stroke="#393c44"/>
+<text x="740" y="149" font-size="13" fill="#969ba8">习惯 / 打卡记录</text><text x="740" y="205" font-size="34" font-weight="700">18 / 365</text>
+<rect x="42" y="260" width="996" height="51" rx="12" fill="#27292f"/>
+<rect x="217" y="266" width="175" height="39" rx="9" fill="#414652"/>
+<text x="121" y="292" text-anchor="middle" font-size="14" fill="#969ba8">每日打卡</text>
+<text x="304" y="292" text-anchor="middle" font-size="14">加分与奖励</text>
+<text x="482" y="292" text-anchor="middle" font-size="14" fill="#969ba8">积分流水</text>
+<text x="656" y="292" text-anchor="middle" font-size="14" fill="#969ba8">积分规则</text>
+<rect x="42" y="330" width="996" height="39" rx="9" fill="#24262b" stroke="#3b3e46"/>
+<text x="59" y="355" font-size="13" fill="#8b91a0">⌕  搜索习惯、奖励和流水</text>
+<rect x="42" y="390" width="490" height="335" rx="14" fill="#24262b" stroke="#393c44"/>
+<text x="64" y="424" font-size="18" font-weight="700">加分项</text><text x="445" y="423" font-size="12" fill="#9aaacf">编辑</text>
+<g font-size="13"><text x="64" y="476">读完一本书 + 20</text><text x="64" y="540">完成创作里程碑 + 50</text><text x="64" y="604">完成学习计划 + 30</text><text x="64" y="668">月度目标奖励 + 100</text></g>
+<g fill="#343b4c"><rect x="419" y="453" width="89" height="34" rx="8"/><rect x="419" y="517" width="89" height="34" rx="8"/><rect x="419" y="581" width="89" height="34" rx="8"/><rect x="419" y="645" width="89" height="34" rx="8"/></g>
+<g font-size="12" text-anchor="middle" fill="#c0cbe4"><text x="463" y="475">记录积分</text><text x="463" y="539">记录积分</text><text x="463" y="603">记录积分</text><text x="463" y="667">记录积分</text></g>
+<rect x="548" y="390" width="490" height="335" rx="14" fill="#24262b" stroke="#393c44"/>
+<text x="570" y="424" font-size="18" font-weight="700">奖励愿望</text><text x="951" y="423" font-size="12" fill="#9aaacf">编辑</text>
+<g font-size="13"><text x="570" y="472">一日旅行</text><text x="570" y="523">学习课程</text><text x="570" y="574">一本新书</text><text x="570" y="625">新的游戏</text><text x="570" y="676">一杯咖啡</text></g>
+<g font-size="12" text-anchor="end" fill="#939aaa"><text x="1009" y="472">500 积分</text><text x="1009" y="523">300 积分</text><text x="1009" y="625">200 积分</text></g>
+<rect x="908" y="550" width="108" height="34" rx="8" fill="#3b6456"/><text x="962" y="573" text-anchor="middle" font-size="12" fill="#c3ead7">兑换 · 80</text>
+<rect x="908" y="652" width="108" height="34" rx="8" fill="#3b6456"/><text x="962" y="675" text-anchor="middle" font-size="12" fill="#c3ead7">兑换 · 15</text>
+<text x="42" y="757" font-size="12" fill="#7d8493">布局预览 · 示例数据 · 直接使用原有习惯笔记和积分数据</text>
+</g></svg>

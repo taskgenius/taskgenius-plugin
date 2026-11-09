@@ -68,13 +68,6 @@ const TASK_GENIUS_BASES_VIEWS: TaskGeniusBasesViewType[] = [
 		description: 'View tasks in Gantt chart'
 	},
 	{
-		id: 'task-genius-review',
-		name: 'Review (Task Genius)',
-		icon: 'lucide-list-checks',
-		defaultViewMode: 'review',
-		description: 'Review and process tasks'
-	},
-	{
 		id: 'task-genius-habits',
 		name: 'Habits (Task Genius)',
 		icon: 'lucide-target',

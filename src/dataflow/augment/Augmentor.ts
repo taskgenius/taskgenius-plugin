@@ -406,6 +406,7 @@ export class Augmentor {
 			"createdDate",
 		];
 		for (const field of dateFields) {
+			if (field !== "createdDate" && typeof ctx.fileMeta?.project === "string" && ctx.fileMeta.project.trim()) continue;
 			if (metadata[field] === undefined || metadata[field] === null) {
 				// Try file first, then project
 				const fileValue = ctx.fileMeta?.[field];

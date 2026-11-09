@@ -87,6 +87,7 @@ export const quickCaptureState = StateField.define<boolean>({
 
 // Configuration options for the quick capture panel
 export interface QuickCaptureOptions {
+	dailyNoteDate?: string;
 	targetFile?: string;
 	placeholder?: string;
 	appendToFile?: "append" | "prepend" | "replace";

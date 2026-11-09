@@ -1,0 +1,22 @@
+.tg-task-planner { padding: 18px; height: 100%; overflow: auto; }
+.tg-planner-nav { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
+.tg-planner-nav strong { margin-left: auto; }
+.tg-planner-layout { display: grid; grid-template-columns: minmax(170px, 240px) minmax(500px, 1fr); gap: 16px; }
+.tg-planner-unscheduled { min-height: 200px; border: 1px solid var(--background-modifier-border); padding: 12px; border-radius: var(--radius-m); }
+.tg-planner-calendar { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 4px; }
+.tg-planner-day { min-height: 110px; padding: 6px; border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); }
+.tg-planner-day.is-today { border-color: var(--interactive-accent); }
+.tg-planner-day.is-other-month { background: var(--background-secondary); color: var(--text-muted); }
+.tg-planner-card { border-radius: var(--radius-s); background: var(--background-modifier-hover); margin-top: 6px; padding: 6px; cursor: grab; overflow-wrap: anywhere; }
+.tg-planner-day-label { font-size: var(--font-ui-small); }
+
+/* Both panes scroll independently, so a long backlog cannot stretch calendar rows. */
+.tg-task-planner { box-sizing: border-box; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.tg-planner-nav { flex-shrink: 0; flex-wrap: wrap; }
+.tg-planner-layout { flex: 1; min-height: 0; grid-template-columns: minmax(160px, 240px) minmax(0, 1fr); overflow: hidden; align-items: stretch; }
+.tg-planner-unscheduled { min-height: 0; overflow-y: auto; box-sizing: border-box; }
+.tg-planner-unscheduled h3 { margin: 0 0 12px; font-size: var(--font-ui-medium); color: var(--text-normal); }
+.tg-planner-calendar { min-height: 0; overflow: auto; align-content: start; grid-template-rows: 28px repeat(6, minmax(110px, 1fr)); }
+.tg-planner-weekday { position: sticky; top: 0; background: var(--background-primary); z-index: 1; }
+.tg-planner-day { min-width: 0; box-sizing: border-box; }
+@media(max-width: 650px) { .tg-planner-layout { grid-template-columns: minmax(120px, 30%) minmax(0, 1fr); gap: 8px; } .tg-planner-day { padding: 3px; } }

@@ -1,0 +1,12 @@
+// Render actual capture/edit DOM exported by the UI regression fixture.
+import fs from 'node:fs';
+import path from 'node:path';
+const output=path.resolve('output/playwright');
+const css=['src/styles/quick-capture.css','src/styles/fluent/fluent-main.css',path.join(output,'pause.css')].map(file=>fs.readFileSync(file,'utf8')).join('\n');
+const read=name=>fs.readFileSync(path.join(output,name+'.html'),'utf8');
+fs.writeFileSync(path.join(output,'task-forms.html'),`<!doctype html><html><head><meta charset="utf-8"><title>Task Genius shared task forms</title><style>
+:root{--background-primary:#1e2021;--background-secondary:#272a2d;--background-modifier-border:#454b50;--text-normal:#d7dce1;--text-muted:#a0a8b0;--text-accent:#90b6d8;--interactive-accent:#6a97c0;--icon-color:#a0a8b0;--font-ui-medium:15px;--font-ui-small:13px;--font-ui-smaller:12px;--radius-s:5px;--size-2-1:2px;--size-2-2:4px;--size-4-2:8px;--size-4-3:12px;--size-4-4:16px;--checkbox-size:16px;}
+*{box-sizing:border-box}body{font:14px system-ui;background:#1e2021;color:#d7dce1;margin:16px}.form-case{margin:20px 0 40px}h1{font-size:18px}.modal{padding:18px;border:1px solid #454b50;border-radius:12px;background:#1e2021;margin:auto;display:flex;flex-direction:column}.modal-content{overflow:auto;min-height:0}.setting-item{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #454b50;gap:8px}.setting-item-info{flex:1}.setting-item-control{display:flex;align-items:center;gap:6px}.setting-item-description{font-size:12px;color:#a0a8b0}input,select,button,textarea{font:inherit;color:#d7dce1;background:#30363b;border:1px solid #454b50;border-radius:5px;padding:5px 7px}input,select,button{height:30px}button{cursor:pointer}textarea{width:100%;min-height:240px;background:transparent;border:0}.search-input-container{flex:1;min-width:80px}.search-input-container input{width:100%}input[type=checkbox]{position:relative;appearance:none;width:16px;height:16px;padding:0}button:disabled{opacity:.4}.status-option{padding:4px;cursor:pointer}.view-header{border:1px solid #454b50;padding:6px;min-height:40px}.modal h2{font-size:16px}.preview-container{min-height:45px}
+${css}
+</style></head><body class="theme-dark task-genius-pause-icons"><h1>Filter label</h1>${read('filter')}<section class="form-case" id="create"><h1>New task</h1>${read('capture')}</section><section class="form-case" id="edit"><h1>Edit task</h1>${read('edit')}</section></body></html>`);
+console.log('Task form fixture ready.');

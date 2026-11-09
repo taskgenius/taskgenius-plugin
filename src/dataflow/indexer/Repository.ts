@@ -19,6 +19,7 @@ export class Repository {
 	private indexer: TaskIndexer;
 	private storage: Storage;
 	private lastSequence: number = 0;
+	public getRevision(): number { return this.lastSequence; }
 	private sourceSeq: number = 0; // Track source sequence to differentiate events
 	private icsEvents: Task[] = []; // Store ICS events separately
 	private fileTasks = new Map<string, Task>(); // Store file-level tasks
@@ -536,6 +537,7 @@ export class Repository {
 	 * Clear all data
 	 */
 	async clear(): Promise<void> {
+		this.lastSequence = Seq.next();
 		await this.indexer.clearIndex();
 		await this.storage.clear();
 	}

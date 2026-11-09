@@ -1,3 +1,9 @@
+import { importLegacyHabits, planLegacyHabits } from "@/integrations/habits/legacy-import";
+import { ConfirmModal } from "@/integrations/habits/ui/confirm-modal";
+import { HabitsBlock } from "@/integrations/habits/ui/habits-block";
+import { NativeHabitCards } from "@/integrations/habits/ui/native-cards";
+import { HabitModal } from "@/integrations/habits/ui/habit-modal";
+import { t as ht } from "@/integrations/habits/i18n";
 import { t as settingsText } from "@/translations/helper";
 import {
 	Component,
@@ -7,6 +13,7 @@ import {
 	Notice,
 	ButtonComponent,
 	ExtraButtonComponent,
+	SearchComponent,
 } from "obsidian";
 import {
 	HabitProps,
@@ -27,6 +34,51 @@ import "@/styles/habit.css";
 import { HabitEditDialog } from "@/components/features/habit/components/HabitEditDialog";
 
 export class Habit extends Component {
+	containerEl: HTMLElement;
+	private block?: HabitsBlock | NativeHabitCards;
+	private query = "";
+	setSearchQuery(query: string): void { this.query = query; this.block?.setSearchQuery(query); }
+	private disposed = false;
+	constructor(readonly plugin: TaskProgressBarPlugin, parentEl: HTMLElement, private externalSearch = false) {
+		super();
+		this.containerEl = parentEl.createDiv({cls: "tg-habit-component-container tg-habits-surface"});
+	}
+	async onload(): Promise<void> {
+		try {
+			const integration = await this.plugin.ensureHabitsIntegration();
+			if (this.disposed) return;
+			const toolbar = this.containerEl.createDiv({cls: "tg-habits-toolbar"});
+			toolbar.createEl("h2", {text: ht("Habits")});
+			if (!this.externalSearch) new SearchComponent(toolbar).setPlaceholder(settingsText("Search habits")).setValue(this.query).onChange(value => this.setSearchQuery(value));
+			const root = this.containerEl.createDiv();
+			this.block = this.addChild(new HabitsBlock(this.plugin.app, integration.store, () => integration.settings, integration.events, "", root));
+			this.block.setSearchQuery(this.query);
+			if (this.plugin.settings.habit.habits?.length) {
+				const legacy = this.containerEl.createEl("details", {cls: "tg-habits-legacy"});
+				legacy.createEl("summary", {text: ht("Existing Task Genius habits")});
+				legacy.createEl("p", {text: ht("Original daily-note records remain available below. Import creates habit notes with a complete source snapshot and never changes the original records.")});
+				new ButtonComponent(legacy).setButtonText(ht("Import existing records")).onClick(async () => {
+					const plans = planLegacyHabits(this.plugin.habitManager?.habits ?? []);
+					if (!plans.length) { new Notice(ht("No records available to import.")); return; }
+					const confirmed = await ConfirmModal.ask(this.plugin.app, ht("Import existing records"), ht("Create {n} habit notes in {folder}? Existing notes and daily records will be preserved.", {n: plans.length, folder: integration.settings.habitsFolder}));
+					if (!confirmed) return;
+					try {
+						const result = await importLegacyHabits(this.plugin.app, integration.settings, plans);
+						new Notice(ht("Imported {created} habits; skipped {skipped} existing imports.", result));
+						integration.events.trigger("settings-changed");
+					} catch (error) { console.error(error); new Notice(ht("Habit import failed. Existing files have been preserved.")); }
+				});
+				this.addChild(new LegacyHabit(this.plugin, legacy));
+			}
+		} catch (error) {
+			if (!this.disposed) this.containerEl.createEl("p", {text: ht("Unable to load habits. Check the console for details.")});
+			console.error("Task Genius habits", error);
+		}
+	}
+	onunload(): void { this.disposed = true; this.containerEl.empty(); }
+}
+
+class LegacyHabit extends Component {
 	plugin: TaskProgressBarPlugin;
 	containerEl: HTMLElement; // The element where the view will be rendered
 

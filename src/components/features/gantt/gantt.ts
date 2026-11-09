@@ -4,6 +4,9 @@ import {
 	debounce,
 	MarkdownRenderer as ObsidianMarkdownRenderer,
 	TFile,
+	Menu,
+	ButtonComponent,
+	Notice,
 } from "obsidian";
 import { type Task } from "@/types/task";
 import "@/styles/gantt/gantt.css";
@@ -23,6 +26,11 @@ import { ScrollToDateButton } from '@/components/features/task/filter/in-view/cu
 import { PRIORITY_MAP } from "@/common/default-symbol";
 
 import { GanttSpecificConfig } from "@/common/setting-definition";
+import { buildProjectPlan } from "@/managers/project-plan";
+import { ProjectFileManager, ProjectEditModal } from "@/managers/project-file-manager";
+import { t } from "@/translations/helper";
+import { projectDateChange, ProjectDateEdge } from "@/managers/project-dates";
+import { registerGanttPan } from "./drag-pan";
 
 // Define the PRIORITY_MAP here as well, or import it if moved to a shared location
 // This is needed to convert filter value (icon/text) back to number for comparison
@@ -105,6 +113,8 @@ export class GanttComponent extends Component {
 	private app: App;
 
 	private timescale: Timescale = "Day";
+	private projectScale: "Week" | "Month" | "Year" = "Month";
+	private periodAnchor = new Date();
 	private dayWidth: number = DAY_WIDTH_DEFAULT;
 	private startDate: Date | null = null;
 	private endDate: Date | null = null;
@@ -215,27 +225,6 @@ export class GanttComponent extends Component {
 		this.createBaseSVG(); // Creates SVG and groups
 
 		// Instantiate Child Components
-		this.filterComponent = this.addChild(
-			new FilterComponent(
-				{
-					container: this.filterContainerEl,
-					options: buildFilterOptionsFromTasks(this.tasks), // Initialize with empty array to satisfy type, will be updated dynamically
-					onChange: (activeFilters: ActiveFilter[]) => {
-						this.applyFiltersAndRender(activeFilters);
-					},
-					components: [
-						new ScrollToDateButton(
-							this.filterContainerEl,
-							(date: Date) => this.scrollToDate(date)
-						),
-					],
-				},
-				this.plugin
-
-
-
-			)
-		);
 
 		if (this.headerContainerEl) {
 			this.timelineHeaderComponent = this.addChild(
@@ -263,6 +252,10 @@ export class GanttComponent extends Component {
 		this.registerDomEvent(this.containerEl, "wheel", this.handleWheel, {
 			passive: false,
 		});
+		registerGanttPan(this, this.scrollContainerEl);
+		const controls = this.filterContainerEl.createDiv({ cls: "gantt-project-controls" });
+		new ButtonComponent(controls).setButtonText(t("Today")).onClick(() => { this.periodAnchor = new Date(); this.setProjectScale(this.projectScale); });
+		for (const scale of ["Week", "Month", "Year"] as const) new ButtonComponent(controls).setButtonText(t(scale)).onClick(() => this.setProjectScale(scale));
 			this.applyEffectiveConfig();
 
 		// Initial render is triggered by updateTasks or refresh
@@ -320,6 +313,7 @@ export class GanttComponent extends Component {
 
 
 	setTasks(newTasks: Task[]) {
+		if (this.viewId === "gantt" && newTasks.length > 0 && !newTasks.some(task => task.metadata.projectPlan)) newTasks = buildProjectPlan(this.app, newTasks);
 		this.preparedTasks = []; // Clear prepared tasks
 
 		this.tasks = this.sortTasks(newTasks);
@@ -374,10 +368,27 @@ export class GanttComponent extends Component {
 
 	// --- Date Range and Timescale Calculations ---
 
+	public onShown(): void { if (this.viewId === "gantt") this.setProjectScale(this.projectScale); }
+
+	public setProjectScale(scale: "Week" | "Month" | "Year"): void {
+		this.projectScale = scale; this.startDate = null; this.endDate = null;
+		this.calculateDateRange(true); this.prepareTasksForRender(); this.renderInternal();
+		this.scrollToDate(this.periodAnchor);
+	}
+
 	private calculateDateRange(forceRecalculate: boolean = false): {
 		startDate: Date;
 		endDate: Date;
 	} {
+		if (this.viewId === "gantt") {
+			const anchor = new Date(this.periodAnchor); anchor.setHours(0,0,0,0);
+			if (this.projectScale === "Week") { anchor.setDate(anchor.getDate()-(anchor.getDay()+6)%7-7); this.startDate = anchor; this.endDate = this.dateHelper.addDays(anchor,21); }
+			else if (this.projectScale === "Month") { this.startDate = new Date(anchor.getFullYear(),anchor.getMonth()-1,1); this.endDate = new Date(anchor.getFullYear(),anchor.getMonth()+2,1); }
+			else { this.startDate = new Date(anchor.getFullYear()-1,0,1); this.endDate = new Date(anchor.getFullYear()+2,0,1); }
+			this.dayWidth = Math.max(.2, (this.scrollContainerEl?.clientWidth || 1000)/Math.max(1,this.dateHelper.daysBetween(this.startDate,this.endDate)));
+			this.visibleStartDate = new Date(this.startDate); this.visibleEndDate = new Date(this.endDate);
+			return { startDate: this.startDate, endDate: this.endDate };
+		}
 		if (!forceRecalculate && this.startDate && this.endDate) {
 			return { startDate: this.startDate, endDate: this.endDate };
 		}
@@ -492,6 +503,7 @@ export class GanttComponent extends Component {
 	}
 
 	private calculateTimescaleParams() {
+		if (this.viewId === "gantt") { this.timescale = this.projectScale; return; }
 		if (!this.startDate || !this.endDate) return;
 
 		// Determine appropriate timescale based on dayWidth
@@ -546,7 +558,7 @@ export class GanttComponent extends Component {
 				// Optional: end bar at completion date if no due date
 			}
 
-			if (
+			if (!task.metadata.projectPlan && (
 				(taskDue && !taskStart) ||
 				(taskStart &&
 					taskDue &&
@@ -554,7 +566,7 @@ export class GanttComponent extends Component {
 						new Date(taskStart),
 						new Date(taskDue)
 					) === 0)
-			) {
+			)) {
 				const milestoneDate = taskDue
 					? new Date(taskDue)
 					: taskStart
@@ -822,6 +834,8 @@ export class GanttComponent extends Component {
 
 		// 3. Update Tasks - Pass only visible tasks
 		this.taskRendererComponent.updateParams({
+			dayWidth: this.dayWidth,
+			onDateChange: (task, days, edge) => void this.changeProjectDates(task, days, edge),
 			app: this.app,
 			taskGroupEl: this.taskGroupEl!, // Assert non-null as checked above
 			preparedTasks: visibleTasks, // Pass filtered list
@@ -1057,10 +1071,37 @@ export class GanttComponent extends Component {
 	};
 
 	private handleTaskClick(task: Task) {
+		if (task.metadata.projectPlan) { void this.app.workspace.openLinkText(task.filePath, "", false); return; }
 		this.params.onTaskSelected?.(task);
 	}
 
+	private zoomBy(factor: number): void {
+		const center = this.startDate ? this.dateHelper.xToDate(this.scrollContainerEl.scrollLeft + this.scrollContainerEl.clientWidth / 2, this.startDate, this.dayWidth) : new Date();
+		this.dayWidth = Math.max(MIN_DAY_WIDTH, Math.min(MAX_DAY_WIDTH, this.dayWidth * factor));
+		this.prepareTasksForRender(); this.renderInternal(); this.scrollToDate(center || new Date());
+	}
+
+	private async changeProjectDates(task: Task, days: number, edge: ProjectDateEdge): Promise<void> {
+		if (!task.metadata.projectPlan || !task.metadata.startDate || !task.metadata.dueDate) return;
+		try {
+			const dates = projectDateChange(task.metadata.startDate, task.metadata.dueDate, days, edge);
+			if (!await new ProjectFileManager(this.app).update(task.metadata.project || task.content, dates)) throw new Error(t("Project not found"));
+			const local = (value: string) => { const [year, month, day] = value.split("-").map(Number); return new Date(year, month - 1, day).getTime(); };
+			for (const item of this.tasks) if (item.id === task.id) item.metadata = { ...item.metadata, startDate: local(dates.startDate), dueDate: local(dates.dueDate) };
+			this.calculateDateRange(true); this.prepareTasksForRender(); this.renderInternal();
+		} catch (error) { new Notice(String(error)); this.renderInternal(); }
+	}
+
 	private handleTaskContextMenu(event: MouseEvent, task: Task) {
+		if (task.metadata.projectPlan) {
+			const manager = new ProjectFileManager(this.app);
+			const project = manager.find(task.metadata.project || task.content);
+			if (!project) return;
+			const menu = new Menu();
+			menu.addItem(item => item.setTitle(t("Edit project details")).setIcon("pencil").onClick(() => new ProjectEditModal(this.app, manager, project, () => void this.plugin.triggerViewUpdate()).open()));
+			menu.addItem(item => item.setTitle(t("Archive project")).setIcon("archive").onClick(async () => { await manager.setArchived(project.name, true); await this.plugin.triggerViewUpdate(); }));
+			menu.showAtMouseEvent(event); return;
+		}
 		this.params.onTaskContextMenu?.(event, task);
 	}
 

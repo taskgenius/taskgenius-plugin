@@ -31,6 +31,8 @@ import { FluentWorkspaceStateManager } from "@/components/features/fluent/manage
 import { FluentActionHandlers } from "@/components/features/fluent/managers/FluentActionHandlers";
 import { TaskSelectionManager } from "@/components/features/task/selection/TaskSelectionManager";
 import { getViewSettingOrDefault } from "@/common/setting-definition";
+import { PresetTaskFilter } from "@/common/setting-definition";
+import { savedTaskFilters } from "@/utils/task/saved-task-filters";
 
 export const FLUENT_TASK_VIEW = "fluent-task-genius-view";
 
@@ -92,6 +94,31 @@ export class FluentTaskView extends ItemView {
 	// Filter state
 	private currentFilterState: RootFilterState | null = null;
 	private liveFilterState: RootFilterState | null = null;
+	private activeTaskPreset: PresetTaskFilter["options"] | null = null;
+	private activeTaskPresetId: string | null = null;
+
+	private loadedFilterKey = "";
+	private viewFilterKey(): string { return `${this.workspaceId}:${this.currentViewId}`; }
+	private saveViewFilters(): void {
+		if (this.isInitializing || this.loadedFilterKey !== this.viewFilterKey()) return;
+		const all = this.app.loadLocalStorage("task-genius-view-filters-v2") || {};
+		all[this.viewFilterKey()] = structuredClone({ presetId: this.activeTaskPresetId, filters: this.viewState.filters, advanced: this.liveFilterState, project: this.viewState.selectedProject });
+		this.app.saveLocalStorage("task-genius-view-filters-v2", all);
+	}
+	private restoreViewFilters(): void {
+		const key = this.viewFilterKey();
+		const legacy = this.plugin.workspaceManager?.getEffectiveSettings(this.workspaceId)?.fluentFilterState?.[this.currentViewId];
+		const stored = this.app.loadLocalStorage("task-genius-view-filters-v2")?.[key] || (legacy ? { filters: legacy.filters, advanced: legacy.advancedFilter, project: legacy.selectedProject } : undefined);
+		this.loadedFilterKey = key;
+		this.activeTaskPresetId = stored?.presetId && savedTaskFilters(this.plugin.settings.taskFilter?.presetTaskFilters).some(preset => preset.id === stored.presetId) ? stored.presetId : null;
+		this.activeTaskPreset = null;
+		this.liveFilterState = stored?.advanced ? structuredClone(stored.advanced) : null;
+		this.currentFilterState = this.liveFilterState;
+		this.viewState.filters = structuredClone(stored?.filters || {});
+		this.viewState.selectedProject = stored?.project;
+		this.topNavigation?.setActivePreset(this.activeTaskPresetId, !!this.liveFilterState?.filterGroups?.length);
+		this.app.saveLocalStorage("task-genius-view-filter", this.liveFilterState);
+	}
 
 	// Selection state
 	private selectedTask: Task | null = null;
@@ -155,7 +182,9 @@ export class FluentTaskView extends ItemView {
 	 * Delay: 150ms to balance responsiveness and performance
 	 */
 	private handleFilterChanged = debounce(
-		(filterState: RootFilterState, leafId?: string) => {
+		(filterState: RootFilterState, leafId?: string, originKey?: string) => {
+			if (originKey && originKey !== this.viewFilterKey()) return;
+			if (!leafId || leafId !== (this.leaf as any)?.id) return;
 			// Only update if it's from a live filter component
 			if (
 				leafId &&
@@ -201,6 +230,7 @@ export class FluentTaskView extends ItemView {
 			}
 
 			// Persist and update header UI
+			this.saveViewFilters();
 			this.workspaceStateManager.saveFilterStateToWorkspace();
 			this.layoutManager.updateActionButtons();
 
@@ -360,7 +390,7 @@ export class FluentTaskView extends ItemView {
 			const restored =
 				this.workspaceStateManager.restoreFilterStateFromWorkspace();
 			if (restored?.activeViewId) {
-				this.currentViewId = restored.activeViewId;
+				this.currentViewId = restored.activeViewId === "review" ? "projects" : restored.activeViewId === "rewards" ? "points" : restored.activeViewId;
 			}
 			this.workspaceStateManager.syncFilterState(restored, {
 				setLiveFilterState: (state) => {
@@ -409,6 +439,7 @@ export class FluentTaskView extends ItemView {
 					}
 				},
 				onAfterSync: () => {
+					this.restoreViewFilters();
 					this.layoutManager?.updateActionButtons();
 				},
 			});
@@ -417,8 +448,8 @@ export class FluentTaskView extends ItemView {
 			// PHASE 6: Load Data (KEY PHASE)
 			// ====================
 			console.log("[Task Genius] Loading tasks...");
-			await this.dataManager.loadTasks(false); // Will trigger onTasksLoaded callback
 			await this.dataManager.registerDataflowListeners();
+			await this.dataManager.loadTasks(false); // Listeners precede the first snapshot.
 			console.log(
 				`[Task Genius] ✅ Loaded ${this.tasks.length} tasks, ${this.filteredTasks.length} after filters`
 			);
@@ -450,6 +481,7 @@ export class FluentTaskView extends ItemView {
 			}
 
 			this.isInitializing = false;
+			await this.dataManager?.finishInitialization();
 
 			if (this.DEBUG_MODE) {
 				console.log("[Task Genius] Calling final updateView()...");
@@ -474,6 +506,7 @@ export class FluentTaskView extends ItemView {
 				selectedProject: this.viewState.selectedProject || undefined,
 				searchQuery: this.viewState.searchQuery || "",
 				filterInputValue: this.viewState.filterInputValue || "",
+				activeTaskPreset: this.activeTaskPresetId ? savedTaskFilters(this.plugin.settings.taskFilter?.presetTaskFilters).find(preset => preset.id === this.activeTaskPresetId)?.options || null : this.activeTaskPreset,
 			}),
 			() => this.isInitializing
 		);
@@ -530,9 +563,8 @@ export class FluentTaskView extends ItemView {
 		this.actionHandlers.setCallbacks({
 			onTaskSelectionChanged: (task) => {
 				this.selectedTask = task;
-				if (task) {
-					this.layoutManager.showTaskDetails(task);
-				}
+				if (task) this.layoutManager.showTaskDetails(task);
+				else this.layoutManager.closeTaskEditor();
 			},
 			onTaskUpdated: (taskId, updatedTask) => {
 				// Update task in cache
@@ -575,7 +607,9 @@ export class FluentTaskView extends ItemView {
 					this.currentViewId,
 					this.viewState.viewMode
 				);
+				this.saveViewFilters();
 				this.currentViewId = viewId;
+				this.restoreViewFilters();
 				console.log(`[Task Genius] currentViewId updated to: ${this.currentViewId}`);
 
 				// When navigating to projects view directly, clear project selection
@@ -614,7 +648,7 @@ export class FluentTaskView extends ItemView {
 							// Broadcast filter change
 							this.app.workspace.trigger(
 								"task-genius:filter-changed",
-								nextState
+								nextState, (this.leaf as any).id
 							);
 						}
 					} catch (e) {
@@ -644,14 +678,16 @@ export class FluentTaskView extends ItemView {
 			},
 			onProjectSelected: (projectId) => {
 				console.log(`[Task Genius] Project selected: ${projectId}`);
-				this.viewState.selectedProject = projectId;
 
 				// Switch to projects view
 				this.recordViewModeForView(
 					this.currentViewId,
 					this.viewState.viewMode
 				);
+				this.saveViewFilters();
 				this.currentViewId = "projects";
+				this.restoreViewFilters();
+				this.viewState.selectedProject = projectId;
 				this.filteredTasks = this.dataManager.applyFilters(this.tasks);
 				const projectsViewMode = this.ensureViewModeForView(
 					this.currentViewId
@@ -705,12 +741,9 @@ export class FluentTaskView extends ItemView {
 						nextState
 					);
 
-					// Broadcast so any open filter UI reacts and header button shows reset
-					// The filter-changed event listener will handle applyFilters and updateView
-					this.app.workspace.trigger(
-						"task-genius:filter-changed",
-						nextState
-					);
+					this.saveViewFilters();
+					this.filteredTasks = this.dataManager.applyFilters(this.tasks);
+					this.updateView();
 				} catch (e) {
 					console.warn(
 						"[Task Genius] Failed to project-sync filter UI state",
@@ -734,13 +767,7 @@ export class FluentTaskView extends ItemView {
 				// Save to workspace
 				this.workspaceStateManager.saveFilterStateToWorkspace();
 			},
-			showDetailsPanel: (task) => {
-				this.layoutManager.showTaskDetails(task);
-			},
-			toggleDetailsVisibility: (visible) => {
-				this.layoutManager.toggleDetailsVisibility(visible);
-			},
-			getIsDetailsVisible: () => this.layoutManager.isDetailsVisible,
+
 		});
 		this.addChild(this.actionHandlers);
 
@@ -810,6 +837,11 @@ export class FluentTaskView extends ItemView {
 		const topNavEl = mainContainer.createDiv({
 			cls: "tg-fluent-top-nav",
 		});
+		// Use the host view's title bar so every control stays in one place.
+		const headerTitle = this.headerEl?.querySelector(".view-header-title-container");
+		if (headerTitle) headerTitle.replaceChildren(topNavEl);
+		this.registerDomEvent(topNavEl, "pointerdown", event => event.stopPropagation());
+		this.register(() => topNavEl.remove());
 
 		// Content wrapper (IMPORTANT: this was missing!)
 		const contentWrapper = mainContainer.createDiv({
@@ -836,30 +868,17 @@ export class FluentTaskView extends ItemView {
 			() => this.filteredTasks.length
 		);
 		this.layoutManager.setOnSidebarNavigate((viewId) => {
-			this.actionHandlers.handleNavigate(viewId);
+			this.actionHandlers.handleNavigate(viewId, this.viewState.selectedProject);
 		});
 		this.layoutManager.setOnProjectSelect((projectId) => {
 			this.actionHandlers.handleProjectSelect(projectId);
 		});
-		this.layoutManager.setTaskCallbacks({
-			onTaskToggleComplete: (task) => {
-				this.actionHandlers.toggleTaskCompletion(task);
-			},
-			onTaskEdit: (task) => {
-				void this.actionHandlers.handleTaskEditInFile(task);
-			},
-			onTaskUpdate: async (originalTask, updatedTask) => {
-				await this.actionHandlers.handleTaskUpdate(
-					originalTask,
-					updatedTask
-				);
-			},
-		});
+
 		this.addChild(this.layoutManager);
 
 		if (!useWorkspaceSideLeaves) {
 			// Initialize details component (non-leaves mode only)
-			this.layoutManager.initializeDetailsComponent();
+
 
 			// Initialize sidebar (non-leaves mode only)
 			this.layoutManager.initializeSidebar(sidebarEl);
@@ -881,9 +900,18 @@ export class FluentTaskView extends ItemView {
 			this.plugin,
 			(query: string) => this.actionHandlers.handleSearch(query),
 			(mode: ViewMode) => this.actionHandlers.handleViewModeChange(mode),
-			() => {
-				// Filter click callback (currently unused)
-				// Note: Filter functionality is implemented in FluentLayoutManager via addAction
+			(presetId) => {
+				this.activeTaskPresetId = presetId;
+				this.liveFilterState = null;
+				this.currentFilterState = null;
+				this.viewState.filters = {};
+				this.app.saveLocalStorage("task-genius-view-filter", null);
+				this.activeTaskPreset = presetId
+					? savedTaskFilters(this.plugin.settings.taskFilter?.presetTaskFilters).find(preset => preset.id === presetId)?.options || null
+					: null;
+				this.saveViewFilters();
+				this.filteredTasks = this.dataManager.applyFilters(this.tasks);
+				this.updateView();
 			},
 			() => {
 				// Sort click callback (future extension point)
@@ -990,11 +1018,15 @@ export class FluentTaskView extends ItemView {
 	 * Register workspace and global events
 	 */
 	private registerEvents() {
+		this.registerEvent(this.app.workspace.on("task-genius:view-config-changed", () => {
+			void this.refreshSettings().catch(error => console.error("Task Genius view settings refresh", error));
+		}));
 		// Workspace switch event
 		if (this.plugin.workspaceManager) {
 			this.registerEvent(
 				onWorkspaceSwitched(this.app, async (payload) => {
 					if (payload.workspaceId !== this.workspaceId) {
+						this.saveViewFilters();
 						// Save current workspace state immediately (before switching)
 						const snapshot =
 							this.workspaceStateManager.captureFilterStateSnapshot();
@@ -1015,7 +1047,7 @@ export class FluentTaskView extends ItemView {
 						const restored =
 							this.workspaceStateManager.restoreFilterStateFromWorkspace();
 						if (restored?.activeViewId) {
-							this.currentViewId = restored.activeViewId;
+							this.currentViewId = restored.activeViewId === "review" ? "projects" : restored.activeViewId === "rewards" ? "points" : restored.activeViewId;
 						}
 						this.workspaceStateManager.syncFilterState(restored, {
 							setLiveFilterState: (state) => {
@@ -1065,6 +1097,7 @@ export class FluentTaskView extends ItemView {
 								}
 							},
 							onAfterSync: () => {
+								this.restoreViewFilters();
 								this.layoutManager?.updateActionButtons();
 							},
 						});
@@ -1099,7 +1132,7 @@ export class FluentTaskView extends ItemView {
 			this.app.workspace.on(
 				"task-genius:filter-changed",
 				(filterState: RootFilterState, leafId?: string) => {
-					this.handleFilterChanged(filterState, leafId);
+					this.handleFilterChanged(filterState, leafId, this.viewFilterKey());
 				}
 			)
 		);
@@ -1113,7 +1146,9 @@ export class FluentTaskView extends ItemView {
 							payload.selectionType === "view" &&
 							payload.selectionId
 						) {
+							this.saveViewFilters();
 							this.currentViewId = payload.selectionId;
+							this.restoreViewFilters();
 							this.filteredTasks = this.dataManager.applyFilters(
 								this.tasks
 							);
@@ -1151,12 +1186,25 @@ export class FluentTaskView extends ItemView {
 	/**
 	 * Update view with current state
 	 */
+	public async refreshSettings(): Promise<void> {
+		if (this.isInitializing) return;
+		this.layoutManager.sidebar?.render();
+		this.componentManager.refreshConfiguration();
+		this.layoutManager.updateActionButtons();
+		await this.dataManager.loadTasks(false);
+	}
+
 	private updateView() {
 		if (this.isInitializing) {
 			console.log("[Task Genius] Skip update during initialization");
 			return;
 		}
 
+		if (this.loadedFilterKey !== this.viewFilterKey()) {
+			this.restoreViewFilters();
+			this.filteredTasks = this.dataManager.applyFilters(this.tasks);
+		}
+		this.topNavigation?.setActivePreset(this.activeTaskPresetId, !!this.liveFilterState?.filterGroups?.length);
 		console.log(
 			`[Task Genius] Proceeding with view update for ${this.currentViewId}`
 		);
@@ -1167,6 +1215,7 @@ export class FluentTaskView extends ItemView {
 				this.currentViewId,
 				this.viewState.selectedProject
 			) ?? [];
+		this.topNavigation?.updateContext(this.currentViewId);
 		this.topNavigation?.updateAvailableModes(availableModes);
 
 		// Update task count
@@ -1175,13 +1224,8 @@ export class FluentTaskView extends ItemView {
 		// Update sidebar active item
 		this.layoutManager.setSidebarActiveItem(this.currentViewId);
 
-		// Control project list interaction based on view state
-		// Disable project list when showing full projects overview (no project selected)
-		// Enable it when in other views or when a specific project is selected
-		const isProjectsOverview =
-			this.currentViewId === "projects" &&
-			!this.viewState.selectedProject;
-		this.layoutManager.sidebar?.setProjectListEnabled(!isProjectsOverview);
+		this.layoutManager.sidebar?.setProjectListEnabled(true);
+		this.layoutManager.setActiveProject(this.viewState.selectedProject || null);
 
 		// Show loading state
 		if (this.isLoading) {
@@ -1205,7 +1249,7 @@ export class FluentTaskView extends ItemView {
 		}
 
 		// Show empty state
-		if (this.tasks.length === 0) {
+		if (this.tasks.length === 0 && this.componentManager.isContentBasedView(this.currentViewId)) {
 			this.componentManager.renderEmptyState();
 			return;
 		}
@@ -1222,6 +1266,7 @@ export class FluentTaskView extends ItemView {
 		}
 
 		// Switch to appropriate component
+		this.componentManager.setSearchQuery?.(this.viewState.searchQuery || "");
 		this.componentManager.switchView(
 			this.currentViewId,
 			this.tasks,
@@ -1238,6 +1283,7 @@ export class FluentTaskView extends ItemView {
 	private resetCurrentFilter(): void {
 		console.log("[Task Genius] Resetting filter");
 
+		this.activeTaskPresetId = null; this.activeTaskPreset = null; this.viewState.filters = {};
 		// Clear filter states
 		this.liveFilterState = null;
 		this.currentFilterState = null;
@@ -1246,6 +1292,7 @@ export class FluentTaskView extends ItemView {
 		// Clear localStorage
 		this.app.saveLocalStorage("task-genius-view-filter", null);
 
+		this.saveViewFilters();
 		// Save the cleared filter state to workspace
 		this.workspaceStateManager.saveFilterStateToWorkspace();
 
@@ -1253,7 +1300,7 @@ export class FluentTaskView extends ItemView {
 		this.app.workspace.trigger("task-genius:filter-changed", {
 			rootCondition: "all",
 			filterGroups: [],
-		} as any);
+		} as any, (this.leaf as any).id);
 
 		// Clear any active project selection in sidebar
 		this.layoutManager.setActiveProject(null);
@@ -1306,6 +1353,7 @@ export class FluentTaskView extends ItemView {
 	 * Clean up on close
 	 */
 	async onClose() {
+		this.saveViewFilters();
 		console.log("[Task Genius] onClose started");
 
 		// Save workspace layout before closing

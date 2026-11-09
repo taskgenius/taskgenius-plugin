@@ -101,7 +101,7 @@ export class QuadrantCardComponent extends Component {
 
 		// Add change event listener for checkbox
 		this.registerDomEvent(checkbox, "change", () => {
-			const newStatus = checkbox.checked ? "x" : " ";
+			const newStatus = (checkbox.checked ? this.plugin.settings.taskStatuses.completed : this.plugin.settings.taskStatuses.notStarted).split("|")[0];
 			if (this.params.onTaskStatusUpdate) {
 				this.params.onTaskStatusUpdate(this.task.id, newStatus);
 			}
@@ -122,7 +122,9 @@ export class QuadrantCardComponent extends Component {
 	}
 
 	private createContent() {
-		this.contentEl = this.containerEl.createDiv("tg-quadrant-card-content");
+		const header = this.containerEl.querySelector<HTMLElement>(".tg-quadrant-card-header")!;
+		this.contentEl = header.createDiv("tg-quadrant-card-content");
+		header.insertBefore(this.contentEl, header.querySelector(".tg-quadrant-card-actions"));
 
 		// Task title/content - use markdown renderer
 		const titleEl = this.contentEl.createDiv("tg-quadrant-card-title");

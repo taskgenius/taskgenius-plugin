@@ -65,7 +65,7 @@ export class StatusComponent extends Component {
 				// Create checkbox-like element or icon for the status
 				let interactiveElement: HTMLElement = statusEl;
 				if (this.plugin.settings.enableTaskGeniusIcons) {
-					setIcon(interactiveElement, status.status);
+					setIcon(interactiveElement, ["archived", "paused", "pause"].includes(status.status) ? "pause" : status.status);
 				} else {
 					// Create checkbox-like element for the status
 					interactiveElement = createTaskCheckbox(
@@ -79,21 +79,15 @@ export class StatusComponent extends Component {
 					evt.stopPropagation();
 					evt.preventDefault();
 
-					const options = {
-						...this.task,
-						status: status.text,
-					};
-
-					if (status.text === "x" && !this.task.completed) {
-						options.completed = true;
-						options.metadata.completedDate = new Date().getTime();
-					}
-
+					const completed = (this.plugin.settings.taskStatuses?.completed || "x").split("|").includes(status.text);
+					const options = { ...this.task, status: status.text, completed, metadata: { ...(this.task.metadata || {}) } };
+					options.metadata.completedDate = completed ? options.metadata.completedDate || Date.now() : undefined;
+					options.metadata.cancelledDate = (this.plugin.settings.taskStatuses?.abandoned || "-").split("|").includes(status.text) ? options.metadata.cancelledDate || Date.now() : undefined;
 					this.params.onTaskUpdate?.(this.task, options);
 					this.params.onTaskStatusSelected?.(status.text);
 
 					// Update the current task status to reflect the change
-					this.task = { ...this.task, status: status.text };
+					this.task = options;
 
 					// Update the visual state
 					this.containerEl

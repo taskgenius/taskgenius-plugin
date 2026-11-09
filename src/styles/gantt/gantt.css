@@ -507,3 +507,13 @@
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
+
+.gantt-project-controls { display: flex; align-items: center; gap: 8px; padding: 4px 8px; }
+.gantt-task-item:has(.gantt-resize-handle) { cursor: grab; touch-action: none; }
+.gantt-task-item:active { cursor: grabbing; }
+.gantt-resize-handle { fill: var(--interactive-accent); opacity: .3; cursor: ew-resize; touch-action: none; }
+.gantt-task-item:hover .gantt-resize-handle { opacity: 1; }
+
+.gantt-scroll-container.is-panning { cursor: grabbing; user-select: none; }
+
+.gantt-drag-date-hint { position: fixed; z-index: 10000; pointer-events: none; padding: 6px 10px; border-radius: 6px; background: var(--background-secondary); color: var(--text-normal); box-shadow: var(--shadow-s); border: 1px solid var(--background-modifier-border); font-variant-numeric: tabular-nums; }

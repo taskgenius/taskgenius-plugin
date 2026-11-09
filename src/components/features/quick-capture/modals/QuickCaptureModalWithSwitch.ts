@@ -1,3 +1,8 @@
+import "@/styles/quick-capture.css";
+import { renderTaskDependencies } from "@/components/features/task/edit/TaskDependencyPicker";
+import { ProjectFileManager } from "@/managers/project-file-manager";
+import { attachDateTimePicker } from "@/utils/date/date-time-picker";
+import { parseOptionalDateTime, formatOptionalDateTime } from "@/utils/date/optional-date-time";
 import {
 	App,
 	Setting,
@@ -54,7 +59,6 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 	private startDateInput?: HTMLInputElement;
 	private dueDateInput?: HTMLInputElement;
 	private scheduledDateInput?: HTMLInputElement;
-	private includeTime: boolean = true;
 
 	// File name input for file creation mode
 	private fileNameInput: FileNameInput | null = null;
@@ -66,6 +70,10 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 
 	// Debounce timer for real-time parsing
 	private parseDebounceTimer?: number;
+	private editorSetupTimer?: number;
+	private suggestSetupTimer?: number;
+	protected rememberCaptureMode = true;
+	protected sourceTask?: Task;
 
 	constructor(
 		app: App,
@@ -84,10 +92,11 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 		} catch {}
 
 		super(app, plugin, initialMode, metadata);
+		this.modalEl.addClass("full");
 
 		// Initialize time parsing service
 		this.timeParsingService = new TimeParsingService(
-			this.plugin.settings.timeParsing || DEFAULT_TIME_PARSING_CONFIG,
+			DEFAULT_TIME_PARSING_CONFIG,
 		);
 	}
 
@@ -105,7 +114,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 			}
 
 			// Enable universal suggest after editor is created
-			setTimeout(() => {
+			this.suggestSetupTimer = window.setTimeout(() => {
 				if (this.markdownEditor?.editor?.editor) {
 					this.universalSuggest =
 						this.suggestManager.enableForQuickCaptureModal(
@@ -239,7 +248,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 
 		// Update editor title
 		const editorTitle = this.contentContainer?.querySelector(
-			".quick-capture-section-title",
+			".quick-capture-editor-panel .quick-capture-section-title",
 		);
 		if (editorTitle) {
 			editorTitle.setText(
@@ -315,7 +324,16 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 	/**
 	 * Create target file selector
 	 */
-	private createTargetFileSelector(container: HTMLElement): void {
+	protected createTargetFileSelector(container: HTMLElement): void {
+		const project = this.taskMetadata.project?.trim();
+		if (project && this.currentMode !== "file") {
+			const manager = new ProjectFileManager(this.app), file = manager.find(project)?.file;
+			const slug = project.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "-");
+			this.tempTargetFilePath = file?.path || `${manager.folder}/${slug}.md`;
+			container.createDiv({ cls: "quick-capture-section-title", text: t("Capture to:") });
+			container.createDiv({ cls: "quick-capture-target", text: this.tempTargetFilePath });
+			return;
+		}
 		const targetFileContainer = container.createDiv({
 			cls: "quick-capture-target-container",
 		});
@@ -336,6 +354,18 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 			},
 			text: this.tempTargetFilePath,
 		});
+
+		if (this.plugin.settings.quickCapture.targetType === "daily-note") {
+			const day = targetFileContainer.createEl("input", { type: "date", attr: { "aria-label": t("Daily note date") } });
+			day.value = this.taskMetadata.dailyNoteDate || moment().format("YYYY-MM-DD");
+			day.addEventListener("change", () => {
+				if (!moment(day.value, "YYYY-MM-DD", true).isValid()) return;
+				this.taskMetadata.dailyNoteDate = day.value;
+				const settings = this.plugin.settings.quickCapture.dailyNoteSettings;
+				this.tempTargetFilePath = this.sanitizeFilePath(`${settings.folder ? settings.folder + "/" : ""}${moment(day.value).format(settings.format)}.md`);
+				targetFileEl.textContent = this.tempTargetFilePath;
+			});
+		}
 
 		// Only add file suggest for fixed file type
 		if (this.plugin.settings.quickCapture.targetType === "fixed") {
@@ -390,29 +420,23 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 		// Context input
 		this.createContextInput(container);
 
-		// Recurrence input
-		this.createRecurrenceInput(container);
+		const additional = container.createEl("details", { cls: "quick-capture-additional" });
+		additional.createEl("summary", { text: t("More properties") });
+		new Setting(additional).setName(t("Task points")).addText(text => {
+			text.inputEl.type = "number"; text.inputEl.min = "0";
+			text.setValue(this.taskMetadata.points == null ? "" : String(this.taskMetadata.points)).onChange(value => { this.taskMetadata.points = value.trim() ? Math.max(0, Number(value)) : undefined; this.updatePreview(); });
+		});
+		new Setting(additional).setName(t("Tags")).addText(text => text.setValue((this.taskMetadata.tags || []).join(" ")).onChange(value => { this.taskMetadata.tags = value.split(/[\s,]+/).map(tag => tag.replace(/^#/, "")).filter(Boolean); this.updatePreview(); }));
+		const dependencies = new Setting(additional).setName(t("Depends On"));
+		renderTaskDependencies(this.app, this.plugin, dependencies.controlEl, this.sourceTask || { id: "capture-draft", content: "", filePath: "", metadata: { dependsOn: this.taskMetadata.dependsOn || [] } } as Task, ids => this.taskMetadata.dependsOn = ids);
 	}
 
 	/**
 	 * Create date inputs
 	 */
 	private createDateInputs(container: HTMLElement): void {
-		const getInputType = () =>
-			this.includeTime ? "datetime-local" : "date";
-		const getPlaceholder = () =>
-			this.includeTime ? "YYYY-MM-DD HH:mm" : "YYYY-MM-DD";
-
-		// Toggle for including time in date inputs
-		new Setting(container)
-			.setName(t("Include time"))
-			.setDesc(t("Toggle between date-only and date+time input"))
-			.addToggle((toggle) => {
-				toggle.setValue(this.includeTime).onChange((value) => {
-					this.includeTime = value;
-					this.updateDateInputsMode();
-				});
-			});
+		const getInputType = () => "text";
+		const getPlaceholder = () => "YYYY-MM-DD / YYYY-MM-DD HH:mm";
 
 		// Start Date
 		new Setting(container).setName(t("Start Date")).addText((text) => {
@@ -423,19 +447,23 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 						: "",
 				)
 				.onChange((value) => {
+					this.startDateInput?.setAttribute("aria-invalid", String(!!value.trim() && !parseOptionalDateTime(value)));
 					if (value) {
-						this.taskMetadata.startDate = this.parseDate(value);
+						const parsed = parseOptionalDateTime(value);
+						if (!parsed) return;
+						this.taskMetadata.startDate = new Date(parsed.timestamp);
+						this.taskMetadata.datePrecision = { ...this.taskMetadata.datePrecision, startDate: parsed.precision };
 						this.markAsManuallySet("startDate");
 					} else {
 						this.taskMetadata.startDate = undefined;
-						if (this.taskMetadata.manuallySet) {
-							this.taskMetadata.manuallySet.startDate = false;
-						}
+						if (this.taskMetadata.datePrecision) delete this.taskMetadata.datePrecision.startDate;
+						this.markAsManuallySet("startDate");
 					}
 					this.updatePreview();
 				});
 			text.inputEl.type = getInputType();
 			this.startDateInput = text.inputEl;
+			attachDateTimePicker(text.inputEl, t("Start Date"));
 		});
 
 		// Due Date
@@ -447,19 +475,23 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 						: "",
 				)
 				.onChange((value) => {
+					this.dueDateInput?.setAttribute("aria-invalid", String(!!value.trim() && !parseOptionalDateTime(value)));
 					if (value) {
-						this.taskMetadata.dueDate = this.parseDate(value);
+						const parsed = parseOptionalDateTime(value);
+						if (!parsed) return;
+						this.taskMetadata.dueDate = new Date(parsed.timestamp);
+						this.taskMetadata.datePrecision = { ...this.taskMetadata.datePrecision, dueDate: parsed.precision };
 						this.markAsManuallySet("dueDate");
 					} else {
 						this.taskMetadata.dueDate = undefined;
-						if (this.taskMetadata.manuallySet) {
-							this.taskMetadata.manuallySet.dueDate = false;
-						}
+						if (this.taskMetadata.datePrecision) delete this.taskMetadata.datePrecision.dueDate;
+						this.markAsManuallySet("dueDate");
 					}
 					this.updatePreview();
 				});
 			text.inputEl.type = getInputType();
 			this.dueDateInput = text.inputEl;
+			attachDateTimePicker(text.inputEl, t("Due Date"));
 		});
 
 		// Scheduled Date
@@ -473,19 +505,23 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 						: "",
 				)
 				.onChange((value) => {
+					this.scheduledDateInput?.setAttribute("aria-invalid", String(!!value.trim() && !parseOptionalDateTime(value)));
 					if (value) {
-						this.taskMetadata.scheduledDate = this.parseDate(value);
+						const parsed = parseOptionalDateTime(value);
+						if (!parsed) return;
+						this.taskMetadata.scheduledDate = new Date(parsed.timestamp);
+						this.taskMetadata.datePrecision = { ...this.taskMetadata.datePrecision, scheduledDate: parsed.precision };
 						this.markAsManuallySet("scheduledDate");
 					} else {
 						this.taskMetadata.scheduledDate = undefined;
-						if (this.taskMetadata.manuallySet) {
-							this.taskMetadata.manuallySet.scheduledDate = false;
-						}
+						if (this.taskMetadata.datePrecision) delete this.taskMetadata.datePrecision.scheduledDate;
+						this.markAsManuallySet("scheduledDate");
 					}
 					this.updatePreview();
 				});
 			text.inputEl.type = getInputType();
 			this.scheduledDateInput = text.inputEl;
+			attachDateTimePicker(text.inputEl, t("Scheduled Date"));
 		});
 	}
 
@@ -522,7 +558,10 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 			text.setPlaceholder(t("Project name"))
 				.setValue(this.taskMetadata.project || "")
 				.onChange((value) => {
-					this.taskMetadata.project = value || undefined;
+					this.taskMetadata.project = value.trim() || undefined;
+					if (this.taskMetadata.project && this.currentMode === "file") { this.inlineModeAvailable = true; void this.switchMode("checkbox"); return; }
+					if (!this.taskMetadata.project) this.initializeTargetFile();
+					this.updateTargetDisplay();
 					this.updatePreview();
 				});
 		});
@@ -561,7 +600,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 	 * Setup markdown editor
 	 */
 	private setupMarkdownEditor(container: HTMLElement): void {
-		setTimeout(() => {
+		this.editorSetupTimer = window.setTimeout(() => {
 			this.markdownEditor = createEmbeddableMarkdownEditor(
 				this.app,
 				container,
@@ -735,6 +774,10 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 			}
 		}
 
+		if (this.taskMetadata.project) {
+			const manager = new ProjectFileManager(this.app, ["project", ...Object.values(this.plugin.settings.projectTagPrefix || {})]);
+			return processedLines.map(line => manager.stripProjectMarkers(line, this.taskMetadata.project!)).join("\n");
+		}
 		return processedLines.join("\n");
 	}
 
@@ -745,7 +788,7 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 		taskLine: string,
 		lineParseResult: LineParseResult,
 	): string {
-		const metadata = this.generateLineMetadata(lineParseResult);
+		const metadata = this.generateLineMetadata(lineParseResult, taskLine);
 		if (!metadata) return taskLine;
 		return `${taskLine} ${metadata}`.trim();
 	}
@@ -753,16 +796,14 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 	/**
 	 * Generate line metadata
 	 */
-	private generateLineMetadata(lineParseResult: LineParseResult): string {
+	private generateLineMetadata(lineParseResult: LineParseResult, taskLine = ""): string {
 		const metadata: string[] = [];
 		const useDataviewFormat = this.preferMetadataFormat === "dataview";
 
 		// Use line-specific dates first, fall back to global metadata
-		const startDate =
-			lineParseResult.startDate || this.taskMetadata.startDate;
-		const dueDate = lineParseResult.dueDate || this.taskMetadata.dueDate;
-		const scheduledDate =
-			lineParseResult.scheduledDate || this.taskMetadata.scheduledDate;
+		const startDate = this.isManuallySet("startDate") ? this.taskMetadata.startDate : lineParseResult.startDate || this.taskMetadata.startDate;
+		const dueDate = this.isManuallySet("dueDate") ? this.taskMetadata.dueDate : lineParseResult.dueDate || this.taskMetadata.dueDate;
+		const scheduledDate = this.isManuallySet("scheduledDate") ? this.taskMetadata.scheduledDate : lineParseResult.scheduledDate || this.taskMetadata.scheduledDate;
 
 		// Add dates
 		if (startDate) {
@@ -809,19 +850,15 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 			}
 		}
 
-		// Add project
-		if (this.taskMetadata.project) {
-			const projectPrefix =
-				this.plugin.settings.projectTagPrefix?.[
-					this.plugin.settings.preferMetadataFormat
-				] || "project";
-			metadata.push(
-				useDataviewFormat
-					? `[${projectPrefix}:: ${this.taskMetadata.project}]`
-					: `#${projectPrefix}/${this.taskMetadata.project}`,
-			);
-		}
+        // Project membership is represented by the destination note, never inline text.
+		if (this.taskMetadata.points != null && Number.isFinite(this.taskMetadata.points)) metadata.push(`[points:: ${this.taskMetadata.points}]`);
+		if (this.taskMetadata.dependsOn?.length) metadata.push(useDataviewFormat ? `[dependsOn:: ${this.taskMetadata.dependsOn.join(", ")}]` : `⛔ ${this.taskMetadata.dependsOn.join(", ")}`);
 
+		for (const raw of this.taskMetadata.tags || []) {
+			const tag = raw.replace(/^#/, "");
+			if (this.taskMetadata.project && ["project", ...Object.values(this.plugin.settings.projectTagPrefix || {})].some(prefix => tag.startsWith(prefix + "/"))) continue;
+			if (tag && !taskLine.split(/\s+/).includes("#" + tag)) metadata.push("#" + tag);
+		}
 		// Add context
 		if (this.taskMetadata.context) {
 			const contextPrefix =
@@ -930,62 +967,32 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 		this.taskMetadata.manuallySet[field] = true;
 	}
 
-	/**
-	 * Update all date input elements when the includeTime mode changes
-	 */
-	private updateDateInputsMode(): void {
-		const inputType = this.includeTime ? "datetime-local" : "date";
-		const placeholder = this.includeTime
-			? "YYYY-MM-DD HH:mm"
-			: "YYYY-MM-DD";
-
-		const updateInput = (input?: HTMLInputElement, value?: Date) => {
-			if (!input) return;
-			input.type = inputType;
-			input.placeholder = placeholder;
-			input.value = this.formatDateInputValue(value);
-		};
-
-		updateInput(this.startDateInput, this.taskMetadata.startDate);
-		updateInput(this.dueDateInput, this.taskMetadata.dueDate);
-		updateInput(this.scheduledDateInput, this.taskMetadata.scheduledDate);
-
-		this.updatePreview();
-	}
-
 	private setDateInputValue(
 		input: HTMLInputElement | undefined,
 		value?: Date,
 	): void {
 		if (!input) return;
-		input.value = this.formatDateInputValue(value);
+		input.value = this.formatDateInputValue(value); input.dispatchEvent(new Event("tg-date-updated"));
 	}
 
 	private formatDateInputValue(value?: Date): string {
-		if (!value) return "";
-		return moment(value).format(
-			this.includeTime ? "YYYY-MM-DD[T]HH:mm" : "YYYY-MM-DD",
-		);
+		const field = (["startDate", "dueDate", "scheduledDate"] as const).find(field => this.taskMetadata[field] === value);
+		return formatOptionalDateTime(value, field ? this.taskMetadata.datePrecision?.[field] : undefined);
 	}
 
 	/**
-	 * Override formatDate to respect includeTime setting for task metadata output
+	 * Format each field according to whether the user supplied a time
 	 */
-	protected formatDate(date: Date): string {
-		return formatDateSmart(date, {
-			forceFormat: this.includeTime ? undefined : "date-only",
-			includeSeconds: false,
-		});
-	}
+	protected formatDate(date: Date): string { return this.formatDateInputValue(date); }
 
 	/**
 	 * Reset UI elements
 	 */
 	protected resetUIElements(): void {
 		// Reset date inputs
-		if (this.startDateInput) this.startDateInput.value = "";
-		if (this.dueDateInput) this.dueDateInput.value = "";
-		if (this.scheduledDateInput) this.scheduledDateInput.value = "";
+		if (this.startDateInput) { this.startDateInput.value = ""; this.startDateInput.dispatchEvent(new Event("tg-date-updated")); }
+		if (this.dueDateInput) { this.dueDateInput.value = ""; this.dueDateInput.dispatchEvent(new Event("tg-date-updated")); }
+		if (this.scheduledDateInput) { this.scheduledDateInput.value = ""; this.scheduledDateInput.dispatchEvent(new Event("tg-date-updated")); }
 
 		// Clear file name input
 		if (this.fileNameInput) {
@@ -1003,12 +1010,13 @@ export class QuickCaptureModal extends BaseQuickCaptureModal {
 	 */
 	onClose() {
 		// Save last used mode if enabled
-		if (this.plugin.settings.quickCapture.rememberLastMode) {
+		if (this.rememberCaptureMode && this.plugin.settings.quickCapture.rememberLastMode) {
 			this.plugin.settings.quickCapture.lastUsedMode = this.currentMode;
 			this.plugin.saveSettings();
 		}
 
 		// Clean up
+		window.clearTimeout(this.editorSetupTimer); window.clearTimeout(this.suggestSetupTimer);
 		if (this.universalSuggest) {
 			this.universalSuggest.disable();
 			this.universalSuggest = null;

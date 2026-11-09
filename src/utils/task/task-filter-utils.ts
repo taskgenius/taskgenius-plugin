@@ -11,11 +11,12 @@ import {
 	FilterGroup,
 	RootFilterState,
 } from "@/components/features/task/filter/ViewTaskFilter";
-import { hasProject } from "./task-operations";
+import { hasProject, getEffectiveProject } from "./task-operations";
 
 // 从ViewTaskFilter.ts导入相关接口
 
 interface FilterOptions {
+	includeClosedTasks?: boolean;
 	textQuery?: string;
 	selectedDate?: Date; // For forecast-like filtering
 	// Add other potential options needed by specific views later
@@ -502,9 +503,15 @@ export function filterTasks(
 	options: FilterOptions = {},
 ): Task[] {
 	let filtered = [...allTasks];
+	if (plugin.app?.vault?.getMarkdownFiles && plugin.app.metadataCache?.getFileCache) {
+		const archivedProjects = new Set(plugin.app.vault.getMarkdownFiles().flatMap(file => {
+			const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+			return fm && (fm.archived === true || fm.status === "archived") && typeof fm.project === "string" ? [fm.project.toLocaleLowerCase()] : [];
+		}));
+		filtered = filtered.filter(task => !archivedProjects.has((getEffectiveProject(task) || "").toLocaleLowerCase()));
+	}
 	const viewConfig = getViewSettingOrDefault(plugin, viewId);
 	const filterRules = viewConfig.filterRules || {};
-	const globalFilterRules = plugin.settings.globalFilterRules || {};
 
 	// --- 过滤 ICS 事件在不应展示的视图中（例如 inbox）---
 	// ICS 事件应仅在日历/日程类视图（calendar/forecast）中展示
@@ -531,23 +538,12 @@ export function filterTasks(
 	// 注意：这些是基础过滤条件，始终应用
 	if (viewConfig.hideCompletedAndAbandonedTasks) {
 		filtered = filtered.filter((task) =>
-			isNotCompleted(plugin, task, viewId),
+			options.includeClosedTasks || isNotCompleted(plugin, task, viewId),
 		);
 	}
 
 	if (viewConfig.filterBlanks) {
 		filtered = filtered.filter((task) => task.content.trim() !== "");
-	}
-
-	// --- 应用全局筛选器（如果存在） ---
-	if (
-		globalFilterRules.advancedFilter &&
-		globalFilterRules.advancedFilter.filterGroups?.length > 0
-	) {
-		console.log("应用全局筛选器:", globalFilterRules.advancedFilter);
-		filtered = filtered.filter((task) =>
-			applyAdvancedFilter(task, globalFilterRules.advancedFilter!),
-		);
 	}
 
 	// --- 应用视图配置中的基础高级过滤器（如果存在） ---
@@ -577,7 +573,7 @@ export function filterTasks(
 		// 如果有实时高级过滤器，应用基本规则后直接返回
 		// 应用 isNotCompleted 过滤器（基于视图配置的 hideCompletedAndAbandonedTasks）
 		filtered = filtered.filter((task) =>
-			isNotCompleted(plugin, task, viewId),
+			options.includeClosedTasks || isNotCompleted(plugin, task, viewId),
 		);
 
 		// 应用 isBlank 过滤器（基于视图配置的 filterBlanks）
@@ -789,7 +785,7 @@ export function filterTasks(
 
 	// --- Apply `isNotCompleted` Filter ---
 	// This uses the hideCompletedAndAbandonedTasks setting from the viewConfig
-	filtered = filtered.filter((task) => isNotCompleted(plugin, task, viewId));
+	filtered = filtered.filter((task) => options.includeClosedTasks || isNotCompleted(plugin, task, viewId));
 
 	// --- Apply `isBlank` Filter ---
 	// This uses the filterBlanks setting from the viewConfig

@@ -311,6 +311,8 @@ export interface PresetTaskFilter {
 	name: string;
 	options: {
 		// TaskFilterOptions structure is embedded here
+		conditions?: Array<{ field: string; operator: string; value: string }>;
+		relation?: "AND" | "OR";
 		includeCompleted: boolean;
 		includeInProgress: boolean;
 		includeAbandoned: boolean;
@@ -486,6 +488,16 @@ export interface RewardItem {
 	inventory: number; // Remaining count (-1 for unlimited)
 	imageUrl?: string; // Optional image URL
 	condition?: string; // Optional condition string for triggering (e.g., "#project AND #milestone")
+	pointCost?: number;
+}
+
+export interface PointsLedgerEntry {
+	id: string;
+	delta: number;
+	label: string;
+	createdAt: number;
+	source: "task" | "manual" | "redemption";
+	taskId?: string;
 }
 
 export interface OccurrenceLevel {
@@ -498,6 +510,10 @@ export interface RewardSettings {
 	rewardItems: RewardItem[];
 	occurrenceLevels: OccurrenceLevel[];
 	showRewardType: "modal" | "notice"; // Type of reward display - modal (default) or notice
+	pointsPerTask?: number;
+	pointsLedger?: PointsLedgerEntry[];
+	/** Markdown file that owns the existing check-in rules and manual ledger. */
+	pointsDataFile?: string;
 }
 
 export interface HabitSettings {
@@ -802,6 +818,7 @@ export interface ChangelogSettings {
 }
 
 export interface TaskProgressBarSettings {
+	interfaceRevision?: number;
 	// General Settings (Example)
 	progressBarDisplayMode: "none" | "graphical" | "text" | "both";
 	supportHoverToShowProgressInfo: boolean;
@@ -920,8 +937,6 @@ export interface TaskProgressBarSettings {
 	defaultViewMode: "list" | "tree"; // Global default view mode for all views
 	viewConfiguration: ViewConfig[]; // Manages order, visibility, basic info, AND filter rules
 
-	// Global Filter Settings
-	globalFilterRules: ViewFilterRule; // Global filter rules that apply to all Views by default
 
 	// Review Settings
 	reviewSettings: Record<string, ProjectReviewSetting>;
@@ -931,6 +946,7 @@ export interface TaskProgressBarSettings {
 
 	// Habit Settings
 	habit: HabitSettings;
+	habitsIntegration?: Partial<import("../integrations/habits/settings").HabitsPluginSettings>;
 
 	// Filter Configuration Settings
 	filterConfig: FilterConfigSettings;
@@ -1360,8 +1376,6 @@ export const DEFAULT_SETTINGS: TaskProgressBarSettings = {
 	enableDynamicMetadataPositioning: false, // Enable intelligent metadata positioning by default
 	defaultViewMode: "list", // Global default view mode for all views
 
-	// Global Filter Defaults
-	globalFilterRules: {}, // Empty global filter rules by default
 
 	viewConfiguration: [
 		{
@@ -1401,7 +1415,7 @@ export const DEFAULT_SETTINGS: TaskProgressBarSettings = {
 		},
 		{
 			id: "projects",
-			name: t("Projects"),
+			name: t("Project Gantt"),
 			icon: "folders",
 			type: "default",
 			visible: true,
@@ -1597,6 +1611,8 @@ export const DEFAULT_SETTINGS: TaskProgressBarSettings = {
 	// Reward Settings Defaults (NEW)
 	rewards: {
 		enableRewards: false,
+		pointsPerTask: 0,
+		pointsLedger: [],
 		rewardItems: [
 			{
 				id: "reward-tea",

@@ -3,7 +3,6 @@ import { ViewConfig, ViewFilterRule } from "@/common/setting-definition";
 import { t } from "@/translations/helper";
 import { TaskProgressBarSettingTab } from "@/setting";
 import { ViewConfigModal } from "@/components/features/task/view/modals/ViewConfigModal";
-import { TaskFilterComponent } from "@/components/features/task/filter/ViewTaskFilter";
 import Sortable from "sortablejs";
 import "@/styles/view-setting-tab.css";
 
@@ -211,100 +210,9 @@ export function renderViewSettingsTab(
 			});
 		});
 
-	// --- Global Filter Section ---
-	new Setting(containerEl)
-		.setName(t("Global Filter Configuration"))
-		.setDesc(
-			t(
-				"Configure global filter rules that apply to all Views by default. Individual Views can override these settings.",
-			),
-		)
-		.setHeading();
-
-	// Global filter container
-	const globalFilterContainer = containerEl.createDiv({
-		cls: "global-filter-container",
-	});
-
-	// Global filter component
-	let globalFilterComponent: TaskFilterComponent | null = null;
-
-	// Sortable instances for view management
 	let topSortable: Sortable | null = null;
 	let bottomSortable: Sortable | null = null;
-
-	// Initialize global filter component
-	const initializeGlobalFilter = () => {
-		if (globalFilterComponent) {
-			globalFilterComponent.onunload();
-		}
-
-		// Pre-save the global filter state to localStorage so TaskFilterComponent can load it
-		if (settingTab.plugin.settings.globalFilterRules.advancedFilter) {
-			settingTab.app.saveLocalStorage(
-				"task-genius-view-filter-global-filter",
-				settingTab.plugin.settings.globalFilterRules.advancedFilter,
-			);
-		}
-
-		globalFilterComponent = new TaskFilterComponent(
-			globalFilterContainer,
-			settingTab.app,
-			"global-filter", // Use a special leafId for global filter
-			settingTab.plugin,
-		);
-
-		// Load the component
-		globalFilterComponent.onload();
-
-		// Listen for filter changes
-		const handleGlobalFilterChange = (filterState: any) => {
-			if (globalFilterComponent) {
-				// Update global filter rules in settings
-				settingTab.plugin.settings.globalFilterRules = {
-					...settingTab.plugin.settings.globalFilterRules,
-					advancedFilter: filterState,
-				};
-				settingTab.applySettingsUpdate();
-
-				// 触发视图刷新以应用新的全局筛选器
-				// 使用插件的triggerViewUpdate方法刷新所有TaskView
-				settingTab.plugin.triggerViewUpdate();
-			}
-		};
-
-		// Register event listener for global filter changes
-		settingTab.plugin.registerEvent(
-			settingTab.app.workspace.on(
-				"task-genius:filter-changed",
-				(filterState, leafId) => {
-					if (leafId === "global-filter") {
-						handleGlobalFilterChange(filterState);
-					}
-				},
-			),
-		);
-	};
-
-	// Initialize the global filter component
-	initializeGlobalFilter();
-
-	// Store cleanup function for later use
-	(containerEl as any).cleanupGlobalFilter = () => {
-		if (globalFilterComponent) {
-			globalFilterComponent.onunload();
-			globalFilterComponent = null;
-		}
-		// Also cleanup sortables
-		if (topSortable) {
-			topSortable.destroy();
-			topSortable = null;
-		}
-		if (bottomSortable) {
-			bottomSortable.destroy();
-			bottomSortable = null;
-		}
-	};
+	(containerEl as any).cleanupViewSortables = () => { topSortable?.destroy(); bottomSortable?.destroy(); topSortable = null; bottomSortable = null; };
 
 	// --- New View Management Section ---
 	new Setting(containerEl)

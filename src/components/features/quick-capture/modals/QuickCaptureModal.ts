@@ -153,7 +153,7 @@ export class QuickCaptureModal extends Modal {
 
 		// Initialize time parsing service
 		this.timeParsingService = new TimeParsingService(
-			this.plugin.settings.timeParsing || DEFAULT_TIME_PARSING_CONFIG,
+			DEFAULT_TIME_PARSING_CONFIG,
 		);
 
 		if (metadata) {
@@ -464,16 +464,6 @@ export class QuickCaptureModal extends Modal {
 				});
 		});
 
-		// Recurrence
-		new Setting(configPanel).setName(t("Recurrence")).addText((text) => {
-			text.setPlaceholder(t("e.g., every day, every week"))
-				.setValue(this.taskMetadata.recurrence || "")
-				.onChange((value) => {
-					this.taskMetadata.recurrence = value || undefined;
-					this.updatePreview();
-				});
-		});
-
 		// Create editor container in the right panel
 		const editorContainer = editorPanel.createDiv({
 			cls: "quick-capture-modal-editor",
@@ -629,6 +619,8 @@ export class QuickCaptureModal extends Modal {
 			// Create options with current settings
 			const captureOptions = {
 				...this.plugin.settings.quickCapture,
+				project: this.taskMetadata.project,
+				projectTagPrefixes: Object.values(this.plugin.settings.projectTagPrefix || {}).map(String),
 				targetFile: this.tempTargetFilePath,
 			};
 

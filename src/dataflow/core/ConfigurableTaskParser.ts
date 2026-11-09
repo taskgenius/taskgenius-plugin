@@ -1482,6 +1482,7 @@ export class MarkdownTaskParser {
 			originalMarkdown: enhancedTask.originalMarkdown,
 			children: enhancedTask.children || [],
 			metadata: {
+				...(["startDate", "dueDate", "scheduledDate", "completedDate", "cancelledDate"].some(field => /\d{1,2}:\d{2}/.test(String(enhancedTask.metadata[field] || ""))) ? { datePrecision: Object.fromEntries(["startDate", "dueDate", "scheduledDate", "completedDate", "cancelledDate"].filter(field => enhancedTask.metadata[field]).map(field => [field, /\d{1,2}:\d{2}/.test(String(enhancedTask.metadata[field])) ? "datetime" : "date"])) } : {}),
 				tags:
 					enhancedTask.tags ||
 					(enhancedTask.metadata.tags
@@ -1803,7 +1804,15 @@ export class MarkdownTaskParser {
 			!this.config.fileMetadataInheritance
 				?.inheritFromFrontmatterForSubtasks
 		) {
-			// Legacy behavior: do not inherit for subtasks
+			// Keep general frontmatter inheritance disabled for subtasks, but
+			// project membership is a file-level relationship and must follow a
+			// task when its parent and children move into a project note.
+			const projectKey =
+				this.config.projectConfig?.metadataConfig?.metadataKey || "project";
+			const projectValue = this.fileMetadata?.[projectKey] ?? this.fileMetadata?.project;
+			if (projectValue !== undefined && projectValue !== null && String(projectValue).trim()) {
+				inherited.project = String(projectValue).trim();
+			}
 			return inherited;
 		}
 
@@ -1832,6 +1841,11 @@ export class MarkdownTaskParser {
 			"comment",
 			"metadata", // Prevent recursive metadata inheritance
 		]);
+		// Project dates describe the project, never implicit deadlines of its tasks.
+		const projectKey = this.config.projectConfig?.metadataConfig?.metadataKey || "project";
+		if (String(this.fileMetadata?.[projectKey] ?? this.fileMetadata?.project ?? "").trim()) {
+			for (const field of ["due", "dueDate", "start", "startDate", "scheduled", "scheduledDate"]) nonInheritableFields.add(field);
+		}
 
 		// LEGACY: Inherit from file metadata (frontmatter) if available
 		if (this.fileMetadata) {

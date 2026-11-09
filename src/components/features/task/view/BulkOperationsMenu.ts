@@ -17,6 +17,7 @@ import { BulkDateOffsetModal } from "@/components/ui/date-picker/BulkDateOffsetM
 import { addDays } from "date-fns";
 import { getCachedData } from "@/components/ui/inputs/AutoComplete";
 import { getAllStatusMarks } from "@/utils/status-cycle-resolver";
+import { ProjectFileManager } from "@/managers/project-file-manager";
 
 /**
  * Create and show bulk operations menu
@@ -715,21 +716,26 @@ async function executeBulkMoveToProject(
 	onOperationComplete: () => void,
 ): Promise<void> {
 	const tasks = selectionManager.getSelectedTasks();
-
-	const result = await executeBulkOperation(
-		tasks,
-		(task) => {
-			return {
-				metadata: {
-					...task.metadata,
-					project,
-				},
-			};
-		},
-		plugin,
-	);
-
-	showOperationResult(result, `Moved to project "${project}"`);
+	try {
+		const prefixes = Object.values(plugin.settings.projectTagPrefix || {}).map(String);
+		const manager = new ProjectFileManager(plugin.app, prefixes.length ? prefixes : ["project"]);
+		const projectNote = await manager.create(project);
+		if (!projectNote) throw new Error(t("Could not create project note"));
+		const canvasTasks = tasks.filter(task => task.metadata?.sourceType === "canvas" || task.filePath.toLowerCase().endsWith(".canvas"));
+		const markdownTasks = tasks.filter(task => !canvasTasks.includes(task));
+		let movedCount = await manager.moveTasks(markdownTasks, project);
+		for (const task of canvasTasks) {
+			const result = await plugin.writeAPI?.updateTask({
+				taskId: task.id,
+				updates: { metadata: { ...task.metadata, project } as any },
+			});
+			if (result?.success) movedCount++;
+		}
+		new Notice(`${t('Moved to project')} "${project}": ${movedCount} ${t("tasks")}`);
+	} catch (error) {
+		console.error("Bulk move to project failed", error);
+		new Notice(t("Failed to move project tasks"));
+	}
 	selectionManager.exitSelectionMode("operation_complete");
 	onOperationComplete();
 }

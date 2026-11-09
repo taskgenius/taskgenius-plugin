@@ -1,18 +1,24 @@
-import { Component, Platform, setIcon, Menu, Modal, App } from "obsidian";
+import { projectFolderContainer } from "./ProjectFolders";
+import { Component, setIcon, Menu, Modal, App, Notice } from "obsidian";
 import TaskProgressBarPlugin from "@/index";
 import { Task } from "@/types/task";
 import { getEffectiveProject } from "@/utils/task/task-operations";
-import {
-	ProjectPopover,
-	ProjectModal,
-	EditProjectModal,
-} from "./ProjectPopover";
+import { EditProjectModal } from "./ProjectPopover";
 import type { CustomProject } from "@/common/setting-definition";
 import { t } from "@/translations/helper";
 import { onWorkspaceSwitched } from "@/components/features/fluent/events/ui-event";
 import { Events, on } from "@/dataflow/events/Events";
+import {
+	ProjectFileManager,
+	ProjectCreateModal,
+	ProjectDeleteModal,
+	ProjectEditModal,
+	ProjectArchiveModal,
+} from "@/managers/project-file-manager";
+import { QuickCaptureModal } from "@/components/features/quick-capture/modals/QuickCaptureModalWithSwitch";
 
 export interface Project {
+	folder?: string;
 	id: string;
 	name: string;
 	filterKey: string;
@@ -34,7 +40,7 @@ interface ProjectTreeNode {
 	fullPath: string;
 }
 
-type SortOption =
+type SortOption = "manual"
 	| "name-asc"
 	| "name-desc"
 	| "tasks-asc"
@@ -46,10 +52,12 @@ export class ProjectList extends Component {
 	private containerEl: HTMLElement;
 	private plugin: TaskProgressBarPlugin;
 	private projects: Project[] = [];
+	private taskSnapshot: Task[] = [];
 	private activeProjectId: string | null = null;
+	private projectLoad = 0;
+	private disposed = false;
 	private onProjectSelect: (projectId: string) => void;
-	private currentPopover: ProjectPopover | null = null;
-	private currentSort: SortOption = "name-asc";
+	private currentSort: SortOption = "manual";
 	private readonly STORAGE_KEY = "task-genius-project-sort";
 	private readonly EXPANDED_KEY = "task-genius-project-expanded";
 	private collator: Intl.Collator;
@@ -78,10 +86,13 @@ export class ProjectList extends Component {
 	}
 
 	async onload() {
+		this.disposed = false;
 		await this.loadSortPreference();
+		if (this.disposed) return;
 		await this.loadExpandedNodes();
+		if (this.disposed) return;
 		await this.loadProjects();
-		this.render();
+		if (this.disposed) return;
 
 		// Listen for workspace switches to refresh the project list
 		this.registerEvent(
@@ -125,16 +136,12 @@ export class ProjectList extends Component {
 	}
 
 	onunload() {
+		this.disposed = true;
+		this.projectLoad++;
 		// Clean up any pending refresh timeout
 		if (this.refreshTimeoutId) {
 			clearTimeout(this.refreshTimeoutId);
 			this.refreshTimeoutId = null;
-		}
-
-		// Clean up any open popover
-		if (this.currentPopover) {
-			this.removeChild(this.currentPopover);
-			this.currentPopover = null;
 		}
 
 		// Clear container
@@ -142,6 +149,8 @@ export class ProjectList extends Component {
 	}
 
 	private async loadProjects() {
+		if (this.disposed) return;
+		const request = ++this.projectLoad;
 		let tasks: Task[] = [];
 		if (this.plugin.dataflowOrchestrator) {
 			const queryAPI = this.plugin.dataflowOrchestrator.getQueryAPI();
@@ -149,11 +158,17 @@ export class ProjectList extends Component {
 		} else {
 			tasks = this.plugin.preloadedTasks || [];
 		}
+		if (this.disposed || request !== this.projectLoad) return;
+		this.taskSnapshot = tasks;
 		const projectMap = new Map<string, Project>();
+		const projectFiles = this.createProjectFileManager();
+		const archivedNames = new Set(
+			projectFiles.list().filter((project) => project.archived).map((project) => project.name),
+		);
 
 		tasks.forEach((task: Task) => {
 			const projectName = getEffectiveProject(task);
-			if (!projectName) {
+			if (!projectName || archivedNames.has(projectName)) {
 				return;
 			}
 
@@ -178,6 +193,26 @@ export class ProjectList extends Component {
 		});
 
 		this.projects = Array.from(projectMap.values());
+
+		// Project notes are the canonical project records. Merge them into the
+		// sidebar even when they do not currently contain any indexed tasks.
+		for (const record of projectFiles.list()) {
+			if (record.archived) continue;
+			const existing = this.projects.find((project) => project.name === record.name);
+			if (existing) existing.folder = record.folder;
+			if (!existing) {
+				this.projects.push({
+					folder: record.folder,
+					id: record.name,
+					name: record.name,
+					filterKey: record.name,
+					displayName: record.name,
+					color: this.generateColorForProject(record.name),
+					taskCount: 0,
+					createdAt: record.file.stat.ctime,
+				});
+			}
+		}
 
 		// Load custom projects
 		this.loadCustomProjects();
@@ -209,6 +244,7 @@ export class ProjectList extends Component {
 
 	private isValidSortOption(value: string): boolean {
 		return [
+			"manual",
 			"name-asc",
 			"name-desc",
 			"tasks-asc",
@@ -240,6 +276,7 @@ export class ProjectList extends Component {
 	private sortProjects() {
 		this.projects.sort((a, b) => {
 			switch (this.currentSort) {
+				case "manual": return this.createProjectFileManager().compareNames(a.name, b.name);
 				case "name-asc":
 					return this.collator.compare(
 						a.displayName || a.name,
@@ -387,6 +424,7 @@ export class ProjectList extends Component {
 
 		nodes.sort((a, b) => {
 			switch (this.currentSort) {
+				case "manual": return this.createProjectFileManager().compareNames(a.project.name, b.project.name);
 				case "name-asc":
 					return this.collator.compare(
 						a.project.displayName || a.project.name,
@@ -447,6 +485,7 @@ export class ProjectList extends Component {
 	}
 
 	private generateColorForProject(projectName: string): string {
+		const saved = this.createProjectFileManager().find(projectName)?.color; if (saved) return saved;
 		const colors = [
 			"#e74c3c",
 			"#3498db",
@@ -479,7 +518,10 @@ export class ProjectList extends Component {
 			cls: "fluent-project-scroll",
 		});
 
-		if (this.isTreeView) {
+		if (this.projects.some(project => project.folder)) {
+			const folder = projectFolderContainer(scrollArea, this.plugin.app);
+			for (const project of this.projects) this.renderProjectItem(folder(project.folder || ""), project, 0, false);
+		} else if (this.isTreeView) {
 			// Build tree structure first
 			this.buildTreeStructure();
 			// Render tree view
@@ -509,6 +551,10 @@ export class ProjectList extends Component {
 		this.registerDomEvent(addProjectBtn, "click", () => {
 			this.handleAddProject(addProjectBtn);
 		});
+		const archiveButton = this.containerEl.createDiv({ cls: "fluent-project-item" });
+		setIcon(archiveButton.createSpan(), "archive");
+		archiveButton.createSpan({ cls: "fluent-project-name", text: t("Archived projects") });
+		this.registerDomEvent(archiveButton, "click", () => new ProjectArchiveModal(this.plugin.app, this.createProjectFileManager(), () => this.loadProjects()).open());
 	}
 
 	private renderTreeNodes(
@@ -547,6 +593,9 @@ export class ProjectList extends Component {
 			},
 		});
 
+		this.createProjectFileManager().bindReorder(projectItem, project.name, () => this.projects.map(project => project.name), () => {
+			this.currentSort = "manual"; void this.saveSortPreference(); void this.loadProjects(); void this.plugin.triggerViewUpdate();
+		});
 		// Add virtual class for styling
 		if (project.isVirtual) {
 			projectItem.addClass("is-virtual");
@@ -684,9 +733,8 @@ export class ProjectList extends Component {
 			});
 
 		if (projectId) {
-			const activeEl = this.containerEl.querySelector(
-				`[data-project-id="${projectId}"]`,
-			);
+			const activeEl = Array.from(this.containerEl.querySelectorAll<HTMLElement>("[data-project-id]"))
+				.find(el => el.dataset.projectId === projectId);
 			if (activeEl) {
 				activeEl.addClass("is-active");
 			}
@@ -714,43 +762,11 @@ export class ProjectList extends Component {
 	}
 
 	private handleAddProject(buttonEl: HTMLElement) {
-		// Clean up any existing popover
-		if (this.currentPopover) {
-			this.removeChild(this.currentPopover);
-			this.currentPopover = null;
-		}
-
-		if (Platform.isPhone) {
-			// Mobile: Use Obsidian Modal
-			const modal = new ProjectModal(
-				this.plugin.app,
-				this.plugin,
-				async (project) => {
-					await this.saveProject(project);
-				},
-			);
-			modal.open();
-		} else {
-			// Desktop: Use popover
-			this.currentPopover = new ProjectPopover(
-				this.plugin,
-				buttonEl,
-				async (project) => {
-					await this.saveProject(project);
-					if (this.currentPopover) {
-						this.removeChild(this.currentPopover);
-						this.currentPopover = null;
-					}
-				},
-				() => {
-					if (this.currentPopover) {
-						this.removeChild(this.currentPopover);
-						this.currentPopover = null;
-					}
-				},
-			);
-			this.addChild(this.currentPopover);
-		}
+		new ProjectCreateModal(
+			this.plugin.app,
+			this.createProjectFileManager(),
+			() => this.loadProjects(),
+		).open();
 	}
 
 	private async saveProject(project: CustomProject) {
@@ -804,23 +820,11 @@ export class ProjectList extends Component {
 			);
 
 			if (existingIndex === -1) {
-				// Add new custom project
-				this.projects.push({
-					id: customProject.id,
-					name: customProject.name,
-					filterKey: customProject.name,
-					displayName:
-						customProject.displayName || customProject.name,
-					color: customProject.color,
-					taskCount: 0, // Will be updated by task counting
-					createdAt: customProject.createdAt,
-					updatedAt: customProject.updatedAt,
-				});
+				// A saved display preference is not a project record.
+				return;
 			} else {
 				// Update existing project with custom color
-				this.projects[existingIndex].id = customProject.id;
-				this.projects[existingIndex].filterKey = customProject.name;
-				this.projects[existingIndex].color = customProject.color;
+				this.projects[existingIndex].color = this.createProjectFileManager().find(customProject.name)?.color || customProject.color;
 				this.projects[existingIndex].displayName =
 					customProject.displayName || customProject.name;
 				this.projects[existingIndex].createdAt =
@@ -831,6 +835,34 @@ export class ProjectList extends Component {
 		});
 	}
 
+	private createProjectFileManager(): ProjectFileManager {
+		const prefixes = Object.values(this.plugin.settings.projectTagPrefix || {}).map(String);
+		return new ProjectFileManager(this.plugin.app, prefixes.length ? prefixes : ["project"]);
+	}
+
+	private async consolidateProject(name: string): Promise<void> {
+		try {
+			const manager = this.createProjectFileManager(), project = await manager.create(name);
+			if (!project) return;
+			const matching = this.taskSnapshot.filter(task => getEffectiveProject(task) === name);
+			const canvas = matching.filter(task => task.metadata?.sourceType === "canvas");
+			let moved = await manager.moveTasks(matching.filter(task => !canvas.includes(task)), name);
+			for (const task of canvas) {
+				const result = await this.plugin.writeAPI?.updateTask({ taskId: task.id, updates: { metadata: { ...task.metadata, project: name } } });
+				if (result?.success) moved++;
+			}
+			await this.plugin.app.vault.process(project.file, text => {
+				let fenced = false;
+				return text.split("\n").map(line => {
+					if (/^\s*(```|~~~)/.test(line)) fenced = !fenced;
+					return !fenced && /^\s*[-*+]\s+\[[^\]]*\]/.test(line) ? manager.stripProjectMarkers(line, name) : line;
+				}).join("\n");
+			});
+			new Notice(`${t("Project note created; tasks moved")}: ${moved}`);
+			await this.loadProjects(); await this.plugin.triggerViewUpdate();
+		} catch (error) { console.error("Project consolidation failed", error); new Notice(t("Failed to move project tasks")); }
+	}
+
 	public showSortMenu(buttonEl: HTMLElement) {
 		const menu = new Menu();
 
@@ -839,6 +871,7 @@ export class ProjectList extends Component {
 			value: SortOption;
 			icon: string;
 		}[] = [
+			{ label: t("Manual order"), value: "manual", icon: "grip-vertical" },
 			{ label: t("Name (A-Z)"), value: "name-asc", icon: "arrow-up-a-z" },
 			{
 				label: t("Name (Z-A)"),
@@ -896,38 +929,65 @@ export class ProjectList extends Component {
 
 	private showProjectContextMenu(event: MouseEvent, project: Project) {
 		const menu = new Menu();
+		const projectFiles = this.createProjectFileManager();
+		const projectFile = projectFiles.find(project.name);
+		if (projectFile) {
+			menu.addItem(item => item.setTitle(t("Move project tasks into note")).setIcon("folder-input").onClick(() => void this.consolidateProject(project.name)));
+			menu.addItem((item) => item
+				.setTitle(t("Open project note"))
+				.setIcon("file-text")
+				.onClick(() => void this.plugin.app.workspace.getLeaf(false).openFile(projectFile.file)));
+			menu.addItem((item) => item
+				.setTitle(t("Edit project details"))
+				.setIcon("pencil")
+				.onClick(() => new ProjectEditModal(
+					this.plugin.app,
+					projectFiles,
+					projectFile,
+					() => this.loadProjects(),
+				).open()));
+			menu.addItem((item) => item
+				.setTitle(projectFile.archived ? t("Restore project") : t("Archive project"))
+				.setIcon(projectFile.archived ? "archive-restore" : "archive")
+				.onClick(async () => {
+					await projectFiles.setArchived(project.name, !projectFile.archived);
+					await this.loadProjects();
+				}));
+			menu.addItem((item) => item
+				.setTitle(t("Add task to project"))
+				.setIcon("plus")
+				.onClick(() => new QuickCaptureModal(this.plugin.app, this.plugin, { project: project.name }, true).open()));
+			menu.addItem(item => item.setTitle(t("Delete project")).setIcon("trash").onClick(() =>
+				new ProjectDeleteModal(this.plugin.app, projectFiles, projectFile, () => this.loadProjects()).open()));
+			menu.showAtMouseEvent(event);
+			return;
+		}
 
-		// Check if this is a custom project
-		const isCustomProject =
-			this.plugin.settings.projectConfig?.customProjects?.some(
-				(cp) => cp.id === project.id || cp.name === project.name,
-			);
-
-		// Edit Project option
-		menu.addItem((item) => {
-			item.setTitle(t("Edit Project")).setIcon("edit");
-
-			if (isCustomProject) {
-				item.onClick(() => {
-					this.editProject(project);
-				});
-			} else {
-				item.setDisabled(true);
-			}
-		});
-
-		// Delete Project option
-		menu.addItem((item) => {
-			item.setTitle(t("Delete Project")).setIcon("trash");
-
-			if (isCustomProject) {
-				item.onClick(() => {
-					this.deleteProject(project);
-				});
-			} else {
-				item.setDisabled(true);
-			}
-		});
+		menu.addItem((item) => item
+			.setTitle(t("Create project note and move tasks"))
+			.setIcon("folder-plus")
+			.onClick(async () => {
+				try {
+					const projectNote = await projectFiles.create(project.name);
+					if (!projectNote) return;
+					const matchingTasks = this.taskSnapshot.filter(task => getEffectiveProject(task) === project.name);
+										const canvasTasks = matchingTasks.filter(task => task.metadata?.sourceType === "canvas" || task.filePath.toLowerCase().endsWith(".canvas"));
+					const markdownTasks = matchingTasks.filter(task => !canvasTasks.includes(task));
+					let movedCount = await projectFiles.moveTasks(markdownTasks, project.name);
+					for (const task of canvasTasks) {
+						const result = await this.plugin.writeAPI?.updateTask({
+							taskId: task.id,
+							updates: { metadata: { ...task.metadata, project: project.name } as any },
+						});
+						if (result?.success) movedCount++;
+					}
+					new Notice(`${t("Project note created; tasks moved")}: ${movedCount}`);
+					await this.loadProjects();
+				} catch (error) {
+					console.error("Failed to migrate legacy project tasks", error);
+					new Notice(t("Failed to move project tasks"));
+				}
+			}));
 
 		menu.showAtMouseEvent(event);
 	}

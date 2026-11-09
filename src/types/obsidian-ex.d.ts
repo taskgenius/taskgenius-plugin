@@ -398,6 +398,8 @@ declare module "obsidian" {
 			callback: () => void,
 		): EventRef;
 
+		on(event: "task-genius:points-updated", callback: () => void): EventRef;
+
 		on(
 			event: "task-genius:task-completed",
 			callback: (task: Task) => void,
@@ -441,6 +443,8 @@ declare module "obsidian" {
 		trigger(event: "task-genius:ics-config-changed"): void;
 
 		trigger(event: "task-genius:ics-cache-updated"): void;
+
+		trigger(event: "task-genius:points-updated"): void;
 
 		trigger(
 			event: "task-genius:habit-index-updated",

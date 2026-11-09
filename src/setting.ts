@@ -39,19 +39,21 @@ import {
 	renderCalendarViewSettingsTab,
 } from "./components/features/settings";
 import { renderFileFilterSettingsTab } from "./components/features/settings/tabs/FileFilterSettingsTab";
-import { renderTimeParsingSettingsTab } from "./components/features/settings/tabs/TimeParsingSettingsTab";
+
 import { SettingsSearchComponent } from "./components//features/settings/components/SettingsSearchComponent";
 import { renderMcpIntegrationSettingsTab } from "./components/features/settings/tabs/McpIntegrationSettingsTab";
 import { IframeModal } from "@/components/ui/modals/IframeModal";
 import { renderTaskTimerSettingTab } from "./components/features/settings/tabs/TaskTimerSettingsTab";
 import { renderBasesSettingsTab } from "./components/features/settings/tabs/BasesSettingsTab";
 import { renderWorkspaceSettingsTab } from "@/components/features/settings/tabs/WorkspaceSettingTab";
+import type { PointsDashboard } from "./components/features/rewards/PointsDashboard";
 
 export class TaskProgressBarSettingTab extends PluginSettingTab {
 	plugin: TaskProgressBarPlugin;
 	private debouncedApplySettings: () => void;
 	private debouncedApplyNotifications: () => void;
 	private searchComponent: SettingsSearchComponent | null = null;
+	private pointsSettingsDashboard?: PointsDashboard;
 
 	// Tabs management
 	private currentTab: string = "general";
@@ -80,13 +82,13 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 			id: "view-settings",
 			name: t("Views"),
 			icon: "layout",
-			category: "core",
+			category: "display",
 		},
 		{
 			id: "interface",
 			name: t("Interface"),
 			icon: "layout-dashboard",
-			category: "core",
+			category: "display",
 		},
 		{
 			id: "file-filter",
@@ -127,7 +129,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 			id: "project",
 			name: t("Projects"),
 			icon: "folder-open",
-			category: "core",
+			category: "management",
 		},
 
 		// Workflow & Automation
@@ -147,7 +149,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 			id: "quick-capture",
 			name: t("Quick Capture"),
 			icon: "zap",
-			category: "workflow",
+			category: "management",
 		},
 		{
 			id: "task-timer",
@@ -155,23 +157,18 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 			icon: "timer",
 			category: "workflow",
 		},
-		{
-			id: "time-parsing",
-			name: t("Time Parsing"),
-			icon: "clock",
-			category: "workflow",
-		},
+
 		{
 			id: "timeline-sidebar",
 			name: t("Timeline Sidebar"),
 			icon: "clock",
-			category: "workflow",
+			category: "display",
 		},
 
 		// Gamification
 		{
 			id: "reward",
-			name: t("Rewards"),
+			name: t("Points and rewards"),
 			icon: "gift",
 			category: "gamification",
 		},
@@ -187,7 +184,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 			id: "calendar-views",
 			name: t("Calendar Views"),
 			icon: "calendar-range",
-			category: "integration",
+			category: "display",
 		},
 		{
 			id: "ics-integration",
@@ -304,7 +301,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 		const categories = {
 			core: { name: t("Core Settings"), tabs: [] as typeof this.tabs },
 			display: {
-				name: t("Display & Progress"),
+				name: t("Views & Display"),
 				tabs: [] as typeof this.tabs,
 			},
 			management: {
@@ -316,7 +313,7 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 				tabs: [] as typeof this.tabs,
 			},
 			gamification: {
-				name: t("Gamification"),
+				name: t("Habits and points"),
 				tabs: [] as typeof this.tabs,
 			},
 			integration: {
@@ -613,12 +610,14 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 	}
 
 	display(): void {
+		this.pointsSettingsDashboard?.unload();
+		this.pointsSettingsDashboard = undefined;
 		const { containerEl } = this;
 
 		containerEl.empty();
 
 		// Ensure we start with general tab if no tab is set
-		if (!this.currentTab) {
+		if (!this.currentTab || this.currentTab !== "workspaces" && !this.tabs.some(tab => tab.id === this.currentTab)) {
 			this.currentTab = "general";
 		}
 
@@ -657,9 +656,6 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 		const taskTimerSection = this.createTabSection("task-timer");
 		this.displayTaskTimerSettings(taskTimerSection);
 
-		// Time Parsing Tab
-		const timeParsingSection = this.createTabSection("time-parsing");
-		this.displayTimeParsingSettings(timeParsingSection);
 
 		// Timeline Sidebar Tab
 		const timelineSidebarSection =
@@ -770,8 +766,6 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 				return `${base}/quick-capture`;
 			case "task-timer":
 				return `${base}/task-timer`;
-			case "time-parsing":
-				return `${base}/time-parsing`;
 			case "workflow":
 				return `${base}/workflows`;
 			case "timeline-sidebar":
@@ -839,9 +833,6 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 		this.renderTaskTimerSettingsTab(containerEl);
 	}
 
-	private displayTimeParsingSettings(containerEl: HTMLElement): void {
-		renderTimeParsingSettingsTab(this, containerEl);
-	}
 
 	private displayTimelineSidebarSettings(containerEl: HTMLElement): void {
 		renderTimelineSidebarSettingsTab(this, containerEl);
@@ -903,7 +894,12 @@ export class TaskProgressBarSettingTab extends PluginSettingTab {
 
 	// START: New Reward Settings Section
 	private displayRewardSettings(containerEl: HTMLElement): void {
-		renderRewardSettingsTab(this, containerEl);
+		this.pointsSettingsDashboard = renderRewardSettingsTab(this, containerEl);
+	}
+
+	hide(): void {
+		this.pointsSettingsDashboard?.unload();
+		this.pointsSettingsDashboard = undefined;
 	}
 
 	private displayHabitSettings(containerEl: HTMLElement): void {

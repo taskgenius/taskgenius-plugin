@@ -53,3 +53,15 @@ packages/*/node_modules
 
 # Documentation site (separate repository)
 docs-site
+
+# Local habit integration verification artifacts
+habits-*.log
+habits-*-jest.json
+
+# Local UI audit verification
+/audit-*.log
+/audit-*.json
+
+# Independent local browser layout artifacts
+/output/playwright/
+/.playwright-cli/

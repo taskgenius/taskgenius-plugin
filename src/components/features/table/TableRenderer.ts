@@ -55,6 +55,8 @@ export class TableRenderer extends Component {
 	) => void;
 
 	// Callback for row expansion
+	public onColumnResize?: (columnId: string, width: number) => void;
+
 	public onRowExpand?: (rowId: string) => void;
 
 	// Callback for cell value changes
@@ -225,6 +227,8 @@ export class TableRenderer extends Component {
 	 */
 	private renderHeader() {
 		this.headerEl.empty();
+		for (const column of this.columns) if (column.id === "status") column.width = Math.max(112, column.width);
+		this.tableEl.style.minWidth = `${this.columns.reduce((sum, column) => sum + column.width, 0)}px`;
 
 		const headerRow = this.headerEl.createEl("tr", "task-table-header-row");
 
@@ -232,7 +236,7 @@ export class TableRenderer extends Component {
 			const th = headerRow.createEl("th", "task-table-header-cell");
 			th.dataset.columnId = column.id;
 			th.style.width = `${column.width}px`;
-			th.style.minWidth = `${Math.min(column.width, 50)}px`;
+			th.style.minWidth = `${column.id === "status" ? 112 : Math.min(column.width, 50)}px`;
 
 			// Create header content container
 			const headerContent = th.createDiv("task-table-header-content");
@@ -766,29 +770,11 @@ export class TableRenderer extends Component {
 		const statusIcon = statusContainer.createSpan("task-table-status-icon");
 		const status = cell.value as string;
 
-		switch (status) {
-			case "x":
-			case "X":
-				setIcon(statusIcon, "check-circle");
-				statusContainer.addClass("completed");
-				break;
-			case "/":
-			case ">":
-				setIcon(statusIcon, "clock");
-				statusContainer.addClass("in-progress");
-				break;
-			case "-":
-				setIcon(statusIcon, "x-circle");
-				statusContainer.addClass("abandoned");
-				break;
-			case "?":
-				setIcon(statusIcon, "help-circle");
-				statusContainer.addClass("planned");
-				break;
-			default:
-				setIcon(statusIcon, "circle");
-				statusContainer.addClass("not-started");
-		}
+		const configured = Object.entries(this.plugin.settings.taskStatuses || {}).find(([, marks]) => String(marks).split("|").includes(status))?.[0];
+		const group = configured || ({ x: "completed", X: "completed", "/": "inProgress", ">": "inProgress", "-": "abandoned", "?": "planned", " ": "notStarted", a: "archived" } as Record<string, string>)[status] || "archived";
+		const appearance: Record<string, [string, string]> = { completed: ["check-circle", "completed"], inProgress: ["clock", "in-progress"], abandoned: ["x-circle", "abandoned"], planned: ["help-circle", "planned"], notStarted: ["circle", "not-started"], archived: ["pause", "paused"], paused: ["pause", "paused"], pause: ["pause", "paused"] };
+		const [icon, cls] = appearance[group] || appearance.archived;
+		setIcon(statusIcon, icon); statusContainer.addClass(cls);
 
 		// Add status text
 		const statusText = statusContainer.createSpan("task-table-status-text");
@@ -1460,7 +1446,9 @@ export class TableRenderer extends Component {
 	private handleMouseUp() {
 		if (!this.isResizing) return;
 
+		const column = this.columns.find(column => column.id === this.resizeColumn);
 		this.isResizing = false;
+		if (column) this.onColumnResize?.(column.id, column.width);
 		this.resizeColumn = "";
 		document.body.style.cursor = "";
 		this.tableEl.removeClass("resizing");
@@ -1470,6 +1458,7 @@ export class TableRenderer extends Component {
 	 * Update column width
 	 */
 	private updateColumnWidth(columnId: string, newWidth: number) {
+		if (columnId === "status") newWidth = Math.max(112, newWidth);
 		// Update header
 		const headerCell = this.headerEl.querySelector(
 			`th[data-column-id="${columnId}"]`,
@@ -1494,6 +1483,7 @@ export class TableRenderer extends Component {
 		if (column) {
 			column.width = newWidth;
 		}
+		this.tableEl.style.minWidth = `${this.columns.reduce((sum, item) => sum + item.width, 0)}px`;
 	}
 
 	/**

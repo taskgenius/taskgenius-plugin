@@ -636,3 +636,26 @@
 .quick-capture-modal .setting-item-control input[type="datetime-local"] {
 	width: 10rem;
 }
+
+.tg-date-time-picker { display: flex; gap: 5px; flex-wrap: nowrap; min-width: 0; }
+.tg-date-time-picker input[type=date] { min-width: 125px; width: 130px; }
+.tg-date-time-picker input[type=time] { width: 100px; }
+.calendar-current-date[role=button] { cursor: pointer; }
+.calendar-current-date[role=button]:hover { color: var(--text-accent); }
+
+.tg-active-filter-label { max-width: none; flex-shrink: 0; white-space: nowrap; font-size: var(--font-ui-small); color: var(--text-accent); }
+.tg-active-filter-label[hidden] { display:none; }
+
+.quick-capture-modal.full { width: min(1120px, 96vw); max-width: 1120px; min-height: 0; }
+.quick-capture-modal .quick-capture-config-panel { flex: 0 0 420px; max-width: 46%; min-width: 0; }
+.quick-capture-modal .quick-capture-config-panel .setting-item { gap: 8px; }
+.quick-capture-modal .quick-capture-config-panel .setting-item-info { flex: 0 0 104px; margin-right: 0; }
+.quick-capture-modal .quick-capture-config-panel .setting-item-name { white-space: nowrap; }
+.quick-capture-modal .quick-capture-config-panel .setting-item-control { min-width: 0; flex: 1; justify-content: flex-end; }
+.quick-capture-modal input[hidden] { display: none !important; }
+.tg-date-time-picker input[type=date] { flex: 0 0 138px; width: 138px; }
+.tg-date-time-picker input[type=time] { flex: 0 0 100px; width: 100px; }
+.tg-date-time-picker .tg-clear-time { flex: 0 0 24px; width: 24px; min-width: 24px; padding: 0; }
+@media(max-width:800px) { .quick-capture-modal .quick-capture-layout { flex-direction: column; } .quick-capture-modal .quick-capture-config-panel { flex-basis: auto; max-width: 100%; } }
+
+.quick-capture-additional > summary { cursor: pointer; color: var(--text-muted); padding: 12px 0; }
