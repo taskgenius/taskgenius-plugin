@@ -130,9 +130,9 @@ export class ProjectList extends Component {
 
 		// Schedule a refresh with a small delay to allow tasks to load
 		this.refreshTimeoutId = setTimeout(() => {
-			this.refresh();
 			this.refreshTimeoutId = null;
-		}, 100);
+			void this.loadProjects(true);
+		}, 250);
 	}
 
 	onunload() {
@@ -148,7 +148,7 @@ export class ProjectList extends Component {
 		this.containerEl.empty();
 	}
 
-	private async loadProjects() {
+	private async loadProjects(onlyIfChanged = false) {
 		if (this.disposed) return;
 		const request = ++this.projectLoad;
 		let tasks: Task[] = [];
@@ -192,6 +192,7 @@ export class ProjectList extends Component {
 			}
 		});
 
+		const previous = this.projects;
 		this.projects = Array.from(projectMap.values());
 
 		// Project notes are the canonical project records. Merge them into the
@@ -225,7 +226,7 @@ export class ProjectList extends Component {
 			this.buildTreeStructure();
 		}
 
-		this.render();
+		if (!onlyIfChanged || JSON.stringify(previous) !== JSON.stringify(this.projects)) this.render();
 	}
 
 	private async loadSortPreference() {

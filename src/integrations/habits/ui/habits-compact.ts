@@ -1,6 +1,6 @@
 import { calendarWeekNumber } from "@/utils/date/calendar-week";
 import { renderMissedNotification } from "./missed-notification";
-import { App, Component, MarkdownRenderChild, Menu, Notice, TFile, debounce, normalizePath, setIcon, setTooltip, type Events } from "obsidian";
+import { App, Component, MarkdownRenderChild, Menu, Notice, TFile, setIcon, setTooltip, type Events } from "obsidian";
 import type { HabitStore } from "../habit-store";
 import type { HabitsPluginSettings } from "../settings";
 import type { HabitDefinition } from "../types";
@@ -12,6 +12,7 @@ import { HabitModal } from "./habit-modal";
 import { applyHabitIcon } from "./icon-suggest-modal";
 import { renderStatsView } from "./stats-view";
 import { ConfirmModal } from "./confirm-modal";
+import { watchHabitFiles } from "./habit-file-refresh";
 import { addDayStatusItems, dayStatus, renderClosedHabits, scheduleSnoozeRefresh, type ClosedHabit } from "./day-status";
 
 /** Compact layout of the `habits` dashboard, with date navigation. */
@@ -49,23 +50,11 @@ export class HabitsCompact extends MarkdownRenderChild {
 			const name = (this.sourcePath.split("/").pop() ?? "").replace(/\.md$/, "");
 			this.selectedDate = parseNoteDate(name, settings.dailyNoteDateFormat?.trim() || "YYYY-MM-DD") ?? new Date();
 		}
-		const refresh = debounce(() => this.render(), 250, true);
-		const relevant = (path: string): boolean => {
-			const folder = normalizePath(this.getSettings().habitsFolder);
-			return path === folder || path.startsWith(`${folder}/`);
-		};
-		// Note habits can derive their completion from notes outside the habits folder.
-		this.registerEvent(this.app.metadataCache.on("changed", file => {
-			this.savedValues.delete(file.path);
-			this.savedDays.delete(file.path);
-			refresh();
-		}));
-		this.registerEvent(this.app.vault.on("create", () => refresh()));
-		this.registerEvent(this.app.vault.on("delete", () => refresh()));
-		this.registerEvent(this.app.vault.on("rename", (file, oldPath) => {
-			if (relevant(file.path) || relevant(oldPath) || file instanceof TFile) refresh();
-		}));
-		this.registerEvent(this.pluginEvents.on("settings-changed", () => refresh()));
+		watchHabitFiles(this, this.app, this.store, path => {
+			this.savedValues.delete(path);
+			this.savedDays.delete(path);
+		}, () => this.render());
+		this.registerEvent(this.pluginEvents.on("settings-changed", () => this.render()));
 		this.render();
 	}
 

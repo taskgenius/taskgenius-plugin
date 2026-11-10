@@ -14,6 +14,7 @@ after(() => rm(directory, {recursive: true, force: true}));
 await build({
   stdin: {contents: `export {TaskGeniusHabits} from './src/integrations/habits/task-genius-host';
     export {HabitStore} from './src/integrations/habits/habit-store';
+    export {MissedHabitsModal} from './src/integrations/habits/ui/missed-habits-modal';
     export {NativeHabitCards} from './src/integrations/habits/ui/native-cards';
     export {nativeCardHeat} from './src/integrations/habits/ui/native-card-state';
     export {DEFAULT_SETTINGS, DEFAULT_FRONTMATTER_KEYS} from './src/integrations/habits/settings';
@@ -33,7 +34,7 @@ await build({
     builder.onResolve({filter: /^obsidian$/}, () => ({path: path.resolve('tests/habits/obsidian-fixture.mjs')}));
   }}],
 });
-const {TaskGeniusHabits, HabitStore, NativeHabitCards, nativeCardHeat, Events, DEFAULT_SETTINGS, DEFAULT_FRONTMATTER_KEYS,
+const {TaskGeniusHabits, HabitStore, NativeHabitCards, MissedHabitsModal, nativeCardHeat, Events, DEFAULT_SETTINGS, DEFAULT_FRONTMATTER_KEYS,
   planLegacyHabits, importLegacyHabits, isDue, isActive, isComplete, isDailyComplete, habitStats, missedInstances, isRescheduleTargetOpen, t, vaultFixture,
   ReminderSync, NoteHabitSync, computeNoteValue, applyCommentLog, parseCommentLog, generateSummary, ExportModal, resolveTaskPoints, taskCompletionTransactionId} = await import(pathToFileURL(path.join(directory, 'integration.mjs')));
 const settings = extra => ({...structuredClone(DEFAULT_SETTINGS), ...extra});
@@ -422,4 +423,79 @@ test('ignore all past misses dismisses old notifications without changing record
  assert.equal(await store.ignoreAllPastMisses('2026-11-09'),2);assert.equal(missedInstances(store.getHabits(),date('2026-11-09')).length,0);
  for(const h of store.getHabits()){assert.deepEqual(h.records,{'2026-11-01':1});assert.equal(f.metadata.get(h.path).frontmatter.bravoPoints,10);assert.equal(h.startDate,'2026-11-01');}
  assert.ok(missedInstances(store.getHabits(),date('2026-11-10')).every(item=>item.dateKey==='2026-11-09'));assert.ok(missedInstances(store.getHabits(),date('2026-11-10')).length);
+});
+
+test('sync metadata only replaces cards when a habit record actually changes', async () => {
+ const dom = new JSDOM('<body></body>');
+ installObsidianDom(dom.window);
+ globalThis.document = dom.window.document;
+ globalThis.window = dom.window;
+ const f = vaultFixture();
+ const config = settings();
+ await f.app.vault.createFolder('Habits');
+ const file = await f.app.vault.create('Habits/Read.md', '---\n{"type":"binary","startDate":"2026-11-01","records":{}}\n---\n');
+ const unrelated = await f.app.vault.create('Journal.md', 'A note');
+ const store = new HabitStore(f.app, () => config, async () => {});
+ const root = document.body.createDiv();
+ const cards = new NativeHabitCards(f.app, store, config, new Events(), root);
+ cards.selectedDate = date('2026-11-09');
+ cards.onload();
+ try {
+  const initial = root.querySelector('.tg-native-habit-card');
+  assert.ok(initial);
+  f.app.metadataCache.trigger('changed', unrelated);
+  f.app.metadataCache.trigger('changed', file);
+  assert.equal(root.querySelector('.tg-native-habit-card'), initial);
+  const original = store.getHabits()[0];
+  await store.setRecord(original, '2026-11-09', 1);
+  f.app.metadataCache.trigger('changed', file);
+  const updated = root.querySelector('.tg-native-habit-card');
+  assert.notEqual(updated, initial);
+  assert.ok(updated.classList.contains('is-done'));
+  f.app.metadataCache.trigger('changed', file);
+  assert.equal(root.querySelector('.tg-native-habit-card'), updated);
+  await store.stopHabit(store.getHabits()[0]);
+  f.app.metadataCache.trigger('changed', file);
+  assert.equal(root.querySelector('.tg-native-habit-card'), null);
+  assert.deepEqual(store.getHabits()[0].records, {'2026-11-09': 1});
+ } finally {
+  cards.unload();
+  dom.window.close();
+  delete globalThis.document;
+  delete globalThis.window;
+ }
+});
+
+test('the missed dialog backfills the original day and preserves a concurrent record', async () => {
+ const dom = new JSDOM('<body></body>');
+ installObsidianDom(dom.window);
+ globalThis.document = dom.window.document;
+ globalThis.testLanguage = 'en';
+ const f = vaultFixture();
+ const config = settings();
+ await f.app.vault.createFolder('Habits');
+ await f.app.vault.create('Habits/Read.md', '---\n{"type":"binary","frequency":"daily","startDate":"2026-11-01","records":{}}\n---\n');
+ const store = new HabitStore(f.app, () => config, async () => {});
+ const original = store.getHabits()[0];
+ const modal = new MissedHabitsModal(f.app, store, [original], () => {});
+ modal.contentEl = dom.window.document.body.createDiv();
+ try {
+  modal.renderList();
+  const backfill = modal.contentEl.querySelector('.habits-missed-reschedule');
+  assert.equal(backfill.textContent, 'Backfill');
+  assert.equal(backfill.disabled, false);
+  backfill.click();
+  const originalDay = missedInstances([original], new Date())[0].dateKey;
+  const confirm = [...modal.contentEl.querySelectorAll('button')].find(button => button.textContent === 'Confirm');
+  assert.ok(confirm && !confirm.disabled);
+  confirm.click();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(store.getHabits()[0].records, {[originalDay]: 1});
+  assert.deepEqual(store.getHabits()[0].reschedules, []);
+  await assert.rejects(() => store.setRecord(original, originalDay, 2, 0));
+  assert.deepEqual(store.getHabits()[0].records, {[originalDay]: 1});
+ } finally {
+  dom.window.close();
+  delete globalThis.document;
+ }
 });

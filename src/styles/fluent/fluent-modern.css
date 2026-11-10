@@ -126,7 +126,7 @@
 	.workspace-leaf-content[data-type^="fluent-task-genius-view"] .view-header {
 		background-color: var(--modern-background-primary);
 		border-radius: var(--radius-m);
-		height: var(--header-height);
+		height: var(--tg-fluent-header-height, var(--header-height));
 		display: flex;
 		z-index: 1;
 		position: relative;
@@ -142,7 +142,7 @@
 	}
 
 	.workspace-leaf-content[data-type^="fluent-task-genius-view"] .view-header {
-		height: var(--view-header-height);
+		height: var(--tg-fluent-header-height, var(--view-header-height));
 	}
 
 	.tg-fluent-sidebar-container.fluent-sidebar:not(.is-collapsed) {

@@ -1,4 +1,4 @@
-import { isDue, isComplete, isRescheduleTargetOpen, isRescheduleEligible } from "./stats";
+import { isDue, isComplete, isRescheduleTargetOpen, isRescheduleEligible, isPausedOn, isFailedOn } from "./stats";
 import { App, normalizePath, Notice, TFile, TFolder } from "obsidian";
 import {
 	DEFAULT_FRONTMATTER_KEYS,
@@ -18,6 +18,7 @@ import type {
 } from "./types";
 import {
 	addDays,
+	fromDateKey,
 	isFlexibleFrequency,
 	roundValue,
 	sanitizeFileName,
@@ -733,9 +734,11 @@ export class HabitStore {
 		habit: HabitDefinition,
 		dateKey: string,
 		value: number,
+		expectedValue?: number,
 	): Promise<void> {
 		const file = this.fileForHabit(habit);
 		if (!file) {
+			if (expectedValue !== undefined) throw new Error(t("This habit changed. Reopen the habit and try again."));
 			new Notice(
 				t('Could not find the note for "{name}".', {
 					name: habit.name,
@@ -753,6 +756,9 @@ export class HabitStore {
 		await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
 			const fm = frontmatter as Record<string, unknown>;
 			const records = this.readRecords(fm[k.records]);
+			if (expectedValue !== undefined && (fm[k.stopped] === true || (records[dateKey] || 0) !== expectedValue)) {
+				throw new Error(t("This habit changed. Reopen the habit and try again."));
+			}
 			if (value > 0) {
 				records[dateKey] = value;
 			} else {
@@ -1073,42 +1079,31 @@ export class HabitStore {
 		new Notice(t('Resumed "{name}".', { name: habit.name }));
 	}
 
-	/**
-	 * Move a missed due day onto a different one (experimental). Upserts by
-	 * `from`, so calling this again for the same missed day replaces where
-	 * it was previously moved to rather than adding a second entry. Callers
-	 * are expected to have already checked {@link isRescheduleTargetOpen}
-	 * for `to` — this only guards against the note going missing mid-edit.
-	 */
-	async rescheduleHabit(
-		habit: HabitDefinition,
-		from: string,
-		to: string,
-	): Promise<void> {
+	/** Move a missed due day, checking the latest data before committing. */
+	async rescheduleHabit(habit: HabitDefinition, from: string, to: string): Promise<HabitReschedule[]> {
 		const file = this.fileForHabit(habit);
-		if (!file) {
-			new Notice(
-				t('Could not find the note for "{name}".', {
-					name: habit.name,
-				}),
-			);
-			return;
-		}
+		const date = fromDateKey(from);
+		if (!file || !date) throw new Error(t("This habit changed. Reopen the habit and try again."));
 		const k = this.keys();
+		let reschedules: HabitReschedule[] = [];
 		await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
 			const fm = frontmatter as Record<string, unknown>;
-			const latest = this.parseFile(file, fm);
-			const current = { ...habit, ...latest, records: this.readRecords(fm[k.records]), reschedules: this.readReschedules(fm[k.reschedules]), ignoredMisses: this.readDateList(fm.ignoredMisses), ignoredMissesBefore: this.readDateString(fm.ignoredMissesBefore) };
-			if (!isRescheduleEligible(current) || from >= toDateKey(new Date()) || !isDue(current, new Date(`${from}T00:00:00`)) || isComplete(current, from) || current.ignoredMisses?.includes(from) || (current.ignoredMissesBefore && from < current.ignoredMissesBefore) || !isRescheduleTargetOpen(current, to) || (current.records[to] || 0) > 0) throw new Error(t("That day is already due or has a record. Choose another day."));
-			const reschedules = this.readReschedules(fm[k.reschedules]).filter(
-				(r) => r.from !== from,
-			);
-			reschedules.push({ from, to });
+			const current = this.parseFile(file, fm);
+			if (!current || !isRescheduleEligible(current) || from >= toDateKey(new Date())
+				|| !isDue(current, date) || isComplete(current, from) || isPausedOn(current, from)
+				|| isFailedOn(current, from) || current.ignoredMisses?.includes(from)
+				|| (current.ignoredMissesBefore && from < current.ignoredMissesBefore)
+				|| !isRescheduleTargetOpen(current, to)) {
+				throw new Error(t("That day is already due or has a record. Choose another day."));
+			}
+			// Move the original instance again if a previous destination was missed.
+			const origin = current.reschedules.find(entry => entry.to === from)?.from ?? from;
+			reschedules = current.reschedules.filter(entry => entry.from !== origin);
+			reschedules.push({ from: origin, to });
 			fm[k.reschedules] = this.serializeReschedules(reschedules);
 		});
-		new Notice(
-			t('Rescheduled "{name}" to {date}.', { name: habit.name, date: to }),
-		);
+		new Notice(t('Rescheduled "{name}" to {date}.', { name: habit.name, date: to }));
+		return reschedules;
 	}
 
 	/** Dismiss old reminders without changing any records, scores or future due days. */

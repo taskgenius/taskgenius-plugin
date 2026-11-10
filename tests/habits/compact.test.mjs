@@ -63,6 +63,7 @@ function fixture(overrides = {}, write = async () => {}, extra = {}) {
   const app = { metadataCache: { on: (name, fn) => { events[name] = fn; } }, vault: { on() {}, getAbstractFileByPath() {} }, workspace: { openLinkText() {} } };
   const snoozes = {};
   const store = {
+    isHabitFile: path => path.startsWith("Habits/"),
     getHabits: () => structuredClone([habit, ...(extra.habits ?? [])]), setRecord: write, dayCalls: [], snoozes,
     snoozedUntil: (h, now = Date.now()) => (snoozes[h.path] > now ? snoozes[h.path] : null),
     snoozeHabit: async (h, until) => { snoozes[h.path] = until; },
@@ -76,7 +77,7 @@ function fixture(overrides = {}, write = async () => {}, extra = {}) {
   };
   const settings = { habitsFolder: 'Habits', sortMode: 'name', manualOrder: [], groups: {}, groupOrder: [], experimental: {}, statusOrdering: true, ...extra.settings };
   const root = new Element();
-  const view = new HabitsCompact(app, store, () => settings, { on() {} }, 'Dashboard.md', root);
+  const view = new HabitsCompact(app, store, () => settings, { on(name, fn) { events[name] = fn; } }, 'Dashboard.md', root);
   view.selectedDate = new Date(2026, 9, 12); view.onload();
   const button = label => root.all().find(el => el.attrs['aria-label'] === label);
   const text = () => root.all().map(el => el.text).join('');
@@ -109,7 +110,7 @@ test('status order respects settings, selected date and paused rows', () => {
   f.button('Next day').handlers.click();
   assert.deepEqual(rowNames(f.root), ['Alpha', 'Beta', 'Gamma']);
   f.button('Previous day').handlers.click();
-  f.settings.statusOrdering = false; f.events.changed({ path: 'other.md' });
+  f.settings.statusOrdering = false; f.events['settings-changed']();
   assert.deepEqual(rowNames(f.root), ['Alpha', 'Beta', 'Gamma']);
 });
 
