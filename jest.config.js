@@ -30,6 +30,7 @@ module.exports = {
 		"^@/.*\\.(css|less|scss|sass)$": "<rootDir>/src/__mocks__/styleMock.js",
 		"^@/(.*)$": "<rootDir>/src/$1",
 		"\\.(css|less|scss|sass)$": "<rootDir>/src/__mocks__/styleMock.js",
+		"\\.(png|md)$": "<rootDir>/src/__mocks__/fileMock.js",
 		".*\\.worker$": "<rootDir>/src/__mocks__/ProjectData.worker.ts",
 	},
 	transform: {

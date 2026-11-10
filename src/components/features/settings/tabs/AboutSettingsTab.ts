@@ -22,7 +22,14 @@ export function renderAboutSettingsTab(
 			)
 		)
 		.addButton((bt) => {
-			bt.buttonEl.outerHTML = `<a href="https://www.buymeacoffee.com/boninall"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=boninall&button_colour=6495ED&font_colour=ffffff&font_family=Inter&outline_colour=000000&coffee_colour=FFDD00"></a>`;
+			// Rendered locally instead of loading a remote badge image, so
+			// opening this tab makes no network request. The page only opens
+			// when the button is clicked.
+			bt.setButtonText("☕ Buy me a coffee")
+				.setCta()
+				.onClick(() => {
+					window.open("https://www.buymeacoffee.com/boninall");
+				});
 		});
 
 	new Setting(containerEl)

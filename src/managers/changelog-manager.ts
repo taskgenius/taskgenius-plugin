@@ -1,4 +1,3 @@
-import { requestUrl } from "obsidian";
 import {
 	CHANGELOG_VIEW_TYPE,
 	ChangelogView,
@@ -9,8 +8,11 @@ import {
 	getCachedChangelog,
 } from "@/utils/changelog-cache";
 
-const CHANGELOG_BASE_URL =
-	"https://raw.githubusercontent.com/quorafind/obsidian-task-genius/master";
+// Changelogs are embedded at build time (esbuild text loader) so viewing them
+// never makes a network request, and they always match the installed version.
+import stableChangelog from "../../CHANGELOG.md";
+import betaChangelog from "../../CHANGELOG-BETA.md";
+
 const RELEASE_BASE_URL =
 	"https://github.com/quorafind/obsidian-task-genius/releases/tag";
 const MAX_CHANGELOG_ENTRIES = 10;
@@ -55,7 +57,7 @@ export class ChangelogManager {
 			view.showLoading(version);
 			this.currentVersionDisplayed = version;
 
-			const data = await this.fetchAndPrepareChangelog(isBeta);
+			const data = this.prepareChangelog(isBeta);
 			if (!data) {
 				view.showError("Failed to load changelog.");
 				this.currentVersionDisplayed = null;
@@ -79,29 +81,38 @@ export class ChangelogManager {
 		}
 	}
 
-	private async fetchAndPrepareChangelog(
-		isBeta: boolean,
-	): Promise<ChangelogFetchResult | null> {
+	private prepareChangelog(isBeta: boolean): ChangelogFetchResult | null {
 		try {
 			const fileName = isBeta ? "CHANGELOG-BETA.md" : "CHANGELOG.md";
-			const url = `${CHANGELOG_BASE_URL}/${fileName}`;
-			const response = await requestUrl({ url });
-			const rawContent = response.text?.trim();
+			const rawContent = (isBeta ? betaChangelog : stableChangelog)?.trim();
 
 			if (!rawContent) {
-				console.warn("[Changelog] Received empty changelog content");
+				console.warn("[Changelog] Bundled changelog is empty");
 				return null;
 			}
 
-			const markdown = this.extractLatestSections(rawContent, isBeta);
+			const markdown = this.stripRemoteImages(
+				this.extractLatestSections(rawContent, isBeta),
+			);
 			return {
 				markdown,
-				sourceUrl: url,
+				sourceUrl: `bundled:${fileName}`,
 			};
 		} catch (error) {
-			console.error("[Changelog] Failed to fetch changelog:", error);
+			console.error("[Changelog] Failed to prepare changelog:", error);
 			return null;
 		}
+	}
+
+	/**
+	 * Rendering markdown loads images automatically, so turn remote images
+	 * into plain links that are only followed when clicked.
+	 */
+	private stripRemoteImages(markdown: string): string {
+		return markdown.replace(
+			/!\[([^\]]*)\]\((https?:\/\/[^)\s]+)[^)]*\)/g,
+			(_match, alt: string, url: string) => `[${alt || url}](${url})`,
+		);
 	}
 
 	private extractLatestSections(

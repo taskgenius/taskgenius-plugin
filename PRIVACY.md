@@ -28,10 +28,12 @@ When you connect your Google Calendar, the plugin requests:
 
 | Permission | Purpose |
 |------------|---------|
-| `calendar.readonly` | Read-only access to view your calendar events |
+| `calendar` | Read your calendars and events, and create, update or delete events when you use calendar write-back |
 | `userinfo.email` | Display your connected account email in settings |
 
-**Important**: Task Genius only requests **read-only** access. The plugin cannot create, modify, or delete any events in your Google Calendar.
+Microsoft Outlook connections request `Calendars.ReadWrite`, `User.Read` and `offline_access` for the same purposes. Apple iCloud connections use the app-specific password you enter, sent only to `caldav.icloud.com`.
+
+**Important**: these are read/write permissions. The plugin only changes events in your calendar when you use a write-back feature.
 
 ### 3.2 How Authorization Works
 
@@ -69,20 +71,35 @@ If you enable MCP (Model Context Protocol) integration:
 - Connection is authenticated using App ID
 - You control which AI clients can access your task data
 
-## 6. Open Source Transparency
+## 6. Network Activity
+
+Out of the box the plugin makes **no network requests**: translations, onboarding images and changelogs are all bundled inside the plugin, and there is no telemetry, analytics, update check or remote configuration.
+
+The plugin only connects to the network when you take one of these actions:
+
+| You... | The plugin contacts |
+|--------|---------------------|
+| Connect Google Calendar | `accounts.google.com`, `oauth2.googleapis.com`, `www.googleapis.com` |
+| Connect Outlook | `login.microsoftonline.com`, `graph.microsoft.com` |
+| Connect Apple iCloud | `caldav.icloud.com` |
+| Add an ICS/iCal subscription | Only the URL you entered |
+| Enable the MCP server | Nothing external: it listens on `127.0.0.1` by default |
+| Click "How to use", Documentation, Discord, GitHub or donate links | The linked page (in an embedded viewer or your browser) |
+
+## 7. Open Source Transparency
 
 The source code is publicly available at [GitHub](https://github.com/Quorafind/Obsidian-Task-Progress-Bar), allowing you to verify how the plugin handles your data.
 
-## 7. Children's Privacy
+## 8. Children's Privacy
 
 Task Genius does not knowingly collect data from children under 13. The plugin does not collect any personal data from users of any age.
 
-## 8. Contact
+## 9. Contact
 
 - **Developer:** Boninall
 - **Email:** quorafind@gmail.com
 - **GitHub:** [github.com/Quorafind/Obsidian-Task-Progress-Bar](https://github.com/Quorafind/Obsidian-Task-Progress-Bar)
 
-## 9. Google API Services User Data Policy
+## 10. Google API Services User Data Policy
 
 Task Genius's use of information received from Google APIs adheres to the [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy), including the Limited Use requirements.

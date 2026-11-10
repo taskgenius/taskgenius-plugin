@@ -902,19 +902,26 @@ export function renderMcpIntegrationSettingsTab(
 					cls: "mcp-cursor-install-desc",
 				});
 
-				// Create install button with official Cursor SVG (dark mode style)
+				// Install badge rendered locally (dark style) rather than loading
+				// Cursor's hosted SVG, so viewing this tab makes no network request.
 				const installLink = installContainer.createEl("a", {
 					href: cursorDeeplink,
 					cls: "mcp-cursor-install-link",
-				});
-
-				const installBtn = installLink.createEl("img", {
 					attr: {
-						src: "https://cursor.com/deeplink/mcp-install-dark.svg",
-						alt: `Add ${toolName} MCP server to Cursor`,
-						height: "32",
+						"aria-label": `Add ${toolName} MCP server to Cursor`,
 					},
 				});
+
+				const installBadge = installLink.createSpan({
+					cls: "mcp-cursor-install-badge",
+				});
+				setIcon(
+					installBadge.createSpan({
+						cls: "mcp-cursor-install-badge-icon",
+					}),
+					"download"
+				);
+				installBadge.createSpan({ text: "Add to Cursor" });
 
 				// Additional buttons container
 				const additionalButtons = installContainer.createDiv(

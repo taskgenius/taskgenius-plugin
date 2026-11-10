@@ -5,6 +5,12 @@ import {
 } from "@/components/features/onboarding/ui/SelectableCard";
 import { OnboardingController } from "@/components/features/onboarding/OnboardingController";
 import { Alert } from "@/components/features/onboarding/ui/Alert";
+// Preview images are embedded into the bundle (esbuild dataurl loader) so the
+// onboarding screen never fetches them from the network.
+import fluentPreviewDark from "../../../../../media/fluent.png";
+import fluentPreviewLight from "../../../../../media/fluent-light.png";
+import legacyPreviewDark from "../../../../../media/legacy.png";
+import legacyPreviewLight from "../../../../../media/legacy-light.png";
 
 export type UIMode = "fluent" | "legacy";
 
@@ -100,8 +106,7 @@ export class ModeSelectionStep {
 
 		// Check theme
 		const isDark = document.body.classList.contains("theme-dark");
-		const theme = isDark ? "" : "-light";
-		const imageUrl = `https://raw.githubusercontent.com/Quorafind/Obsidian-Task-Progress-Bar/master/media/fluent${theme}.png`;
+		const imageUrl = isDark ? fluentPreviewDark : fluentPreviewLight;
 
 		const img = preview.createEl("img", {
 			attr: {
@@ -127,8 +132,7 @@ export class ModeSelectionStep {
 
 		// Check theme
 		const isDark = document.body.classList.contains("theme-dark");
-		const theme = isDark ? "" : "-light";
-		const imageUrl = `https://raw.githubusercontent.com/Quorafind/Obsidian-Task-Progress-Bar/master/media/legacy${theme}.png`;
+		const imageUrl = isDark ? legacyPreviewDark : legacyPreviewLight;
 
 		const img = preview.createEl("img", {
 			attr: {

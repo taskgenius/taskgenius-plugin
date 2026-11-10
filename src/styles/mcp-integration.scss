@@ -635,6 +635,30 @@ button {
 	transform: scale(1.05);
 }
 
+.mcp-cursor-install-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 14px;
+	border-radius: 6px;
+	background: #0b0b0b;
+	border: 1px solid #2a2a2a;
+	color: #ffffff;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1;
+}
+
+.mcp-cursor-install-badge-icon {
+	display: inline-flex;
+
+	svg {
+		width: 16px;
+		height: 16px;
+	}
+}
+
 .mcp-cursor-additional-buttons {
 	margin-top: 12px;
 	display: flex;

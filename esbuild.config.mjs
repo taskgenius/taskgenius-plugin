@@ -94,13 +94,6 @@ const copyManifestPlugin = {
 	},
 };
 
-// Translations are now downloaded at runtime from GitHub.
-// This plugin is kept as a no-op placeholder so the plugins array doesn't break.
-const copyTranslationsPlugin = {
-	name: "copy-translations",
-	setup() {},
-};
-
 const buildOptions = {
 	banner: {
 		js: banner,
@@ -124,8 +117,13 @@ const buildOptions = {
 		renamePluginWithDir,
 		cssSettingsPluginWithDir,
 		copyManifestPlugin,
-		copyTranslationsPlugin,
 	],
+	// Assets are embedded into main.js so the plugin never fetches them remotely
+	// (translations are bundled via regular TS imports).
+	loader: {
+		".png": "dataurl",
+		".md": "text",
+	},
 	bundle: true,
 	alias: {
 		"@": path.resolve(process.cwd(), "src"),
