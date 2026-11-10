@@ -71,7 +71,7 @@ export class MissedHabitsModal extends Modal {
 
 		contentEl.createEl("p", {
 			cls: "habits-missed-intro",
-			text: t("Pick a habit to move it onto a different day."),
+			text: t("Move a missed habit to an open day or record it on its original date."),
 		});
 
 		const list = contentEl.createDiv({ cls: "habits-missed-list" });
@@ -106,20 +106,64 @@ export class MissedHabitsModal extends Modal {
 			text: date ? friendlyDateLabel(date, today) : dateKey,
 		});
 
+		const canMove = isRescheduleEligible(habit);
 		const button = card.createEl("button", {
 			cls: "habits-icon-button habits-missed-reschedule",
 			attr: { type: "button" },
-			text: t("Reschedule"),
+			text: canMove ? t("Reschedule") : t("Backfill"),
 		});
-		button.disabled = !isRescheduleEligible(habit);
-		setTooltip(button, button.disabled ? t("This habit is already due every day. Ignore this miss or record it on its original day.") : t("Move this missed day onto a different one"));
-		button.addEventListener("click", () => this.renderPicker(instance));
+		setTooltip(button, canMove ? t("Move this missed day onto a different one") : t("Record on the original date"));
+		button.addEventListener("click", () => canMove ? this.renderPicker(instance) : this.renderOriginalDay(instance));
 		const ignore = card.createEl("button", { text: t("Ignore"), attr: { type: "button" } });
 		ignore.addEventListener("click", async () => {
 			ignore.disabled = true;
 			try { await this.store.ignoreMissedDay(habit, dateKey); this.habits = this.habits.map(item => item.path === habit.path ? { ...item, ignoredMisses: [...(item.ignoredMisses || []), dateKey] } : item); this.onChanged(); this.renderList(); }
 			catch (error) { new Notice(String(error)); ignore.disabled = false; }
 		});
+	}
+
+	private renderOriginalDay({ habit, dateKey }: MissedInstance): void {
+		const { contentEl } = this;
+		contentEl.empty();
+		new Setting(contentEl).setName(t("Backfill")).setHeading();
+		contentEl.createEl("p", { text: `${habit.name} · ${dateKey}` });
+		contentEl.createEl("p", { text: t("This habit is already due every day. Ignore this miss or record it on its original day.") });
+
+		const previous = habit.records[dateKey] || 0;
+		let value = habit.type === "binary" ? 1 : previous;
+		let confirm: ButtonComponent | undefined;
+		if (habit.type !== "binary") {
+			new Setting(contentEl).setName(habit.unit || t("Value")).addText(text => {
+				text.inputEl.type = "number";
+				text.inputEl.min = "0";
+				text.inputEl.step = "any";
+				text.setValue(previous ? String(previous) : "").onChange(input => {
+					value = Number(input);
+					confirm?.setDisabled(!Number.isFinite(value) || value <= 0);
+				});
+			});
+		}
+		new Setting(contentEl)
+			.addButton(button => button.setButtonText(t("Back")).onClick(() => this.renderList()))
+			.addButton(button => {
+				confirm = button;
+				button.setButtonText(t("Confirm")).setCta().setDisabled(value <= 0).onClick(async () => {
+					const recordedValue = value;
+					if (!Number.isFinite(recordedValue) || recordedValue <= 0) return;
+					button.setDisabled(true);
+					try {
+						await this.store.setRecord(habit, dateKey, recordedValue, previous);
+						this.habits = this.habits.map(item => item.path === habit.path
+							? { ...item, records: { ...item.records, [dateKey]: recordedValue } }
+							: item);
+						this.onChanged();
+						this.renderList();
+					} catch (error) {
+						new Notice(String(error));
+						button.setDisabled(false);
+					}
+				});
+			});
 	}
 
 	private renderPicker(instance: MissedInstance): void {
@@ -148,14 +192,23 @@ export class MissedHabitsModal extends Modal {
 		const max = toDateKey(addDays(today, PICKER_WINDOW_DAYS));
 
 		let chosen = "";
+		for (let offset = 0; offset <= PICKER_WINDOW_DAYS; offset++) {
+			const key = toDateKey(addDays(today, offset));
+			if (key !== dateKey && isRescheduleTargetOpen(habit, key)) {
+				chosen = key;
+				break;
+			}
+		}
 		let confirmButton: ButtonComponent | null = null;
 		const errorEl = contentEl.createDiv({ cls: "habits-missed-error" });
 
 		const validate = (): void => {
 			if (!chosen) {
+				errorEl.setText("");
+				confirmButton?.setDisabled(true);
 				return;
 			}
-			const open = isRescheduleTargetOpen(habit, chosen);
+			const open = chosen >= min && chosen <= max && isRescheduleTargetOpen(habit, chosen);
 			errorEl.setText(
 				open
 					? ""
@@ -170,7 +223,7 @@ export class MissedHabitsModal extends Modal {
 			text.inputEl.type = "date";
 			text.inputEl.min = min;
 			text.inputEl.max = max;
-			text.onChange((value) => {
+			text.setValue(chosen).onChange((value) => {
 				chosen = value;
 				validate();
 			});
@@ -186,8 +239,14 @@ export class MissedHabitsModal extends Modal {
 					.setButtonText(t("Confirm"))
 					.setCta()
 					.setDisabled(true)
-					.onClick(() => void this.confirm(habit, dateKey, chosen));
+					.onClick(async () => {
+						if (!chosen || chosen < min || chosen > max) return;
+						button.setDisabled(true);
+						await this.confirm(habit, dateKey, chosen);
+						validate();
+					});
 			});
+		validate();
 	}
 
 	private async confirm(
@@ -199,9 +258,10 @@ export class MissedHabitsModal extends Modal {
 			new Notice(t("That day no longer works — pick another."));
 			return;
 		}
-		try { await this.store.rescheduleHabit(habit, from, to); }
-		catch (error) { new Notice(String(error)); return; }
-		this.habits = this.habits.map(item => item.path === habit.path ? { ...item, reschedules: [...item.reschedules.filter(entry => entry.from !== from), { from, to }] } : item);
+		try {
+			const reschedules = await this.store.rescheduleHabit(habit, from, to);
+			this.habits = this.habits.map(item => item.path === habit.path ? { ...item, reschedules } : item);
+		} catch (error) { new Notice(String(error)); return; }
 		this.onChanged();
 		this.renderList();
 	}

@@ -50,6 +50,8 @@ export function isFlexible(habit: HabitDefinition): boolean {
  * log an occurrence whenever it actually happens.
  */
 export function isActive(habit: HabitDefinition, date: Date): boolean {
+	const key = toDateKey(date);
+	if (rescheduleTarget(habit, key) || rescheduleSource(habit, key)) return isDue(habit, date);
 	if (habit.frequency === "interval" && habit.intervalMode !== "cycle" && (habit.intervalWindowDays || 1) > 1) return !!intervalWindow(habit, date)?.active;
 	return isDue(habit, date) || isFlexible(habit);
 }

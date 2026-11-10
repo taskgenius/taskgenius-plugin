@@ -731,3 +731,32 @@ test('the phone toolbar keeps its drawer toggle and closes on repeated backdrop 
   e.close();
  }
 });
+
+test('duplicate background task snapshots retain the rendered view and a real change arrives once', async () => {
+ const e = environment();
+ let current = [task('Read')];
+ e.plugin.dataflowOrchestrator = {getQueryAPI: () => ({getAllTasks: async () => structuredClone(current)})};
+ const manager = new FluentDataManager(e.plugin, () => 'inbox', () => ({}), () => false);
+ const renders = [];
+ const loading = [];
+ manager.setCallbacks({onTasksLoaded: tasks => renders.push(tasks[0].content), onLoadingStateChanged: state => loading.push(state)});
+ try {
+  await manager.registerDataflowListeners();
+  await manager.loadTasks(false);
+  for (let n = 0; n < 5; n++) e.app.workspace.trigger('task-genius:task-cache-updated', {});
+  await new Promise(resolve => setTimeout(resolve, 550));
+  assert.deepEqual(renders, ['Read']);
+  current = [{...current[0], content: 'Read the next chapter'}];
+  for (let n = 0; n < 5; n++) e.app.workspace.trigger('task-genius:task-cache-updated', {});
+  await new Promise(resolve => setTimeout(resolve, 550));
+  assert.deepEqual(renders, ['Read', 'Read the next chapter']);
+  assert.ok(!loading.includes(true));
+  // A background result can supersede an explicit refresh. It must still
+  // paint the view if that refresh has already shown a loading overlay.
+  await Promise.all([manager.loadTasks(true), manager.loadTasks(false, true)]);
+  assert.deepEqual(renders, ['Read', 'Read the next chapter', 'Read the next chapter']);
+ } finally {
+  manager.unload();
+  e.close();
+ }
+});

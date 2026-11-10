@@ -11,9 +11,10 @@ import { TaskTimerManager } from "@/managers/timer-manager";
 import { PresetTaskFilter } from "@/common/setting-definition";
 import { evaluateFilterNode, parseAdvancedFilterQuery } from "@/utils/task/filter-compatibility";
 import { buildProjectPlan } from "@/managers/project-plan";
+import { ProjectFileManager } from "@/managers/project-file-manager";
 
 /**
- * FluentDataManager - Stateless data loading, filtering, and sorting executor
+ * FluentDataManager - Data loading, filtering, and sorting executor
  *
  * Responsibilities:
  * - Load tasks from dataflow or preloaded cache (returns via callback)
@@ -22,8 +23,8 @@ import { buildProjectPlan } from "@/managers/project-plan";
  * - Register dataflow event listeners for real-time updates
  * - Schedule and batch updates to prevent rapid re-renders
  *
- * NOTE: This manager is STATELESS - it does not hold tasks or filtered tasks.
- * All state is managed by TaskViewV2, this manager only executes operations.
+ * The view owns its task arrays. The manager remembers the last delivered
+ * snapshot so repeated sync events do not repaint an unchanged view.
  */
 export class FluentDataManager extends Component {
 	// Callbacks
@@ -37,6 +38,8 @@ export class FluentDataManager extends Component {
 	private disposed = false;
 	private listenersRegistered = false;
 	private pendingDataRefresh = false;
+	private lastSnapshot: string | undefined;
+	private showingLoading = false;
 
 	async finishInitialization(): Promise<void> {
 		if (this.disposed || !this.pendingDataRefresh) return;
@@ -80,7 +83,7 @@ export class FluentDataManager extends Component {
 	 * Load tasks from dataflow or preloaded cache
 	 * Returns loaded tasks via callback
 	 */
-	async loadTasks(showLoading = true): Promise<void> {
+	async loadTasks(showLoading = true, onlyIfChanged = false): Promise<void> {
 		if (this.disposed) return;
 		const request = ++this.loadRequest;
 		try {
@@ -91,6 +94,7 @@ export class FluentDataManager extends Component {
 
 			// Notify loading state
 			if (showLoading && !this.isInitializing()) {
+				this.showingLoading = true;
 				console.log("[FluentData] Notifying loading state");
 				this.onLoadingStateChanged?.(true);
 			}
@@ -117,18 +121,30 @@ export class FluentDataManager extends Component {
 				);
 			}
 
-			// Return loaded tasks via callback
-			if (!this.disposed && request === this.loadRequest) this.onTasksLoaded?.(loadedTasks, null);
+			if (this.disposed || request !== this.loadRequest) return;
+			const viewId = this.getCurrentViewId();
+			const projects = viewId === "projects" || viewId === "gantt"
+				? new ProjectFileManager(this.plugin.app).list().map(({ file, ...project }) => ({ ...project, path: file.path }))
+				: undefined;
+			const snapshot = JSON.stringify([loadedTasks, projects]);
+			if (onlyIfChanged && !this.showingLoading && snapshot === this.lastSnapshot) return;
+			this.lastSnapshot = snapshot;
+			this.onTasksLoaded?.(loadedTasks, null);
 		} catch (error) {
 			console.error("[FluentData] Failed to load tasks:", error);
 			const errorMessage =
 				(error as Error).message || "Failed to load tasks";
-			// Return error via callback
-			if (!this.disposed && request === this.loadRequest) this.onTasksLoaded?.([], errorMessage);
+			if (!this.disposed && request === this.loadRequest) {
+				this.lastSnapshot = undefined;
+				this.onTasksLoaded?.([], errorMessage);
+			}
 		} finally {
 			// Always notify loading complete
 			console.log("[FluentData] loadTasks complete");
-			if (!this.disposed && request === this.loadRequest) this.onLoadingStateChanged?.(false);
+			if (!this.disposed && request === this.loadRequest) {
+				this.showingLoading = false;
+				this.onLoadingStateChanged?.(false);
+			}
 		}
 	}
 
@@ -510,12 +526,9 @@ export class FluentDataManager extends Component {
 
 			if (!this.isInitializing()) {
 				this.pendingDataRefresh = false;
-				// Load tasks and notify parent
-				await this.loadTasks(false);
-				// Notify parent that data changed
-				if (!this.disposed) this.onUpdateNeeded?.("dataflow");
+				await this.loadTasks(false, true);
 			}
-		}, 500);
+		}, 500, true);
 
 		// Add debounced filter application
 		const debouncedApplyFilter = debounce(() => {
@@ -538,10 +551,7 @@ export class FluentDataManager extends Component {
 
 		// Listen for cache ready event
 		this.registerEvent(
-			on(this.plugin.app, Events.CACHE_READY, async () => {
-				await this.loadTasks();
-				this.onUpdateNeeded?.("cache-ready");
-			}),
+			on(this.plugin.app, Events.CACHE_READY, () => this.loadTasks(false, true)),
 		);
 
 		// Register dataflow event listeners
@@ -567,11 +577,8 @@ export class FluentDataManager extends Component {
 						);
 						this.isBatchOperating = false;
 
-						// Immediately refresh view after batch operation (skip debounce)
-						if (!this.isInitializing()) {
-							await this.loadTasks(false);
-							this.onUpdateNeeded?.("batch-operation-complete");
-						}
+						// Use the same scheduled refresh as the cache events from the batch.
+						requestDataRefresh();
 					},
 				),
 			);

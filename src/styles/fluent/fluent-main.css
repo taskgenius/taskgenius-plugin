@@ -1072,7 +1072,7 @@ button.fluent-new-task-btn:hover {
 	flex-shrink: 0;
 }
 
-.tg-fluent-phone-toolbar .fluent-top-navigation {
+.tg-fluent-phone-toolbar > .tg-fluent-top-nav.fluent-top-navigation {
 	height: auto;
 	min-height: 48px;
 	padding: 4px 8px;
@@ -1155,4 +1155,32 @@ button.fluent-new-task-btn:hover {
 		max-width: 100%;
 		min-height: 40px;
 	}
+}
+
+/* Let the native header fit its controls, including when modern styling is enabled. */
+.is-phone .workspace-leaf-content[data-type="fluent-task-genius-view"] {
+	--tg-fluent-header-height: auto;
+}
+
+.is-phone .workspace-leaf-content[data-type="fluent-task-genius-view"] > .view-header {
+	height: auto;
+	min-height: 0;
+	flex-shrink: 0;
+	margin-block: 0;
+}
+
+.is-phone .workspace-leaf-content[data-type="fluent-task-genius-view"] > .task-genius-fluent-view {
+	flex: 1 1 0;
+	height: auto;
+	min-height: 0;
+}
+
+.tg-fluent-main-container > .tg-fluent-phone-toolbar + .tg-fluent-content-wrapper {
+	flex: 1 1 0;
+	height: auto;
+	min-height: 0;
+}
+
+.tg-fluent-phone-toolbar .fluent-top-navigation.other-view .fluent-nav-left {
+	flex: 1 1 0;
 }
